@@ -1,0 +1,174 @@
+/* 아파트 감별사 · 확정 디자인 A "접수 서류"
+   토큰과 컴포넌트 클래스는 design/sian-a-document.html 시안 포팅 */
+:root {
+  --paper: #f6f6f3;
+  --sheet: #fdfdfb;
+  --ink: #1b1b1e;
+  --ink-soft: #5c5c62;
+  --line: #d9d9d3;
+  --stamp: #c73a2f;
+  --stamp-soft: #f6e3e1;
+  --radius: 2px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { color-scheme: light; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "IBM Plex Sans KR", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: "IBM Plex Mono", monospace; }
+[hidden] { display: none !important; }
+::selection { background: var(--stamp-soft); color: var(--ink); }
+:focus-visible { outline: 2px solid var(--stamp); outline-offset: 3px; }
+button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
+
+/* ---- 프레임/시트 ---- */
+.frame { min-height: 100dvh; display: flex; flex-direction: column; padding: 16px; }
+.sheet {
+  background: var(--sheet); border: 1px solid var(--line); border-radius: var(--radius);
+  flex: 1; display: flex; flex-direction: column; width: 100%;
+  box-shadow: 0 1px 0 rgba(27, 27, 30, 0.04);
+}
+.sheet-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 18px 20px; border-bottom: 1px solid var(--line);
+}
+.brand { font-weight: 700; font-size: 16px; letter-spacing: -0.02em; background: none; border: none; color: var(--ink); cursor: pointer; text-align: left; padding: 0; text-decoration: none; display: block; }
+.brand small { display: block; font-weight: 400; color: var(--ink-soft); font-size: 12px; margin-top: 2px; }
+.issue { font-size: 12px; color: var(--ink-soft); text-align: right; }
+.screen { flex: 1; display: flex; flex-direction: column; padding: 24px 20px; }
+.sheet-footer {
+  padding: 14px 20px; border-top: 1px solid var(--line);
+  font-size: 12px; color: var(--ink-soft); display: flex; justify-content: space-between;
+  gap: 12px; align-items: baseline;
+}
+.sheet-footer span:last-child { flex-shrink: 0; white-space: nowrap; }
+
+/* ---- 홈 ---- */
+.home h1 { font-size: clamp(26px, 6.5vw, 36px); line-height: 1.25; letter-spacing: -0.03em; font-weight: 700; }
+.home h1 em { font-style: normal; color: var(--stamp); }
+.home .sub { margin-top: 12px; color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; max-width: 34ch; }
+.modes { margin-top: 20px; border-top: 1px solid var(--line); }
+.mode {
+  width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+  display: flex; gap: 14px; align-items: baseline; padding: 17px 2px;
+  border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none;
+}
+.mode:active { background: var(--paper); }
+.mode .no { color: var(--ink-soft); font-size: 12px; min-width: 18px; }
+.mode .tt { font-weight: 700; font-size: 16.5px; letter-spacing: -0.02em; }
+.daily-badge {
+  display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700; color: var(--stamp);
+  border: 1.5px solid currentColor; border-radius: var(--radius); padding: 2px 7px; transform: rotate(-2deg);
+}
+.mode .dd { display: block; font-weight: 400; font-size: 13px; color: var(--ink-soft); margin-top: 4px; line-height: 1.55; }
+.mode .go-ic { margin-left: auto; color: var(--stamp); font-weight: 700; }
+.mode.lock { cursor: default; }
+.mode.lock .tt { color: var(--ink-soft); font-weight: 500; }
+.mode.lock:active { background: none; }
+
+/* ---- 버튼 ---- */
+.btn {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em; padding: 16px 12px;
+  border-radius: var(--radius); cursor: pointer; transition: transform 0.12s ease;
+  text-align: center; text-decoration: none; display: block;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn-next { width: 100%; background: var(--ink); color: var(--sheet); border: 1px solid var(--ink); }
+.btn-ghost { background: var(--sheet); color: var(--ink); border: 1px solid var(--line); font-size: 14px; padding: 14px 12px; }
+
+/* ---- 문제 ---- */
+.progress { display: flex; gap: 5px; }
+.progress i { height: 3px; flex: 1; background: var(--line); border-radius: 99px; }
+.progress i.done { background: var(--ink); }
+.progress i.now { background: var(--stamp); }
+.qlabel { font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+.qname-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 0; min-height: 150px; }
+.qname {
+  font-size: clamp(30px, 8.5vw, 44px); font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1.28; text-align: center; word-break: keep-all; max-width: 14ch;
+}
+.verdict { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+.verdict .mark {
+  display: inline-block; font-weight: 700; font-size: 13px; padding: 5px 10px;
+  border: 1.5px solid currentColor; border-radius: var(--radius); transform: rotate(-2deg);
+}
+.verdict.right .mark { color: var(--ink); }
+.verdict.wrong .mark { color: var(--stamp); }
+.verdict h3 { margin-top: 12px; font-size: 17px; letter-spacing: -0.02em; }
+.verdict .meta { margin-top: 8px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
+.verdict .rate { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--ink-soft); }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.choices .full { grid-column: 1 / -1; }
+.btn-real { background: var(--ink); color: var(--sheet); border: 1px solid var(--ink); font-size: 17px; padding: 18px 12px; }
+.btn-fake { background: var(--sheet); color: var(--stamp); border: 1.5px solid var(--stamp); font-size: 17px; padding: 18px 12px; }
+
+/* ---- 결과 ---- */
+.result .score-label { font-size: 13px; color: var(--ink-soft); }
+.result .big { font-size: clamp(46px, 13vw, 72px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.05; margin-top: 6px; }
+.grade-stamp {
+  display: inline-block; margin-top: 18px; padding: 12px 18px;
+  border: 2px solid var(--stamp); color: var(--stamp); border-radius: var(--radius);
+  font-weight: 700; font-size: clamp(18px, 5vw, 24px); letter-spacing: -0.02em;
+  transform: rotate(-2.5deg); word-break: keep-all; align-self: flex-start;
+}
+.grade-desc { margin-top: 16px; color: var(--ink-soft); font-size: 14px; line-height: 1.65; max-width: 32ch; }
+.grid-line { margin-top: 22px; display: flex; gap: 6px; flex-wrap: wrap; }
+.grid-line svg { display: block; }
+.top-note { margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
+.top-note b { color: var(--stamp); }
+.review { margin-top: 20px; border-top: 1px solid var(--line); }
+.review li {
+  list-style: none; display: flex; justify-content: space-between; gap: 12px;
+  padding: 11px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px;
+}
+.review .nm { font-weight: 500; }
+.review .nm.x { color: var(--ink-soft); }
+.review .tag { color: var(--ink-soft); font-size: 12px; white-space: nowrap; }
+.review .tag.f { color: var(--stamp); }
+.result-actions { margin-top: auto; padding-top: 24px; display: grid; gap: 10px; }
+
+/* ---- 스트릭/상태 ---- */
+.status-chip { font-size: 12px; color: var(--ink-soft); }
+.status-chip b { color: var(--stamp); font-weight: 700; }
+
+/* ---- 로딩/에러 ---- */
+.center-note { flex: 1; display: grid; place-items: center; color: var(--ink-soft); font-size: 14px; text-align: center; line-height: 1.7; }
+
+/* ---- 사이드 레일 ---- */
+.rail { display: none; }
+
+/* ============ 타블렛 ≥768 ============ */
+@media (min-width: 768px) {
+  .frame { padding: 40px; align-items: center; }
+  .sheet { max-width: 640px; }
+  .screen { padding: 36px 44px; }
+  .sheet-header { padding: 22px 44px; }
+  .sheet-footer { padding: 16px 44px; }
+  .choices { gap: 14px; }
+}
+
+/* ============ 데스크탑 ≥1024: 좌측 레일 + 시트 ============ */
+@media (min-width: 1024px) {
+  .frame {
+    flex-direction: row; justify-content: center; align-items: stretch;
+    gap: 48px; padding: 56px 48px; max-width: 1200px; margin: 0 auto; width: 100%;
+  }
+  .rail { display: flex; flex-direction: column; width: 300px; flex-shrink: 0; padding-top: 8px; }
+  .rail h2 { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.25; word-break: keep-all; }
+  .rail h2 em { font-style: normal; color: var(--stamp); }
+  .rail .date { margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
+  .rail .note {
+    margin-top: auto; font-size: 13px; color: var(--ink-soft); line-height: 1.7;
+    border-top: 1px solid var(--line); padding-top: 18px;
+  }
+  .sheet { max-width: 560px; min-height: 660px; }
+  .qname { font-size: 40px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

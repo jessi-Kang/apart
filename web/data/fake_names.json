@@ -1,0 +1,21 @@
+{
+  "_note": "시드 샘플 가짜 이름. M1 이후 LLM 배치 생성 + 검수 파이프라인(docs/03) 산출물로 교체한다. 전 건 실단지명 대조 검증을 거쳐 등록한다.",
+  "items": [
+    { "id": "f01", "name": "e편한세상 더 프라임 노블", "hint": "실존 브랜드에 없는 조합을 붙였습니다", "difficulty": "easy" },
+    { "id": "f02", "name": "힐스테이트 리버센트럴 에듀포레", "hint": "펫네임이 하나 더 얹혔습니다", "difficulty": "mid" },
+    { "id": "f03", "name": "아이파크 센트럴 에듀리버", "hint": "입지 키워드 두 개를 이어 붙였습니다", "difficulty": "mid" },
+    { "id": "f04", "name": "푸르지오 레이크시티 그랑포레", "hint": "있을 법하지만 없는 호수입니다", "difficulty": "hard" },
+    { "id": "f05", "name": "롯데캐슬 스카이 퍼스티지", "hint": "하늘과 명예를 동시에 약속했습니다", "difficulty": "hard" },
+    { "id": "f06", "name": "자이 더 헤리티지 리버뷰", "hint": "유산과 조망을 한 이름에 담았습니다", "difficulty": "mid" },
+    { "id": "f07", "name": "더샵 센트럴 파크노블", "hint": "공원 옆이라는 보장은 없습니다", "difficulty": "mid" },
+    { "id": "f08", "name": "래미안 그랑 에듀시티", "hint": "학군을 이름으로만 해결했습니다", "difficulty": "mid" },
+    { "id": "f09", "name": "e편한세상 리버사이드 블리스", "hint": "강변의 행복은 AI의 상상입니다", "difficulty": "hard" },
+    { "id": "f10", "name": "호반써밋 레이크 에듀포레", "hint": "호수, 학군, 숲을 전부 약속했습니다", "difficulty": "easy" },
+    { "id": "f11", "name": "코오롱하늘채 리버 노블", "hint": "하늘과 강을 동시에 가졌다고 합니다", "difficulty": "mid" },
+    { "id": "f12", "name": "두산위브 센트럴 그랑비스타", "hint": "전망을 두 번 강조했습니다", "difficulty": "hard" },
+    { "id": "f13", "name": "힐스테이트 어반 레이크포레", "hint": "도심, 호수, 숲의 3단 조합입니다", "difficulty": "easy" },
+    { "id": "f14", "name": "푸르지오 노블레스 원", "hint": "고귀함에 번호를 붙였습니다", "difficulty": "mid" },
+    { "id": "f15", "name": "더샵 스카이린 퍼스티지", "hint": "스카이라인을 살짝 줄여 썼습니다", "difficulty": "hard" },
+    { "id": "f16", "name": "아이파크 에코 센트리움", "hint": "친환경과 중심을 합성했습니다", "difficulty": "hard" }
+  ]
+}

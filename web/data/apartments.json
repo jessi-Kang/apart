@@ -1,0 +1,21 @@
+{
+  "_note": "시드 샘플 데이터. M1 이후 K-apt 수집 파이프라인(docs/03) 산출물로 교체한다. 메타데이터는 편성 전 K-apt 기준 재검증 필요.",
+  "items": [
+    { "id": "r01", "name": "헬리오시티", "sido": "서울", "sigungu": "송파구", "dong": "가락동", "builtYear": 2018, "households": 9510, "difficulty": "easy" },
+    { "id": "r02", "name": "래미안 원베일리", "sido": "서울", "sigungu": "서초구", "dong": "반포동", "builtYear": 2023, "households": 2990, "difficulty": "easy" },
+    { "id": "r03", "name": "트리마제", "sido": "서울", "sigungu": "성동구", "dong": "성수동", "builtYear": 2017, "households": 688, "difficulty": "mid" },
+    { "id": "r04", "name": "경희궁 자이", "sido": "서울", "sigungu": "종로구", "dong": "홍파동", "builtYear": 2017, "households": 2415, "difficulty": "mid" },
+    { "id": "r05", "name": "디에이치 아너힐즈", "sido": "서울", "sigungu": "강남구", "dong": "개포동", "builtYear": 2019, "households": 1320, "difficulty": "hard" },
+    { "id": "r06", "name": "올림픽파크 포레온", "sido": "서울", "sigungu": "강동구", "dong": "둔촌동", "builtYear": 2024, "households": 12032, "difficulty": "mid" },
+    { "id": "r07", "name": "은마", "sido": "서울", "sigungu": "강남구", "dong": "대치동", "builtYear": 1979, "households": 4424, "difficulty": "easy" },
+    { "id": "r08", "name": "잠실엘스", "sido": "서울", "sigungu": "송파구", "dong": "잠실동", "builtYear": 2008, "households": 5678, "difficulty": "easy" },
+    { "id": "r09", "name": "파크리오", "sido": "서울", "sigungu": "송파구", "dong": "신천동", "builtYear": 2008, "households": 6864, "difficulty": "mid" },
+    { "id": "r10", "name": "리센츠", "sido": "서울", "sigungu": "송파구", "dong": "잠실동", "builtYear": 2008, "households": 5563, "difficulty": "mid" },
+    { "id": "r11", "name": "마포 래미안 푸르지오", "sido": "서울", "sigungu": "마포구", "dong": "아현동", "builtYear": 2014, "households": 3885, "difficulty": "easy" },
+    { "id": "r12", "name": "반포 자이", "sido": "서울", "sigungu": "서초구", "dong": "반포동", "builtYear": 2009, "households": 3410, "difficulty": "easy" },
+    { "id": "r13", "name": "아크로리버파크", "sido": "서울", "sigungu": "서초구", "dong": "반포동", "builtYear": 2016, "households": 1612, "difficulty": "mid" },
+    { "id": "r14", "name": "고덕 그라시움", "sido": "서울", "sigungu": "강동구", "dong": "고덕동", "builtYear": 2019, "households": 4932, "difficulty": "hard" },
+    { "id": "r15", "name": "잠실주공5단지", "sido": "서울", "sigungu": "송파구", "dong": "잠실동", "builtYear": 1978, "households": 3930, "difficulty": "easy" },
+    { "id": "r16", "name": "경남아너스빌", "sido": "서울", "sigungu": "관악구", "dong": "봉천동", "builtYear": 2005, "households": 452, "difficulty": "hard" }
+  ]
+}
