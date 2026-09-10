@@ -10,7 +10,6 @@ import { shareCardImage } from "@/lib/sharecard";
 import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 import { SoundToggle } from "@/components/SoundToggle";
 import { CloseX } from "@/components/CloseX";
-import { buildSlug } from "@/lib/slug";
 
 interface TodayResponse {
   date: string;
@@ -38,7 +37,6 @@ export default function PlayPage() {
   const [reveal, setReveal] = useState<AnswerResponse | null>(null);
   const [topPct, setTopPct] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
-  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
   const [practice, setPractice] = useState(false);
@@ -128,14 +126,6 @@ export default function PlayPage() {
   const score = marks.filter(Boolean).length;
   const grade = useMemo(() => gradeFor(score), [score]);
 
-  function share() {
-    if (!quiz) return;
-    const grid = marks.map((m) => (m ? "🟩" : "⬛")).join("");
-    const url = `${location.origin}/r/${buildSlug(quiz.date, marks)}`;
-    const text = `아파트 감별사 #${quiz.episode} 🏢\n${grid} ${score}/10\n${grade.name}\n${url}`;
-    navigator.clipboard?.writeText(text).then(() => setCopied(true));
-  }
-
   function restart() {
     setPractice(true);
     setIdx(0);
@@ -143,7 +133,6 @@ export default function PlayPage() {
     setReview([]);
     setReveal(null);
     setImgState("idle");
-    setCopied(false);
     setPhase("question");
   }
 
@@ -324,9 +313,6 @@ export default function PlayPage() {
                       : imgState === "failed"
                         ? "발급 실패. 다시 시도해 주세요"
                         : "결과 통지서 이미지로 자랑하기"}
-              </button>
-              <button className="btn btn-ghost" onClick={share}>
-                {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "텍스트로 복사하기"}
               </button>
               <button className="btn btn-ghost" onClick={restart}>
                 다시 감별하기 (연습 · 기록 미반영)
