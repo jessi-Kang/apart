@@ -129,6 +129,38 @@ export async function answerRate(
   return { rate: Math.round((q.correct / q.answered) * 100), sample: q.answered };
 }
 
+/** 하루치 문제별 정답률 일괄 조회 (어제 대장·홈 하이라이트용). 표본 미달은 rate=null */
+export async function answerRates(
+  date: string,
+  minSample = 100,
+): Promise<{ no: number; rate: number | null; sample: number }[]> {
+  const empty = Array.from({ length: 10 }, (_, i) => ({ no: i + 1, rate: null, sample: 0 }));
+  if (sql) {
+    try {
+      const rows = (await sql`
+        SELECT no, answered, correct FROM question_stats WHERE date = ${date}`) as {
+        no: number;
+        answered: number;
+        correct: number;
+      }[];
+      return empty.map((e) => {
+        const q = rows.find((r) => Number(r.no) === e.no);
+        if (!q || q.answered < minSample) return { ...e, sample: q?.answered ?? 0 };
+        return { no: e.no, rate: Math.round((q.correct / q.answered) * 100), sample: q.answered };
+      });
+    } catch {
+      return empty;
+    }
+  }
+  const day = load()[date];
+  if (!day) return empty;
+  return empty.map((e) => {
+    const q = day.perQuestion[e.no - 1];
+    if (!q || q.answered < minSample) return { ...e, sample: q?.answered ?? 0 };
+    return { no: e.no, rate: Math.round((q.correct / q.answered) * 100), sample: q.answered };
+  });
+}
+
 export async function recordFinish(date: string, score: number): Promise<void> {
   if (!Number.isInteger(score) || score < 0 || score > 10) return;
   if (sql) {

@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber, quizForDate } from "@/lib/daily";
+import { answerRates } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
 /** 어제 문제 정답 열람 (docs/02 §1-1). 플레이 불가, 열람만. */
-export default function YesterdayPage() {
+export default async function YesterdayPage() {
   const today = kstDateString();
   const [y, m, d] = today.split("-").map(Number);
   const yesterday = new Date(Date.UTC(y, m - 1, d) - 86400000).toISOString().slice(0, 10);
   const ep = episodeNumber(yesterday);
   const items = quizForDate(yesterday);
+  const rates = await answerRates(yesterday);
   const [, mm, dd] = yesterday.split("-");
 
   return (
@@ -56,6 +58,7 @@ export default function YesterdayPage() {
                     {it.kind === "real"
                       ? `${it.real!.sido} ${it.real!.sigungu} ${it.real!.dong} · ${it.real!.builtYear}년 준공`
                       : it.fake!.hint}
+                    {rates[it.no - 1]?.rate !== null && ` · 전국 정답률 ${rates[it.no - 1].rate}%`}
                   </span>
                 </span>
                 <span className={`tag ${it.kind === "real" ? "" : "f"}`}>{it.kind === "real" ? "진짜" : "가짜"}</span>
