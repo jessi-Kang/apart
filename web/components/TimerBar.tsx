@@ -43,7 +43,7 @@ export function TimerBar({
   return (
     <div className={`timerbar ${remain <= 3 ? "low" : ""}`} role="timer" aria-label={`남은 시간 ${Math.ceil(remain)}초`}>
       <div className="track">
-        <i style={{ width: `${pct}%` }} />
+        <i style={{ transform: `scaleX(${pct / 100})` }} />
       </div>
       <span className="mono">{Math.ceil(remain)}</span>
     </div>
