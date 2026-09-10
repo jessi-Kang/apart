@@ -34,7 +34,13 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 .sheet-header {
   display: flex; justify-content: space-between; align-items: baseline;
-  padding: 18px 20px; border-bottom: 1px solid var(--line);
+  padding: 18px 20px; border-bottom: 2.5px solid var(--ink);
+  position: relative;
+}
+/* 공문서식 이중 괘선: 굵은 선 아래 가는 선 */
+.sheet-header::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -5px;
+  border-bottom: 1px solid var(--ink);
 }
 .brand { font-weight: 700; font-size: 16px; letter-spacing: -0.02em; background: none; border: none; color: var(--ink); cursor: pointer; text-align: left; padding: 0; text-decoration: none; display: block; }
 .brand small { display: block; font-weight: 400; color: var(--ink-soft); font-size: 12px; margin-top: 2px; }
@@ -52,7 +58,13 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 
 /* ---- 홈 ---- */
-.home h1 { font-size: clamp(26px, 6.5vw, 36px); line-height: 1.25; letter-spacing: -0.03em; font-weight: 700; }
+.home { position: relative; }
+/* 관인: 제목 우상단에 비스듬히 날인. 겹치는 도장의 물성상 반투명 */
+.home-seal {
+  position: absolute; top: 16px; right: 14px; transform: rotate(-12deg);
+  opacity: 0.85; pointer-events: none; mix-blend-mode: multiply;
+}
+.home h1 { font-size: clamp(26px, 6.5vw, 36px); line-height: 1.25; letter-spacing: -0.03em; font-weight: 700; position: relative; max-width: 11ch; }
 .home h1 em { font-style: normal; color: var(--stamp); }
 .home .sub { margin-top: 12px; color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; max-width: 34ch; }
 .modes { margin-top: 20px; border-top: 1px solid var(--line); }
@@ -62,7 +74,17 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none;
 }
 .mode:active { background: var(--paper); }
-.mode .no { color: var(--ink-soft); font-size: 12px; min-width: 18px; }
+.mode { align-items: flex-start; }
+.mode .no {
+  min-width: 26px; height: 26px; display: grid; place-items: center; margin-top: 1px;
+  background: var(--ink); color: var(--sheet); font-size: 13px; font-weight: 500;
+  border-radius: var(--radius); transform: rotate(-1.2deg); flex-shrink: 0;
+}
+.mode:nth-child(even) .no { transform: rotate(1.2deg); }
+.mode .go-ic { align-self: center; }
+.mode.lock .no {
+  background: none; color: var(--ink-soft); border: 1.5px dashed var(--line); transform: none;
+}
 .mode .tt { font-weight: 700; font-size: 16.5px; letter-spacing: -0.02em; }
 .daily-badge {
   display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700; color: var(--stamp);
