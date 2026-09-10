@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
-import { HomeStatus } from "@/components/HomeStatus";
+import { ComboStatus, HomeStatus } from "@/components/HomeStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -70,8 +70,18 @@ export default function HomePage() {
               </span>
               <span className="go-ic">→</span>
             </Link>
-            <Link className="mode" href="/yesterday">
+            <Link className="mode" href="/findreal">
               <span className="no mono">3</span>
+              <span>
+                <span className="tt">진짜 찾기</span>
+                <span className="dd">
+                  넷 중 진짜는 하나 · <ComboStatus />
+                </span>
+              </span>
+              <span className="go-ic">→</span>
+            </Link>
+            <Link className="mode" href="/yesterday">
+              <span className="no mono">4</span>
               <span>
                 <span className="tt">어제의 정답 대장</span>
                 <span className="dd">어제 10문제 정답 열람 · 전국이 얼마나 속았나</span>
@@ -79,7 +89,7 @@ export default function HomePage() {
               <span className="go-ic">→</span>
             </Link>
             <div className="mode lock">
-              <span className="no mono">4</span>
+              <span className="no mono">5</span>
               <span>
                 <span className="tt">작명소 · 우리 동네</span>
                 <span className="dd">2단계 개설 예정 창구</span>

@@ -1,4 +1,5 @@
 import { apartments, fakeNames, type Apartment, type FakeName, type Difficulty } from "./data";
+import { mulberry32, seededShuffle } from "./seeded";
 
 /**
  * 데일리 출제 (docs/02 §2)
@@ -27,27 +28,7 @@ export function episodeNumber(date: string): number {
   return Math.max(1, Math.round((Date.UTC(y, m - 1, d) - EPOCH) / 86400000) + 1);
 }
 
-function mulberry32(seed: number) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function seededShuffle<T>(arr: T[], rng: () => number): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function pickByDifficulty<T extends { difficulty: Difficulty }>(
+export function pickByDifficulty<T extends { difficulty: Difficulty }>(
   pool: T[],
   want: Difficulty,
   rng: () => number,
