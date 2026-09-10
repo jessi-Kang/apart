@@ -1,0 +1,322 @@
+"use client";
+
+/**
+ * 공유 이미지 생성 (감별 결과 통지서, 1080×1350 캔버스 → PNG)
+ * 구성은 듀오링고식(히어로 → 큰 타이포 → 스탯 카드 → 링크),
+ * 비주얼은 확정 시안 A의 접수 서류 물성(종이·잉크·도장 빨강)을 따른다.
+ * 런타임 의존성 0: Canvas 2D로 직접 그린다.
+ */
+
+export interface ShareCardData {
+  episode: number;
+  date: string; // YYYY-MM-DD
+  score: number;
+  marks: boolean[];
+  gradeName: string;
+  topPct: number | null;
+  streak: number;
+  bestCombo: number;
+}
+
+const PAPER = "#f6f6f3";
+const SHEET = "#fdfdfb";
+const INK = "#1b1b1e";
+const INK_SOFT = "#5c5c62";
+const LINE = "#d9d9d3";
+const STAMP = "#c73a2f";
+
+const W = 1080;
+const H = 1350;
+
+const SANS = '"IBM Plex Sans KR", system-ui, sans-serif';
+const MONO = '"IBM Plex Mono", monospace';
+
+function font(weight: number, size: number, family = SANS) {
+  return `${weight} ${size}px ${family}`;
+}
+
+/** 관인: Seal.tsx와 같은 조형을 캔버스로 (링 텍스트 + 아파트 글리프) */
+function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, alpha = 1) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = STAMP;
+  ctx.fillStyle = STAMP;
+
+  ctx.lineWidth = r * 0.055;
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.92, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.lineWidth = r * 0.018;
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.84, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.52, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 링 텍스트: 위 "아파트 감별사", 아래 "감별민원 접수처" (둘 다 정방향 판독)
+  const ringText = (text: string, radius: number, size: number, top: boolean) => {
+    ctx.font = font(700, size);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const step = (size * 1.55) / radius; // 글자 간 각도
+    const total = step * (text.length - 1);
+    for (let i = 0; i < text.length; i++) {
+      // 위쪽은 상단 중심(0)에서 좌→우, 아래쪽은 하단 중심에서 좌→우(각도 역방향)
+      const a = top ? -total / 2 + step * i : total / 2 - step * i;
+      ctx.save();
+      ctx.rotate(a);
+      // 하단 글자는 중심을 향해 바로 선다 — 추가 회전(플립) 금지
+      ctx.translate(0, top ? -radius : radius);
+      ctx.fillText(text[i], 0, 0);
+      ctx.restore();
+    }
+  };
+  ringText("아파트 감별사", r * 0.68, r * 0.155, true);
+  ringText("감별민원 접수처", r * 0.68, r * 0.135, false);
+
+  // 좌우 구분점
+  ctx.beginPath();
+  ctx.arc(-r * 0.68, 0, r * 0.03, 0, Math.PI * 2);
+  ctx.arc(r * 0.68, 0, r * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 중앙 아파트 글리프 (파비콘 조형)
+  const u = r / 100; // 글리프 좌표계
+  const rr = (x: number, y: number, w: number, h: number, rad: number, color: string) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x * u, y * u, w * u, h * u, rad * u);
+    ctx.fill();
+  };
+  rr(-16, -28, 32, 52, 2, STAMP);
+  rr(-8, -35, 16, 7, 1.5, STAMP);
+  rr(-11, -21, 8, 7, 1, SHEET);
+  rr(3, -21, 8, 7, 1, SHEET);
+  rr(-11, -9, 8, 7, 1, SHEET);
+  rr(3, -9, 8, 7, 1, SHEET);
+  rr(-11, 3, 8, 7, 1, SHEET);
+  rr(3, 3, 8, 7, 1, SHEET);
+  rr(-4, 14, 8, 10, 1, SHEET);
+  ctx.restore();
+}
+
+/** 판정 그리드 타일 (GridTile 조형) */
+function drawTile(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, ok: boolean) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.beginPath();
+  ctx.roundRect(0, 0, s, s, s * 0.08);
+  if (ok) {
+    ctx.fillStyle = INK;
+    ctx.fill();
+    ctx.strokeStyle = SHEET;
+    ctx.lineWidth = s * 0.1;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(s * 0.27, s * 0.52);
+    ctx.lineTo(s * 0.42, s * 0.67);
+    ctx.lineTo(s * 0.73, s * 0.33);
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = SHEET;
+    ctx.fill();
+    ctx.strokeStyle = STAMP;
+    ctx.lineWidth = s * 0.06;
+    ctx.stroke();
+    ctx.lineWidth = s * 0.085;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(s * 0.33, s * 0.33);
+    ctx.lineTo(s * 0.67, s * 0.67);
+    ctx.moveTo(s * 0.67, s * 0.33);
+    ctx.lineTo(s * 0.33, s * 0.67);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** 등급 도장: Stamp 컴포넌트의 거친 이중 테두리 사각 */
+function drawGradeStamp(ctx: CanvasRenderingContext2D, cx: number, cy: number, text: string) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((-2.5 * Math.PI) / 180);
+  ctx.font = font(700, 58);
+  const tw = ctx.measureText(text).width;
+  const w = tw + 96;
+  const h = 118;
+  ctx.strokeStyle = STAMP;
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.roundRect(-w / 2, -h / 2, w, h, 6);
+  ctx.stroke();
+  // 인주 얼룩 느낌: 살짝 어긋난 얇은 보조 테두리
+  ctx.globalAlpha = 0.35;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.roundRect(-w / 2 + 5, -h / 2 + 5, w - 10, h - 10, 4);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = STAMP;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, 0, 4);
+  ctx.restore();
+}
+
+function drawStatCard(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  value: string,
+  label: string,
+  accent = false,
+) {
+  ctx.save();
+  ctx.fillStyle = SHEET;
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 4);
+  ctx.fill();
+  ctx.stroke();
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = accent ? STAMP : INK;
+  ctx.font = font(700, 48);
+  ctx.fillText(value, x + 34, y + h / 2 + 2);
+  ctx.fillStyle = INK_SOFT;
+  ctx.font = font(500, 24);
+  ctx.fillText(label, x + 34, y + h / 2 + 44);
+  ctx.restore();
+}
+
+export async function renderShareCard(data: ShareCardData): Promise<Blob> {
+  // 캔버스는 document.fonts에 로드된 페이지 폰트를 그대로 쓴다 — 먼저 로드 보장
+  try {
+    await Promise.all([
+      document.fonts.load(`700 90px ${SANS}`),
+      document.fonts.load(`500 30px ${SANS}`),
+      document.fonts.load(`400 28px ${MONO}`),
+    ]);
+  } catch {
+    /* 폰트 로드 실패 시 시스템 폰트로 진행 */
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  // 종이 바탕 + 시트
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, H);
+  const M = 56; // 시트 여백
+  ctx.fillStyle = SHEET;
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(M, M, W - M * 2, H - M * 2, 4);
+  ctx.fill();
+  ctx.stroke();
+
+  const left = M + 56;
+  const right = W - M - 56;
+
+  // 헤더 + 공문서 이중 괘선
+  ctx.fillStyle = INK;
+  ctx.textAlign = "left";
+  ctx.font = font(700, 40);
+  ctx.fillText("아파트 감별사", left, M + 92);
+  ctx.fillStyle = INK_SOFT;
+  ctx.font = font(400, 27);
+  ctx.fillText("감별 결과 통지서", left, M + 136);
+  ctx.textAlign = "right";
+  ctx.font = font(400, 28, MONO);
+  const [, mm, dd] = data.date.split("-");
+  ctx.fillText(`#${data.episode} · ${mm}.${dd}`, right, M + 100);
+  ctx.fillStyle = INK;
+  ctx.fillRect(M, M + 172, W - M * 2, 5);
+  ctx.fillRect(M, M + 183, W - M * 2, 2);
+
+  // 히어로: 큰 점수 + 등급 도장 + 관인
+  ctx.fillStyle = INK;
+  ctx.textAlign = "center";
+  ctx.font = font(700, 230);
+  ctx.fillText(String(data.score), W / 2 - 60, 512);
+  ctx.fillStyle = INK_SOFT;
+  ctx.font = font(700, 72);
+  ctx.fillText("/ 10", W / 2 + 128, 500);
+  drawSeal(ctx, right - 100, 330, 128, 0.85);
+  drawGradeStamp(ctx, W / 2, 640, data.gradeName);
+
+  // 판정 그리드 (한 줄 10칸)
+  const ts = 66;
+  const gap = 14;
+  const gw = ts * 10 + gap * 9;
+  let gx = (W - gw) / 2;
+  for (const m of data.marks) {
+    drawTile(ctx, gx, 742, ts, m);
+    gx += ts + gap;
+  }
+
+  // 스탯 카드 2×2 (푸터 점선 1176px과 겹치지 않게 1140 안에서 끝낸다)
+  const cw = (right - left - 24) / 2;
+  const ch = 130;
+  const cy = 860;
+  drawStatCard(
+    ctx, left, cy, cw, ch,
+    data.topPct !== null ? `상위 ${data.topPct}%` : "집계 중",
+    "오늘 전국 순위", data.topPct !== null,
+  );
+  drawStatCard(ctx, left + cw + 24, cy, cw, ch, `${Math.max(data.streak, 1)}일`, "연속 감별");
+  drawStatCard(ctx, left, cy + ch + 20, cw, ch, `${10 - data.score}번`, "AI에 속은 횟수");
+  drawStatCard(ctx, left + cw + 24, cy + ch + 20, cw, ch, `${data.bestCombo}`, "진짜 찾기 최고 콤보");
+
+  // 푸터
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 8]);
+  ctx.beginPath();
+  ctx.moveTo(left, H - M - 118);
+  ctx.lineTo(right, H - M - 118);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.textAlign = "left";
+  ctx.fillStyle = INK_SOFT;
+  ctx.font = font(400, 26);
+  ctx.fillText("진짜 아파트냐, AI가 지은 이름이냐", left, H - M - 62);
+  ctx.textAlign = "right";
+  ctx.fillStyle = STAMP;
+  ctx.font = font(700, 28, MONO);
+  ctx.fillText("apt-gam.vercel.app", right, H - M - 62);
+
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob 실패"))), "image/png");
+  });
+}
+
+/** 모바일이면 시스템 공유 시트, 아니면 파일 다운로드 */
+export async function shareCardImage(data: ShareCardData): Promise<"shared" | "downloaded"> {
+  const blob = await renderShareCard(data);
+  const file = new File([blob], `아파트감별사-${data.date}.png`, { type: "image/png" });
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return "shared";
+    } catch {
+      /* 사용자가 시트를 닫음 → 다운로드 폴백 */
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = file.name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  return "downloaded";
+}
