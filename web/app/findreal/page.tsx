@@ -181,7 +181,7 @@ export default function FindRealPage() {
               이 중 <b>진짜는 하나</b>. 나머지 셋은 AI가 지은 이름입니다.
             </p>
 
-            <div className="pick-list">
+            <div className="pick-list paper-in" key={round.no}>
               {round.options.map((option) => {
                 const isAnswer = reveal?.answer === option;
                 const cls =

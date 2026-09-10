@@ -185,6 +185,65 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .answers .tag { margin-left: auto; color: var(--ink-soft); font-size: 12px; white-space: nowrap; }
 .answers .tag.f { color: var(--stamp); }
 
+/* ---- 게임 중 모션 (시안 A 물성: 서류가 놓이고 도장이 찍힌다) ---- */
+.btn-real:active, .btn-fake:active, .pick:active:not(:disabled), .tile:active { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 새 서류(문제)가 책상에 놓인다 */
+  .paper-in { animation: paper-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+  @keyframes paper-in {
+    from { opacity: 0; transform: translateY(14px) rotate(0.4deg); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* 판정 카드가 미끄러져 들어오고, 도장이 내리찍힌다 */
+  .verdict { animation: paper-in 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
+  .verdict .mark { animation: stamp-slam 0.34s cubic-bezier(0.22, 1, 0.36, 1) 0.12s backwards; }
+  @keyframes stamp-slam {
+    from { opacity: 0; transform: scale(2.4) rotate(-14deg); }
+    62% { opacity: 1; transform: scale(0.94) rotate(-1deg); }
+    to { opacity: 1; transform: scale(1) rotate(-2deg); }
+  }
+  /* 오답·오판이면 찍힌 충격으로 서류가 떨린다 */
+  .verdict.wrong {
+    animation: paper-in 0.26s cubic-bezier(0.22, 1, 0.36, 1), verdict-shake 0.3s linear 0.4s;
+  }
+  @keyframes verdict-shake {
+    20% { transform: translateX(-3px); }
+    45% { transform: translateX(2.5px); }
+    70% { transform: translateX(-1.5px); }
+    to { transform: none; }
+  }
+
+  /* 현재 문제 위치는 숨 쉬듯 깜빡인다 */
+  .progress i.now { animation: now-pulse 1.7s ease-in-out infinite; }
+  @keyframes now-pulse { 50% { opacity: 0.45; } }
+
+  /* 조립: 조각이 칸에 탁 박힌다. 진짜 찾기: 정답이 튀어나온다 */
+  .slot.filled { animation: pop-in 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
+  .pick.hit { animation: pop-in 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes pop-in {
+    from { transform: scale(0.55); }
+    65% { transform: scale(1.05); }
+    to { transform: scale(1); }
+  }
+  .combo-line b { display: inline-block; animation: pop-in 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
+
+  /* 결과: 등급 도장이 크게 내리찍히고, 판정 그리드가 차례로 박힌다 */
+  .stamp { animation: stamp-slam-big 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.5s backwards; }
+  @keyframes stamp-slam-big {
+    from { opacity: 0; transform: scale(2) rotate(-11deg); }
+    65% { opacity: 1; transform: scale(0.96) rotate(-1.5deg); }
+    to { opacity: 1; transform: scale(1) rotate(-2.5deg); }
+  }
+  .tile-in { display: inline-block; animation: tile-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+  @keyframes tile-in {
+    from { opacity: 0; transform: scale(0.4); }
+    65% { opacity: 1; transform: scale(1.06); }
+    to { opacity: 1; transform: scale(1); }
+  }
+}
+
 /* ---- 스트릭/상태 ---- */
 .status-chip { font-size: 12px; color: var(--ink-soft); }
 .status-chip b { color: var(--stamp); font-weight: 700; }

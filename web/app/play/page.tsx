@@ -190,7 +190,7 @@ export default function PlayPage() {
             <p className="qlabel mono">
               {String(idx + 1).padStart(2, "0")} / 10
             </p>
-            <div className="qname-wrap">
+            <div className="qname-wrap paper-in" key={idx}>
               <h2 className="qname">{quiz.items[idx].name}</h2>
             </div>
 
@@ -244,7 +244,9 @@ export default function PlayPage() {
             <p className="grade-desc">{grade.desc}</p>
             <div className="grid-line" role="img" aria-label={`10문제 중 ${score}문제 정답`}>
               {marks.map((m, k) => (
-                <GridTile key={k} ok={m} />
+                <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
+                  <GridTile ok={m} />
+                </span>
               ))}
             </div>
             <p className="top-note">

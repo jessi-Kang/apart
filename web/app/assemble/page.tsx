@@ -180,7 +180,7 @@ export default function AssemblePage() {
             <p className="qlabel mono">
               {String(idx + 1).padStart(2, "0")} / 03
             </p>
-            <div className="hintcard">
+            <div className="hintcard paper-in" key={puzzle.no}>
               이 단지를 조립하세요: <b>{puzzle.hint.location}</b>
               <br />
               {puzzle.hint.builtYear}년 준공 · {puzzle.hint.households.toLocaleString()}세대
