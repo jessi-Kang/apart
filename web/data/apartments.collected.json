@@ -1,5 +1,5 @@
 {
-  "_note": "K-apt 실데이터 (서울 전역, 목록 V4 + 기본정보 V5). 수집 스크립트: scripts/collect-kapt.mjs",
+  "_note": "K-apt 수집본 2026-09-10. 검토 후 apartments.json으로 승격.",
   "items": [
     {
       "id": "kA10021295",
