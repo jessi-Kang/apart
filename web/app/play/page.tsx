@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
 import { SoundToggle } from "@/components/SoundToggle";
+import { TimerBar } from "@/components/TimerBar";
 import { gradeFor } from "@/lib/grades";
-import { bumpStreak, bumpEndlessBest, comboState, endlessBest, loadResult, saveResult, type ReviewItem, type SavedResult } from "@/lib/local";
+import { bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
@@ -28,6 +29,11 @@ interface AnswerResponse {
 
 type Phase = "loading" | "question" | "reveal" | "result" | "error";
 
+const TIME_LIMIT = 12; // 초 — 이름 보고 직감으로 찍는 게임이라 짧게
+
+const fmtSec = (ms: number | null | undefined) =>
+  ms == null ? null : `${(ms / 1000).toFixed(1)}초`;
+
 export default function PlayPage() {
   const [quiz, setQuiz] = useState<TodayResponse | null>(null);
   const [phase, setPhase] = useState<Phase>("loading");
@@ -35,6 +41,7 @@ export default function PlayPage() {
   const [marks, setMarks] = useState<boolean[]>([]);
   const [review, setReview] = useState<ReviewItem[]>([]);
   const [reveal, setReveal] = useState<AnswerResponse | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
   const [topPct, setTopPct] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -43,12 +50,14 @@ export default function PlayPage() {
   // 무한 감별 (데일리 완주 후 랜덤 새 문제 연속 — 집계 미반영)
   const [endless, setEndless] = useState(false);
   const [eq, setEq] = useState<string | null>(null);
-  const [run, setRun] = useState(0); // 현재 연속 정답
-  const [eCount, setECount] = useState(0); // 이번 세션에서 푼 문제 수
-  const [eBest, setEBest] = useState(0);
+  const [run, setRun] = useState(0);
+  const [eCount, setECount] = useState(0);
+  const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
+  const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
+  const qStart = useRef(0);
 
   useEffect(() => {
-    setEBest(endlessBest("ox"));
+    setERec(endlessRecord("ox"));
     fetch("/api/quiz/today")
       .then((r) => r.json())
       .then((data: TodayResponse) => {
@@ -64,6 +73,10 @@ export default function PlayPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (phase === "question") qStart.current = Date.now();
+  }, [phase, idx, eCount]);
+
   function restore(saved: SavedResult, date: string) {
     setMarks(saved.marks);
     setReview(saved.review);
@@ -74,8 +87,7 @@ export default function PlayPage() {
   async function fetchEndless() {
     const res = await fetch("/api/endless/ox");
     if (!res.ok) throw new Error("endless_failed");
-    const data = (await res.json()) as { name: string };
-    setEq(data.name);
+    setEq(((await res.json()) as { name: string }).name);
   }
 
   async function startEndless() {
@@ -86,6 +98,7 @@ export default function PlayPage() {
       setEndless(true);
       setRun(0);
       setECount(0);
+      runTimes.current = [];
       setReveal(null);
       setPhase("question");
     } catch {
@@ -95,10 +108,14 @@ export default function PlayPage() {
     }
   }
 
-  async function answer(choice: "real" | "fake") {
+  const runAvgMs = () =>
+    runTimes.current.length ? Math.round(runTimes.current.reduce((a, b) => a + b, 0) / runTimes.current.length) : null;
+
+  async function answer(choice: "real" | "fake" | "timeout") {
     if (busy || phase !== "question") return;
     setBusy(true);
-    sfxTap();
+    if (choice !== "timeout") sfxTap();
+    const dt = Date.now() - qStart.current;
     try {
       if (endless) {
         if (!eq) throw new Error("no_question");
@@ -110,13 +127,16 @@ export default function PlayPage() {
         if (!res.ok) throw new Error("answer_failed");
         const data = (await res.json()) as AnswerResponse;
         setReveal(data);
+        setTimedOut(choice === "timeout");
         setECount((c) => c + 1);
         if (data.correct) {
+          runTimes.current.push(dt);
           const nextRun = run + 1;
           setRun(nextRun);
-          setEBest(bumpEndlessBest("ox", nextRun));
+          setERec(bumpEndlessRecord("ox", nextRun, runAvgMs()));
           sfxStampRight();
         } else {
+          runTimes.current = [];
           setRun(0);
           sfxStampWrong();
         }
@@ -133,6 +153,7 @@ export default function PlayPage() {
       if (!res.ok) throw new Error("answer_failed");
       const data = (await res.json()) as AnswerResponse;
       setReveal(data);
+      setTimedOut(choice === "timeout");
       setMarks((m) => [...m, data.correct]);
       setReview((r) => [...r, { no: item.no, name: item.name, kind: data.kind, correct: data.correct }]);
       if (data.correct) sfxStampRight();
@@ -167,7 +188,6 @@ export default function PlayPage() {
       setPhase("question");
       return;
     }
-    // 완주 처리
     sfxResult();
     const score = marks.filter(Boolean).length;
     saveResult({ date: quiz.date, marks, review });
@@ -239,18 +259,13 @@ export default function PlayPage() {
       <main className="sheet">
         <header className="sheet-header">
           <Link className="brand" href="/">
-            아파트 감별사<small>{endless ? "무한 감별 접수증" : "진짜 단지명 판별 접수증"}</small>
+            아파트 감별사
+            <small>
+              {endless ? "무한 감별 접수증" : "진짜 단지명 판별 접수증"}
+              {quiz && ` · 제${ep}호 ${mm}.${dd}`}
+            </small>
           </Link>
-          <div className="head-right">
-            {quiz && (
-              <div className="issue mono">
-                #{ep}
-                <br />
-                {mm}.{dd}
-              </div>
-            )}
-            <CloseX inProgress={!endless && (phase === "question" || phase === "reveal") && marks.length < 10} />
-          </div>
+          <CloseX inProgress={!endless && (phase === "question" || phase === "reveal") && marks.length < 10} />
         </header>
 
         {phase === "loading" && (
@@ -278,7 +293,7 @@ export default function PlayPage() {
           <section className="screen">
             {endless ? (
               <p className="qlabel mono">
-                무한 {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 {run} · 최고 {eBest}
+                무한 {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
               </p>
             ) : (
               <>
@@ -296,9 +311,16 @@ export default function PlayPage() {
               <h2 className="qname">{currentName}</h2>
             </div>
 
+            <TimerBar
+              seconds={TIME_LIMIT}
+              active={phase === "question"}
+              resetKey={endless ? `e${eCount}` : idx}
+              onExpire={() => answer("timeout")}
+            />
+
             {phase === "reveal" && reveal && (
               <div className={`verdict ${reveal.correct ? "right" : "wrong"}`}>
-                <span className="mark">{reveal.correct ? "정답" : "오답"}</span>
+                <span className="mark">{timedOut ? "시간 초과" : reveal.correct ? "정답" : "오답"}</span>
                 <h3>{reveal.kind === "real" ? "진짜 있는 아파트입니다" : "AI가 지은 이름입니다"}</h3>
                 <p className="meta">
                   {reveal.kind === "real" && reveal.meta ? (
@@ -314,8 +336,8 @@ export default function PlayPage() {
                 <p className="rate">
                   {endless
                     ? reveal.correct
-                      ? `연속 ${run}문제 적중 중 · 최고 기록 ${eBest}`
-                      : `연속이 끊겼습니다. 최고 기록 ${eBest}`
+                      ? `연속 ${run}문제 · 평균 ${fmtSec(runAvgMs()) ?? "-"} · 최고 ${eRec.best}${fmtSec(eRec.avgMs) ? ` (${fmtSec(eRec.avgMs)})` : ""}`
+                      : `연속이 끊겼습니다 · 최고 ${eRec.best}${fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}`
                     : reveal.rate != null
                       ? `이 문제, 지금까지 ${reveal.rate}%가 맞혔습니다`
                       : "전국 정답률 집계 중"}
@@ -362,7 +384,8 @@ export default function PlayPage() {
                 </>
               )}
               {streak > 0 && <>{streak}일 연속 감별 중 · </>}
-              무한 감별 최고 연속 {eBest}
+              무한 감별 최고 연속 {eRec.best}
+              {fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}
             </p>
             <ul className="review">
               {review.map((r) => (

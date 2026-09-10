@@ -9,13 +9,13 @@ export function GET() {
 }
 
 export async function POST(req: Request) {
-  let body: { options?: unknown; pick?: unknown };
+  let body: { options?: unknown; pick?: unknown; timeout?: unknown };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
-  const result = judgeFind(body.options, body.pick);
+  const result = judgeFind(body.options, body.timeout === true ? null : body.pick);
   if (!result) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   return NextResponse.json(result);
 }

@@ -67,10 +67,15 @@ export function bumpStreak(date: string): number {
   }
 }
 
-/** 진짜 찾기 연속 콤보 (docs/06 모드 3 — 날짜를 넘어 이어지는 기록 갱신형) */
-interface ComboState {
+/** 진짜 찾기 연속 콤보 (docs/06 모드 3 — 날짜를 넘어 이어지는 기록 갱신형).
+ * 현재 콤보의 누적 풀이 시간도 함께 담아, 최고 기록 갱신 시 그때의
+ * 라운드당 평균 시간을 남긴다 (무한 모드 시간 비교용) */
+export interface ComboState {
   current: number;
   best: number;
+  runTotalMs?: number;
+  runCount?: number;
+  bestAvgMs?: number | null;
 }
 
 const COMBO_KEY = "aptgam:combo";
@@ -85,11 +90,25 @@ export function comboState(): ComboState {
   }
 }
 
-/** 라운드 판정마다 호출: 적중이면 +1, 오판이면 0. 최고 기록 동시 갱신 */
-export function applyComboPick(correct: boolean): ComboState {
+/** 라운드 판정마다 호출: 적중이면 +1, 오판이면 0. 최고 기록·평균 시간 동시 갱신 */
+export function applyComboPick(correct: boolean, dtMs?: number): ComboState {
   const prev = comboState();
-  const current = correct ? prev.current + 1 : 0;
-  const next = { current, best: Math.max(prev.best, current) };
+  let next: ComboState;
+  if (correct) {
+    const current = prev.current + 1;
+    const runTotalMs = (prev.runTotalMs ?? 0) + (dtMs ?? 0);
+    const runCount = (prev.runCount ?? 0) + (dtMs !== undefined ? 1 : 0);
+    const isNewBest = current > prev.best;
+    next = {
+      current,
+      best: isNewBest ? current : prev.best,
+      runTotalMs,
+      runCount,
+      bestAvgMs: isNewBest && runCount > 0 ? Math.round(runTotalMs / runCount) : (prev.bestAvgMs ?? null),
+    };
+  } else {
+    next = { current: 0, best: prev.best, runTotalMs: 0, runCount: 0, bestAvgMs: prev.bestAvgMs ?? null };
+  }
   try {
     localStorage.setItem(COMBO_KEY, JSON.stringify(next));
   } catch {
@@ -98,23 +117,32 @@ export function applyComboPick(correct: boolean): ComboState {
   return next;
 }
 
-/** 무한 모드 최고 연속 기록 (모드별) */
-export function endlessBest(mode: "ox" | "assemble"): number {
+/** 무한 모드 최고 연속 기록 (모드별). avgMs = 그 기록을 세울 때의 문제당 평균 풀이 시간 */
+export interface EndlessRecord {
+  best: number;
+  avgMs: number | null;
+}
+
+export function endlessRecord(mode: "ox" | "assemble"): EndlessRecord {
   try {
-    return Number(localStorage.getItem(`aptgam:endless:${mode}`) ?? 0) || 0;
+    const raw = localStorage.getItem(`aptgam:endless:${mode}`);
+    if (!raw) return { best: 0, avgMs: null };
+    if (raw.startsWith("{")) return JSON.parse(raw) as EndlessRecord;
+    return { best: Number(raw) || 0, avgMs: null }; // 구버전(숫자만 저장) 호환
   } catch {
-    return 0;
+    return { best: 0, avgMs: null };
   }
 }
 
-export function bumpEndlessBest(mode: "ox" | "assemble", streak: number): number {
-  const best = Math.max(endlessBest(mode), streak);
+export function bumpEndlessRecord(mode: "ox" | "assemble", streak: number, avgMs: number | null): EndlessRecord {
+  const prev = endlessRecord(mode);
+  const next = streak > prev.best ? { best: streak, avgMs } : prev;
   try {
-    localStorage.setItem(`aptgam:endless:${mode}`, String(best));
+    localStorage.setItem(`aptgam:endless:${mode}`, JSON.stringify(next));
   } catch {
     /* 무시 */
   }
-  return best;
+  return next;
 }
 
 /** 홈 표시용: 오늘 기준 유효한 스트릭 (오늘 또는 어제 완주 기록만 인정) */

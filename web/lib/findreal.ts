@@ -5,7 +5,7 @@ import { seededShuffle, rngForDate } from "./seeded";
 /**
  * 진짜 찾기 4지선다 출제 (docs/06 모드 3)
  * - 4개 중 진짜는 하나, 나머지 셋은 같은 난이도의 가짜
- * - 매일 3라운드, 난이도는 쉬움 → 중간 → 어려움
+ * - 매일 10라운드, 난이도 커브는 본편과 동일 (쉬움 2 → 중간 5 → 어려움 3)
  * - 연속 적중 콤보는 날짜를 넘어 이어지는 기록 갱신형 루프 (클라이언트 보관)
  * - 본편·조립과 같은 날짜 시드, 오프셋으로 분리
  */
@@ -16,7 +16,7 @@ export interface FindRealRound {
 }
 
 const SEED_OFFSET = 555_000_000;
-const ROUND_DIFF: Difficulty[] = ["easy", "mid", "hard"];
+const ROUND_DIFF: Difficulty[] = ["easy", "easy", "mid", "mid", "mid", "mid", "mid", "hard", "hard", "hard"];
 
 interface InternalRound {
   real: Apartment;
@@ -40,14 +40,15 @@ export function findRealForDate(date: string): FindRealRound[] {
   return roundsForDate(date).map((r, idx) => ({ no: idx + 1, options: r.options }));
 }
 
-/** 서버 판정: 고른 이름이 진짜인지. 오답이어도 진짜와 메타를 공개한다 */
+/** 서버 판정: 고른 이름이 진짜인지. 오답이어도 진짜와 메타를 공개한다.
+ * pick=null은 시간 초과 — 오답 처리하되 정답은 공개한다 */
 export function checkFindReal(
   date: string,
   no: number,
-  pick: string,
+  pick: string | null,
 ): { correct: boolean; answer: string; meta: { location: string; builtYear: number; households: number } } | null {
   const round = roundsForDate(date)[no - 1];
-  if (!round || !round.options.includes(pick)) return null;
+  if (!round || (pick !== null && !round.options.includes(pick))) return null;
   const r = round.real;
   return {
     correct: pick === r.name,

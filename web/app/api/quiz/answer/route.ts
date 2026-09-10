@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 interface Body {
   date?: string;
   no?: number;
-  choice?: "real" | "fake";
-  practice?: boolean; // 다시 하기(연습): 판정만 하고 집계에 넣지 않는다
+  choice?: "real" | "fake" | "timeout"; // timeout = 시간 초과 (무조건 오답)
+  practice?: boolean; // 판정만 하고 집계에 넣지 않는다
 }
 
 /** 서버 판정: 정답 여부 + 공개 정보(실단지 메타 / 가짜 힌트) + 전국 정답률 */
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   }
   const today = kstDateString();
   const { date, no, choice } = body;
-  if (date !== today || !Number.isInteger(no) || no! < 1 || no! > 10 || (choice !== "real" && choice !== "fake")) {
+  if (date !== today || !Number.isInteger(no) || no! < 1 || no! > 10 || (choice !== "real" && choice !== "fake" && choice !== "timeout")) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 

@@ -4,7 +4,7 @@ import { seededShuffle, rngForDate as rngForDateWithOffset } from "./seeded";
 /**
  * 이름 조립 모드 출제 (docs/06 모드 2)
  * - 힌트(위치·준공년도·세대수)를 보고 조각으로 실존 단지명을 조립
- * - 매일 3문제, 본편과 같은 KST 날짜 시드 (시드 오프셋으로 본편과 분리)
+ * - 매일 10문제, 본편과 같은 KST 날짜 시드 (시드 오프셋으로 본편과 분리)
  * - 함정 조각은 가짜 이름 풀의 토큰 재활용 (docs/06: 기존 데이터만으로 출제)
  */
 
@@ -21,11 +21,11 @@ function rngForDate(date: string) {
   return rngForDateWithOffset(date, SEED_OFFSET);
 }
 
-/** 그날의 정답 단지 3개 (조각 2개 이상으로 쪼개지는 이름만) */
+/** 그날의 정답 단지 10개 (조각 2개 이상으로 쪼개지는 이름만) */
 function answersForDate(date: string): Apartment[] {
   const rng = rngForDate(date);
   const pool = apartments.filter((a) => a.name.split(" ").length >= 2);
-  return seededShuffle(pool, rng).slice(0, 3);
+  return seededShuffle(pool, rng).slice(0, 10);
 }
 
 /** 함정 조각 풀: 가짜 이름 토큰 (중복 제거) */
