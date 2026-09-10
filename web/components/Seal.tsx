@@ -3,7 +3,7 @@
  * 링 텍스트는 textPath 대신 글자별 고정 각도 배치 — textPath는 기기 폰트
  * 메트릭에 따라 글자가 링을 뚫고 나가서(모바일 실기기 확인) 쓰지 않는다. */
 
-const RING_R = 66;
+const RING_R = 68; // 텍스트 밴드 중심 반지름 (안 52 ~ 밖 84의 정중앙)
 
 function RingText({ text, top, size }: { text: string; top: boolean; size: number }) {
   const chars = [...text.replace(/\s/g, "")];
@@ -15,7 +15,11 @@ function RingText({ text, top, size }: { text: string; top: boolean; size: numbe
         // 위쪽: 상단 중심에서 좌→우 / 아래쪽: 하단 중심에서 좌→우(각도 역순, 플립 없음)
         const a = top ? -total / 2 + step * i : total / 2 - step * i;
         return (
-          <text key={i} transform={`rotate(${a}) translate(0 ${top ? -RING_R : RING_R + size * 0.9})`}>
+          <text
+            key={i}
+            transform={`rotate(${a}) translate(0 ${top ? -RING_R : RING_R})`}
+            dominantBaseline="central"
+          >
             {ch}
           </text>
         );
@@ -58,8 +62,8 @@ export function Seal({ size = 104 }: { size?: number }) {
         </g>
       </g>
       <g transform="translate(100 100)" fill="var(--stamp)">
-        <RingText text="아파트 감별사" top size={17.5} />
-        <RingText text="감별민원 접수처" top={false} size={15} />
+        <RingText text="아파트 감별사" top size={16} />
+        <RingText text="감별민원 접수처" top={false} size={14} />
       </g>
     </svg>
   );
