@@ -1,0 +1,291 @@
+<title>아파트 감별사 시안 C</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* ============ 시안 C · 게임쇼 팝 ============
+     콘셉트: O/X 게임쇼. 코발트 무대 위 크림색 자막.
+     팔레트: 코발트 블루 + 크림(단일 중립) : "Cobalt + Cream"
+     radius: 버튼 full-pill / 카드 20px (규칙 고정)
+     폰트: Black Han Sans(디스플레이) + IBM Plex Sans KR(본문) */
+  :root{
+    --cobalt:#2044d4; --cobalt-deep:#16309e; --cream:#f6f3ea;
+    --ink:#14204a; --cream-soft:rgba(246,243,234,.88);
+    --card-r:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:light}
+  body{
+    background:var(--cobalt); color:var(--cream);
+    font-family:"IBM Plex Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .disp{font-family:"Black Han Sans","IBM Plex Sans KR",sans-serif; font-weight:400;}
+  [hidden]{display:none!important}
+  ::selection{background:#ffd644; color:var(--ink);}
+  :focus-visible{outline:3px solid #ffd644; outline-offset:3px; border-radius:8px;}
+
+  .app{min-height:100dvh; display:flex; flex-direction:column; padding:20px 18px; max-width:520px; margin:0 auto;}
+
+  header{display:flex; justify-content:space-between; align-items:center; padding-bottom:14px;}
+  .brand{font-size:17px; letter-spacing:.01em;}
+  .round{
+    font-size:12.5px; font-weight:500; color:var(--cream);
+    border:1.5px solid rgba(246,243,234,.4); border-radius:999px; padding:6px 14px;
+  }
+
+  .screen{flex:1; display:flex; flex-direction:column;}
+
+  /* ---- 인트로 ---- */
+  .intro{justify-content:center; text-align:center; align-items:center;}
+  .intro h1{
+    font-size:clamp(40px,11vw,64px); line-height:1.15; letter-spacing:.005em;
+    word-break:keep-all;
+  }
+  .intro h1 span{color:#ffd644;}
+  .intro p{margin-top:16px; font-size:15.5px; line-height:1.7; color:var(--cream-soft); max-width:30ch;}
+  .ox{display:flex; gap:14px; margin-top:26px; font-size:clamp(40px,10vw,56px);}
+  .ox b{
+    width:1.6em; height:1.6em; display:grid; place-items:center;
+    border-radius:999px; background:var(--cream); color:var(--cobalt);
+    font-family:"Black Han Sans",sans-serif; font-weight:400;
+  }
+  .ox b.x{background:var(--ink); color:var(--cream);}
+  .go{margin-top:30px; width:100%;}
+
+  /* ---- 문제 ---- */
+  .counter{display:flex; align-items:baseline; gap:8px;}
+  .counter .now{font-size:38px; line-height:1;}
+  .counter .of{font-size:14px; color:var(--cream-soft);}
+  .dots{display:flex; gap:6px; margin-top:12px;}
+  .dots i{width:100%; height:5px; border-radius:99px; background:rgba(246,243,234,.25); flex:1;}
+  .dots i.done{background:var(--cream);}
+  .dots i.now{background:#ffd644;}
+
+  .stage{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:24px 0; min-height:200px;
+  }
+  .qname{
+    font-size:clamp(34px,9.5vw,52px); line-height:1.28; letter-spacing:.005em;
+    word-break:keep-all; max-width:12ch;
+    text-shadow:0 3px 0 rgba(20,32,74,.25);
+  }
+
+  /* ---- 판정 카드 ---- */
+  .verdict{
+    background:var(--cream); color:var(--ink); border-radius:var(--card-r);
+    padding:20px; margin-bottom:14px;
+  }
+  .verdict .mark{font-size:22px; line-height:1;}
+  .verdict h3{margin-top:10px; font-size:18px; letter-spacing:-.01em; font-weight:700;}
+  .verdict .meta{margin-top:8px; font-size:13.5px; line-height:1.7; color:#4a5378;}
+  .verdict .rate{
+    margin-top:14px; padding-top:12px; border-top:1.5px dashed rgba(20,32,74,.18);
+    font-size:12.5px; color:#4a5378;
+  }
+  .verdict .rate b{color:var(--ink);}
+
+  /* ---- 버튼 ---- */
+  .choices{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .btn{
+    font-family:inherit; font-size:18px; font-weight:700; padding:19px 12px;
+    border-radius:999px; cursor:pointer; border:none; letter-spacing:-.01em;
+    transition:transform .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-real{background:var(--cream); color:var(--cobalt);}
+  .btn-fake{background:var(--ink); color:var(--cream);}
+  .btn-next{width:100%; background:#ffd644; color:var(--ink); font-size:16px; padding:17px;}
+  .btn-ghost{background:transparent; color:var(--cream-soft); border:1.5px solid rgba(246,243,234,.4); font-size:14px; padding:14px;}
+
+  /* ---- 결과 ---- */
+  .result{text-align:center; align-items:center;}
+  .r-head{font-size:14px; color:var(--cream-soft); margin-top:8px;}
+  .r-score{font-size:clamp(72px,22vw,120px); line-height:1; margin-top:6px; text-shadow:0 4px 0 rgba(20,32,74,.25);}
+  .r-score small{font-size:.28em; color:var(--cream-soft); font-family:"IBM Plex Sans KR",sans-serif;}
+  .r-grade{
+    display:inline-block; margin-top:18px; background:var(--cream); color:var(--cobalt);
+    border-radius:999px; padding:12px 22px; font-size:clamp(16px,4.6vw,20px);
+    word-break:keep-all;
+  }
+  .r-desc{margin-top:14px; font-size:14.5px; line-height:1.7; color:var(--cream-soft); max-width:30ch;}
+  .r-grid{margin-top:20px; font-size:22px; letter-spacing:3px;}
+  .review{
+    margin-top:22px; width:100%; background:rgba(20,32,74,.35);
+    border-radius:var(--card-r); padding:8px 20px; text-align:left;
+  }
+  .review li{list-style:none; display:flex; justify-content:space-between; gap:12px; padding:12px 0; font-size:13.5px;}
+  .review li + li{border-top:1px solid rgba(246,243,234,.14);}
+  .review .nm{font-weight:500;}
+  .review .nm.x{color:var(--cream-soft); text-decoration:line-through; text-decoration-thickness:1px;}
+  .review .tag{font-size:12px; color:var(--cream-soft); white-space:nowrap;}
+  .r-actions{margin-top:auto; padding-top:26px; display:grid; gap:10px; width:100%;}
+
+  footer{padding-top:16px; font-size:11.5px; color:var(--cream-soft); display:flex; justify-content:space-between;}
+
+  .wing{display:none;}
+
+  /* ============ 타블렛 ≥768 ============ */
+  @media (min-width:768px){
+    .app{max-width:620px; padding:40px 24px;}
+    .stage{min-height:260px;}
+  }
+
+  /* ============ 데스크탑 ≥1024 : 무대 중앙 + 양쪽 윙 ============ */
+  @media (min-width:1024px){
+    .layout{
+      display:grid; grid-template-columns:1fr 620px 1fr; gap:24px;
+      max-width:1400px; margin:0 auto; min-height:100dvh; align-items:center;
+      padding:0 32px;
+    }
+    .wing{
+      display:flex; flex-direction:column; gap:14px; padding:32px 0;
+    }
+    .wing .tile{
+      background:rgba(20,32,74,.35); border-radius:var(--card-r); padding:22px;
+    }
+    .wing .tile p:first-child{font-size:30px; font-family:"Black Han Sans",sans-serif;}
+    .wing .tile p:last-child{font-size:13px; color:var(--cream-soft); margin-top:6px; line-height:1.6;}
+    .wing.right{align-items:flex-end; text-align:right;}
+    .wing .badge{
+      background:var(--cream); color:var(--cobalt); border-radius:999px;
+      padding:10px 18px; font-size:14px; font-weight:700; display:inline-block;
+    }
+    .app{min-height:auto; max-width:none; margin:0; padding:48px 0;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important; animation:none!important;}
+  }
+</style>
+
+<div class="layout">
+  <aside class="wing left">
+    <div class="tile"><p class="mono">54%</p><p>어제 전국 평균 정답률.<br>절반은 속았습니다.</p></div>
+    <div class="tile"><p>23%</p><p>어제 3번 문제 정답률.<br>역대급 낚시 문제였습니다.</p></div>
+  </aside>
+
+  <main class="app">
+    <header>
+      <div class="brand disp">아파트 감별사</div>
+      <div class="round">제37회 · 9월 10일</div>
+    </header>
+
+    <!-- 인트로 -->
+    <section class="screen intro" id="s-intro">
+      <h1 class="disp">진짜냐,<br><span>가짜냐</span></h1>
+      <p>실존하는 단지명이면 O, AI가 지어낸 이름이면 X. 하루 10문제, 오늘 전국이 같은 문제를 풉니다.</p>
+      <div class="ox"><b class="disp">O</b><b class="x disp">X</b></div>
+      <div class="go"><button class="btn btn-next" onclick="start()">오늘의 10문제 시작</button></div>
+    </section>
+
+    <!-- 문제 -->
+    <section class="screen" id="s-quiz" hidden>
+      <div class="counter"><span class="now disp" id="qnum">1</span><span class="of">/ 10 문제</span></div>
+      <div class="dots" id="dots"></div>
+      <div class="stage"><h2 class="qname disp" id="qname"></h2></div>
+
+      <div class="verdict" id="verdict" hidden>
+        <span class="mark" id="v-mark"></span>
+        <h3 id="v-title"></h3>
+        <p class="meta" id="v-meta"></p>
+        <p class="rate" id="v-rate"></p>
+      </div>
+
+      <div class="choices" id="choices">
+        <button class="btn btn-real" onclick="answer(true)">O 진짜</button>
+        <button class="btn btn-fake" onclick="answer(false)">X 가짜</button>
+      </div>
+      <div class="choices" id="nextwrap" hidden>
+        <button class="btn btn-next" style="grid-column:1/-1" onclick="next()" id="nextbtn">다음 문제</button>
+      </div>
+      <footer><span>단지 정보: 공공데이터 K-apt</span><span>내일 자정 새 문제</span></footer>
+    </section>
+
+    <!-- 결과 -->
+    <section class="screen result" id="s-result" hidden>
+      <p class="r-head">오늘의 성적표</p>
+      <p class="r-score disp" id="r-score"></p>
+      <span class="r-grade disp" id="r-grade"></span>
+      <p class="r-desc" id="r-desc"></p>
+      <p class="r-grid" id="r-grid"></p>
+      <ul class="review" id="r-review"></ul>
+      <div class="r-actions">
+        <button class="btn btn-next" onclick="share()" id="sharebtn">결과 복사해서 자랑하기</button>
+        <button class="btn btn-ghost" onclick="location.reload()">처음부터 다시 보기</button>
+      </div>
+    </section>
+  </main>
+
+  <aside class="wing right">
+    <span class="badge">🔥 6일 연속 감별 중</span>
+    <div class="tile"><p class="disp">9,510</p><p>어제 등장한 실존 단지의<br>세대수. 진짜가 더 수상합니다.</p></div>
+  </aside>
+</div>
+
+<script>
+const Q=[
+ {n:"헬리오시티",real:true,meta:"서울 송파구 가락동<br>2018년 준공 · 9,510세대",rate:88},
+ {n:"e편한세상 더 프라임 노블",real:false,hint:"실존 브랜드에 없는 조합을 붙였습니다",rate:61},
+ {n:"래미안 원베일리",real:true,meta:"서울 서초구 반포동<br>2023년 준공 · 2,990세대",rate:74},
+ {n:"힐스테이트 리버센트럴 에듀포레",real:false,hint:"펫네임이 하나 더 얹혔습니다",rate:47},
+ {n:"트리마제",real:true,meta:"서울 성동구 성수동<br>2017년 준공 · 688세대",rate:69},
+ {n:"아이파크 센트럴 에듀리버",real:false,hint:"입지 키워드 두 개를 이어 붙였습니다",rate:52},
+ {n:"경희궁 자이",real:true,meta:"서울 종로구 홍파동<br>2017년 준공 · 2,415세대",rate:71},
+ {n:"푸르지오 레이크시티 그랑포레",real:false,hint:"있을 법하지만 없는 호수입니다",rate:38},
+ {n:"디에이치 아너힐즈",real:true,meta:"서울 강남구 개포동<br>2019년 준공 · 1,320세대",rate:33},
+ {n:"롯데캐슬 스카이 퍼스티지",real:false,hint:"하늘과 명예를 동시에 약속했습니다",rate:29},
+];
+let i=0, marks=[];
+const $=id=>document.getElementById(id);
+
+function start(){ $("s-intro").hidden=true; $("s-quiz").hidden=false; render(); }
+function render(){
+  const q=Q[i];
+  $("qname").textContent=q.n;
+  $("qnum").textContent=i+1;
+  $("dots").innerHTML=Q.map((_,k)=>`<i class="${k<i?'done':k===i?'now':''}"></i>`).join("");
+  $("verdict").hidden=true; $("choices").hidden=false; $("nextwrap").hidden=true;
+}
+function answer(saidReal){
+  const q=Q[i], ok=saidReal===q.real;
+  marks.push(ok);
+  const v=$("verdict");
+  v.hidden=false;
+  $("v-mark").textContent=ok?"⭕ 정답!":"❌ 오답";
+  $("v-title").textContent=q.real?"진짜 있는 아파트입니다":"AI가 지은 이름입니다";
+  $("v-meta").innerHTML=q.real?q.meta:q.hint;
+  $("v-rate").innerHTML=`이 문제, 지금까지 <b>${q.rate}%</b>가 맞혔습니다`;
+  $("choices").hidden=true; $("nextwrap").hidden=false;
+  $("nextbtn").textContent=(i===Q.length-1)?"내 등급 확인하기":"다음 문제";
+}
+function next(){ i++; if(i<Q.length){render();} else{finish();} }
+
+const GRADES=[
+ {min:0,name:"외지인",desc:"아파트 이름이 다 그게 그거 같죠? 정상입니다. 내일 다시 도전하세요."},
+ {min:4,name:"전세 유목민",desc:"발품은 팔아봤는데, 이름까진 안 외웠군요. 감은 있습니다."},
+ {min:7,name:"부동산 카페 눈팅러",desc:"매일 눈팅한 짬은 못 속입니다. 상위권 감별력."},
+ {min:9,name:"시어머니도 못 찾는 이름 감별사",desc:"이름만 봐도 평면도가 보이는 수준. 최고 등급입니다."},
+];
+function finish(){
+  const s=marks.filter(Boolean).length;
+  const g=[...GRADES].reverse().find(g=>s>=g.min);
+  $("s-quiz").hidden=true; $("s-result").hidden=false;
+  $("r-score").innerHTML=s+"<small> / 10</small>";
+  $("r-grade").textContent=g.name;
+  $("r-desc").textContent=g.desc;
+  $("r-grid").textContent=marks.map(m=>m?"🟩":"⬛").join("");
+  $("r-review").innerHTML=Q.map((q,k)=>
+    `<li><span class="nm ${marks[k]?'':'x'}">${q.n}</span><span class="tag">${q.real?"진짜":"가짜"}</span></li>`
+  ).join("");
+}
+function share(){
+  const s=marks.filter(Boolean).length;
+  const g=[...GRADES].reverse().find(g=>s>=g.min);
+  const t=`아파트 감별사 #37 🏢\n${marks.map(m=>m?"🟩":"⬛").join("")} ${s}/10\n${g.name}\napt-gam.kr`;
+  navigator.clipboard?.writeText(t).then(()=>{ $("sharebtn").textContent="복사 완료. 붙여넣기만 하면 됩니다"; });
+}
+</script>
