@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { applyComboPick, comboState } from "@/lib/local";
+import { sfxCombo, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
+import { SoundToggle } from "@/components/SoundToggle";
+import { CloseX } from "@/components/CloseX";
 
 interface Round {
   no: number;
@@ -66,6 +69,7 @@ export default function FindRealPage() {
   async function pick(option: string) {
     if (!quiz || !round || busy || phase !== "solve") return;
     setBusy(true);
+    sfxTap();
     try {
       const res = await fetch("/api/findreal/check", {
         method: "POST",
@@ -77,7 +81,13 @@ export default function FindRealPage() {
       setPicked(option);
       setReveal(data);
       setMarks((m) => [...m, data.correct]);
-      if (!practice) setCombo(applyComboPick(data.correct)); // 연습은 콤보에 반영 안 함
+      if (data.correct) sfxStampRight();
+      else sfxStampWrong();
+      if (!practice) {
+        const next = applyComboPick(data.correct); // 연습은 콤보에 반영 안 함
+        setCombo(next);
+        if (next.current >= 2) sfxCombo();
+      }
       setPhase("reveal");
     } catch {
       setPhase("error");
@@ -95,6 +105,7 @@ export default function FindRealPage() {
       setPhase("solve");
       return;
     }
+    sfxResult();
     if (!practice) {
       try {
         localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
@@ -155,13 +166,16 @@ export default function FindRealPage() {
           <Link className="brand" href="/">
             아파트 감별사<small>진짜 찾기 감정서</small>
           </Link>
-          {quiz && (
-            <div className="issue mono">
-              #{ep}
-              <br />
-              {mm}.{dd}
-            </div>
-          )}
+          <div className="head-right">
+            {quiz && (
+              <div className="issue mono">
+                #{ep}
+                <br />
+                {mm}.{dd}
+              </div>
+            )}
+            <CloseX inProgress={phase === "solve" || phase === "reveal"} />
+          </div>
         </header>
 
         {phase === "loading" && (
@@ -271,6 +285,7 @@ export default function FindRealPage() {
         )}
 
         <footer className="sheet-footer">
+          <SoundToggle />
           <span>진짜 하나를 골라 누르세요</span>
           <span className="mono">내일 00:00 새 라운드</span>
         </footer>

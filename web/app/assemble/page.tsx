@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
+import { SoundToggle } from "@/components/SoundToggle";
+import { CloseX } from "@/components/CloseX";
 
 interface Puzzle {
   no: number;
@@ -64,10 +67,12 @@ export default function AssemblePage() {
 
   function pick(k: number) {
     if (!puzzle || phase !== "solve" || picked.includes(k) || picked.length >= puzzle.answerLen) return;
+    sfxTap();
     setPicked((p) => [...p, k]);
   }
   function unpick(slot: number) {
     if (phase !== "solve") return;
+    sfxTap();
     setPicked((p) => p.filter((_, i) => i !== slot));
   }
 
@@ -84,6 +89,8 @@ export default function AssemblePage() {
       const data = (await res.json()) as CheckResponse;
       setReveal(data);
       setMarks((m) => [...m, data.correct]);
+      if (data.correct) sfxStampRight();
+      else sfxStampWrong();
       setPhase("reveal");
     } catch {
       setPhase("error");
@@ -101,6 +108,7 @@ export default function AssemblePage() {
       setPhase("solve");
       return;
     }
+    sfxResult();
     if (!practice) {
       try {
         localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
@@ -158,13 +166,16 @@ export default function AssemblePage() {
           <Link className="brand" href="/">
             아파트 감별사<small>이름 조립 신청서</small>
           </Link>
-          {quiz && (
-            <div className="issue mono">
-              #{ep}
-              <br />
-              {mm}.{dd}
-            </div>
-          )}
+          <div className="head-right">
+            {quiz && (
+              <div className="issue mono">
+                #{ep}
+                <br />
+                {mm}.{dd}
+              </div>
+            )}
+            <CloseX inProgress={phase === "solve" || phase === "reveal"} />
+          </div>
         </header>
 
         {phase === "loading" && (
@@ -279,6 +290,7 @@ export default function AssemblePage() {
         )}
 
         <footer className="sheet-footer">
+          <SoundToggle />
           <span>조각을 순서대로 눌러 이름을 완성하세요</span>
           <span className="mono">내일 00:00 새 문제</span>
         </footer>
