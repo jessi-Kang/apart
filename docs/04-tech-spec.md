@@ -67,7 +67,7 @@ submissions ( id PK, date, name, pieces JSON, nickname, device_hash )
 votes       ( id PK, date, winner_id, loser_id, device_hash )
 ```
 
-- **유저 테이블 없음**: 로그인 없음. 스트릭·완료 여부·오답 기록은 전부 localStorage. 서버는 익명 집계만 저장 → 개인정보 이슈 원천 제거.
+- **MVP는 유저 테이블 없음**: 로그인 없음(게스트). M2부터의 계정·기록 스키마(users, user_daily, user_stats, leaderboard)는 [07. 플로우·계정·기록](07-account-and-records.md#4-데이터-모델-확장) 참조. 스트릭·완료 여부·오답 기록은 전부 localStorage. 서버는 익명 집계만 저장 → 개인정보 이슈 원천 제거.
 - localStorage 초기화 시 스트릭이 날아가는 것은 MVP에서 수용 (계정 연동은 리텐션이 검증된 뒤 검토).
 
 ## 3. API 설계

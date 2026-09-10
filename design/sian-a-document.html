@@ -104,7 +104,8 @@
     transform:rotate(-2.5deg); word-break:keep-all;
   }
   .grade-desc{margin-top:16px; color:var(--ink-soft); font-size:14px; line-height:1.65; max-width:32ch;}
-  .grid-line{margin-top:22px; font-size:20px; letter-spacing:2px;}
+  .grid-line{margin-top:22px; display:flex; gap:6px; flex-wrap:wrap;}
+  .grid-line svg{display:block;}
   .result-actions{margin-top:auto; padding-top:24px; display:grid; gap:10px;}
   .btn-ghost{background:var(--sheet); color:var(--ink); border:1px solid var(--line); font-size:14px; padding:14px 12px;}
   .review{margin-top:20px; border-top:1px solid var(--line);}
@@ -118,7 +119,7 @@
 
   footer{
     padding:14px 20px; border-top:1px solid var(--line);
-    font-size:11.5px; color:var(--ink-soft); display:flex; justify-content:space-between;
+    font-size:12px; color:var(--ink-soft); display:flex; justify-content:space-between;
   }
 
   /* ---- 사이드 레일 (데스크탑 전용) ---- */
@@ -214,7 +215,7 @@
       <p class="big" id="r-score"></p>
       <span class="grade-stamp" id="r-grade"></span>
       <p class="grade-desc" id="r-desc"></p>
-      <p class="grid-line" id="r-grid"></p>
+      <div class="grid-line" id="r-grid" role="img" aria-label="문제별 정답 그리드"></div>
       <ul class="review" id="r-review"></ul>
       <div class="result-actions">
         <button class="btn btn-next" onclick="share()" id="sharebtn">결과 복사해서 자랑하기</button>
@@ -244,6 +245,11 @@ const Q=[
 ];
 let i=0, marks=[];
 const $=id=>document.getElementById(id);
+function gridTile(ok){
+  return ok
+   ? `<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="2" fill="#1b1b1e"/><path d="M7 13.5l4 4 8-8.5" stroke="#fdfdfb" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+   : `<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1.75" y="1.75" width="22.5" height="22.5" rx="2" fill="none" stroke="#c73a2f" stroke-width="1.5"/><path d="M8.5 8.5l9 9M17.5 8.5l-9 9" stroke="#c73a2f" stroke-width="2.2" stroke-linecap="round"/></svg>`;
+}
 
 function start(){ $("s-intro").hidden=true; $("s-quiz").hidden=false; render(); }
 
@@ -272,7 +278,7 @@ function next(){ i++; if(i<Q.length){render();} else{finish();} }
 
 const GRADES=[
  {min:0,name:"외지인",desc:"아파트 이름이 다 그게 그거 같죠? 정상입니다. 내일 다시 접수하세요."},
- {min:4,name:"전세 유목민",desc:"발품은 팔아봤는데, 이름까진 안 외웠군요. 감은 있습니다."},
+ {min:4,name:"모델하우스 구경러",desc:"발품은 팔아봤는데, 이름까진 안 외웠군요. 감은 있습니다."},
  {min:7,name:"부동산 카페 눈팅러",desc:"매일 눈팅한 짬은 못 속입니다. 상위권 감별력."},
  {min:9,name:"시어머니도 못 찾는 이름 감별사",desc:"이름만 봐도 평면도가 보이는 수준. 최고 등급입니다."},
 ];
@@ -283,7 +289,7 @@ function finish(){
   $("r-score").textContent=s+" / 10";
   $("r-grade").textContent=g.name;
   $("r-desc").textContent=g.desc;
-  $("r-grid").textContent=marks.map(m=>m?"🟩":"⬛").join("");
+  $("r-grid").innerHTML=marks.map(gridTile).join("");
   $("r-review").innerHTML=Q.map((q,k)=>
     `<li><span class="nm">${marks[k]?"":"✗ "}${q.n}</span><span class="tag ${q.real?'':'f'}">${q.real?"진짜":"가짜"}</span></li>`
   ).join("");

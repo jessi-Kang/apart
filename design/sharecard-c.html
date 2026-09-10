@@ -1,0 +1,218 @@
+<title>감별사 공유 카드 시안 C</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* ============ 공유 카드 시안 · C 게임쇼 팝 ============
+     콘셉트: 아파트 캐릭터. 정답 수만큼 창문에 불이 켜진다.
+     카드 전체를 캔버스로 렌더 → 미리보기와 저장 이미지가 동일 */
+  :root{
+    --cobalt:#2044d4; --cream:#f6f3ea; --ink:#14204a;
+    --cream-soft:rgba(246,243,234,.88); --yellow:#ffd644; --card-r:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:light}
+  body{
+    background:var(--cobalt); color:var(--cream);
+    font-family:"IBM Plex Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .disp{font-family:"Black Han Sans","IBM Plex Sans KR",sans-serif; font-weight:400;}
+  [hidden]{display:none!important}
+  ::selection{background:var(--yellow); color:var(--ink);}
+  :focus-visible{outline:3px solid var(--yellow); outline-offset:3px; border-radius:8px;}
+  button{-webkit-tap-highlight-color:transparent; font-family:inherit;}
+
+  .app{min-height:100dvh; display:flex; flex-direction:column; padding:20px 18px; max-width:560px; margin:0 auto;}
+  header{display:flex; justify-content:space-between; align-items:center; padding-bottom:14px;}
+  .brand{font-size:17px;}
+  .round{font-size:12.5px; font-weight:500; border:1.5px solid rgba(246,243,234,.4); border-radius:999px; padding:6px 14px;}
+
+  h1{font-size:clamp(28px,7.5vw,40px); line-height:1.2; word-break:keep-all; margin-top:4px;}
+  h1 span{color:var(--yellow);}
+  .sub{margin-top:10px; font-size:14px; line-height:1.65; color:var(--cream-soft); max-width:34ch;}
+
+  .variant{margin-top:18px; display:flex; gap:8px; flex-wrap:wrap;}
+  .vbtn{
+    border:1.5px solid rgba(246,243,234,.4); background:transparent; color:var(--cream);
+    border-radius:999px; padding:10px 16px; font-size:13.5px; font-weight:700; cursor:pointer;
+  }
+  .vbtn.on{background:var(--cream); color:var(--cobalt); border-color:var(--cream);}
+
+  .cards{margin-top:20px; display:grid; gap:22px;}
+  .cardbox h2{font-size:15px; margin-bottom:10px;}
+  .cardbox p.fmt{font-size:12px; color:var(--cream-soft); margin-bottom:10px;}
+  canvas{width:100%; height:auto; display:block; border-radius:16px; box-shadow:0 8px 0 rgba(20,32,74,.3);}
+  .save{
+    margin-top:12px; width:100%; border:none; border-radius:999px; cursor:pointer;
+    background:var(--yellow); color:var(--ink); font-size:15px; font-weight:700; padding:15px;
+    transition:transform .12s ease;
+  }
+  .save:active{transform:scale(.98);}
+  .save:disabled{opacity:.5; cursor:default;}
+  .save-note{margin-top:8px; font-size:12px; color:var(--cream-soft); text-align:center; min-height:16px;}
+
+  footer{margin-top:auto; padding-top:20px; font-size:12px; color:var(--cream-soft); display:flex; justify-content:space-between;}
+
+  @media (min-width:768px){
+    .app{max-width:860px; padding:40px 24px;}
+    .cards{grid-template-columns:1.4fr 1fr; align-items:start;}
+  }
+  @media (min-width:1024px){
+    .app{max-width:1040px;}
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important;} }
+</style>
+
+<div class="app">
+  <header>
+    <span class="brand disp">아파트 감별사</span>
+    <span class="round">공유 카드 · 시안 C</span>
+  </header>
+
+  <h1 class="disp">정답만큼<br><span>불이 켜집니다</span></h1>
+  <p class="sub">결과 공유용 이미지 카드. 아파트 캐릭터의 창문 10개가 그날의 정답 그리드입니다. 점수를 바꿔 보세요.</p>
+
+  <div class="variant" id="variants" role="group" aria-label="점수 예시 선택"></div>
+
+  <div class="cards">
+    <div class="cardbox">
+      <h2 class="disp">정방형 · 피드용</h2>
+      <p class="fmt">1080 × 1080 / 인스타 피드, 카톡</p>
+      <canvas id="cv-sq" width="1080" height="1080" aria-label="정방형 공유 카드 미리보기"></canvas>
+      <button class="save" onclick="saveCard('sq')" id="save-sq">이미지로 저장</button>
+      <p class="save-note" id="note-sq"></p>
+    </div>
+    <div class="cardbox">
+      <h2 class="disp">세로형 · 스토리용</h2>
+      <p class="fmt">1080 × 1920 / 인스타 스토리, 릴스</p>
+      <canvas id="cv-st" width="1080" height="1920" aria-label="세로형 공유 카드 미리보기"></canvas>
+      <button class="save" onclick="saveCard('st')" id="save-st">이미지로 저장</button>
+      <p class="save-note" id="note-st"></p>
+    </div>
+  </div>
+
+  <footer><span>미리보기가 곧 저장 이미지입니다</span><span>apt-gam.kr</span></footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const C={cobalt:"#2044d4", ink:"#14204a", cream:"#f6f3ea", yellow:"#ffd644",
+         creamSoft:"rgba(246,243,234,.75)", winOff:"rgba(246,243,234,.14)"};
+const SAMPLES=[
+ {label:"3/10 외지인", marks:[1,0,0,1,0,0,1,0,0,0], grade:"외지인"},
+ {label:"8/10 눈팅러", marks:[1,1,0,1,1,1,0,1,1,1], grade:"부동산 카페 눈팅러"},
+ {label:"10/10 만점", marks:[1,1,1,1,1,1,1,1,1,1], grade:"시어머니도 못 찾는 이름 감별사"},
+];
+let cur=1;
+
+function disp(px){ return `${px}px "Black Han Sans","IBM Plex Sans KR",sans-serif`; }
+function sans(px,w=500){ return `${w} ${px}px "IBM Plex Sans KR",sans-serif`; }
+
+/* 아파트 캐릭터: 창문 2열×5행 = 정답 그리드 (위→아래, 좌→우 = 1번→10번) */
+function drawBuilding(ctx, cx, top, w, h, marks){
+  const r=Math.round(w*.10);
+  const x=cx-w/2;
+  // 몸통
+  ctx.fillStyle=C.ink;
+  ctx.beginPath(); ctx.roundRect(x, top, w, h, [r,r,Math.round(r*.4),Math.round(r*.4)]); ctx.fill();
+  // 안테나 + 깃발
+  ctx.strokeStyle=C.ink; ctx.lineWidth=w*.035; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(cx, top-h*.09); ctx.lineTo(cx, top); ctx.stroke();
+  ctx.fillStyle=C.yellow;
+  ctx.beginPath(); ctx.arc(cx, top-h*.11, w*.05, 0, Math.PI*2); ctx.fill();
+  // 창문 2×5
+  const cols=2, rows=5;
+  const gw=w*.30, gh=h*.10, gapx=w*.12, gapy=h*.035;
+  const gx=cx-(gw*cols+gapx)/2, gy=top+h*.075;
+  for(let i=0;i<10;i++){
+    const cxi=i%cols, ryi=Math.floor(i/cols);
+    const wx=gx+cxi*(gw+gapx), wy=gy+ryi*(gh+gapy);
+    ctx.fillStyle=marks[i]?C.yellow:C.winOff;
+    ctx.beginPath(); ctx.roundRect(wx, wy, gw, gh, gh*.32); ctx.fill();
+    if(marks[i]){ /* 켜진 창의 빛 */
+      ctx.fillStyle="rgba(255,214,68,.18)";
+      ctx.beginPath(); ctx.roundRect(wx-gw*.09, wy-gh*.18, gw*1.18, gh*1.36, gh*.5); ctx.fill();
+    }
+  }
+  // 얼굴 (문 위)
+  const fy=top+h*.865;
+  ctx.fillStyle=C.cream;
+  ctx.beginPath(); ctx.arc(cx-w*.11, fy, w*.028, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx+w*.11, fy, w*.028, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle=C.cream; ctx.lineWidth=w*.022;
+  ctx.beginPath(); ctx.arc(cx, fy+w*.015, w*.055, Math.PI*.15, Math.PI*.85); ctx.stroke();
+}
+
+function drawCard(ctx, W, H, s){
+  const score=s.marks.filter(Boolean).length;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=C.cobalt; ctx.fillRect(0,0,W,H);
+  ctx.textAlign="center";
+  const story=H>W;
+  // 상단 브랜드
+  ctx.fillStyle=C.cream; ctx.font=disp(story?58:52);
+  ctx.fillText("아파트 감별사 #37", W/2, story?200:110);
+  ctx.fillStyle=C.creamSoft; ctx.font=sans(story?34:30);
+  ctx.fillText("9월 10일 · 오늘의 감별", W/2, story?260:162);
+  // 캐릭터
+  const bw=story?470:400, bh=story?640:520;
+  drawBuilding(ctx, W/2, story?340:210, bw, bh, s.marks);
+  // 점수
+  ctx.fillStyle=C.yellow; ctx.font=disp(story?190:150);
+  const sy=story?1210:840;
+  ctx.save();
+  ctx.shadowColor="rgba(20,32,74,.6)"; ctx.shadowOffsetY=story?10:8;
+  ctx.fillText(`${score}/10`, W/2, sy);
+  ctx.restore();
+  // 등급 필
+  ctx.font=disp(score===10?(story?42:36):(story?46:40));
+  const gw=ctx.measureText(s.grade).width+ (story?110:90);
+  const gh=story?104:92, gy=sy+(story?70:56);
+  ctx.fillStyle=C.cream;
+  ctx.beginPath(); ctx.roundRect(W/2-gw/2, gy, gw, gh, gh/2); ctx.fill();
+  ctx.fillStyle=C.cobalt;
+  ctx.fillText(s.grade, W/2, gy+gh*.66);
+  // 하단 URL
+  ctx.fillStyle=C.creamSoft; ctx.font=sans(story?32:28,700);
+  ctx.fillText("apt-gam.kr", W/2, H-(story?120:64));
+  if(story){
+    ctx.font=sans(30);
+    ctx.fillText("당신의 감별력은 몇 점입니까", W/2, H-170);
+  }
+}
+
+function renderAll(){
+  const s=SAMPLES[cur];
+  drawCard($("cv-sq").getContext("2d"), 1080, 1080, s);
+  drawCard($("cv-st").getContext("2d"), 1080, 1920, s);
+  $("variants").innerHTML=SAMPLES.map((v,i)=>
+    `<button class="vbtn ${i===cur?'on':''}" onclick="setVar(${i})">${v.label}</button>`).join("");
+}
+function setVar(i){ cur=i; renderAll(); }
+
+let dl=null;
+(async ()=>{
+  document.fonts && await document.fonts.ready;
+  renderAll();
+  try{ dl=await window.claude?.use?.("downloads"); }catch(e){ dl=null; }
+})();
+renderAll();
+
+async function saveCard(which){
+  const cv=$(which==="sq"?"cv-sq":"cv-st");
+  const note=$(which==="sq"?"note-sq":"note-st");
+  const blob=await new Promise(res=>cv.toBlob(res,"image/png"));
+  const filename=`apt-gam-37-${which==="sq"?"feed":"story"}.png`;
+  if(dl){
+    try{ await dl.save({filename, data:blob}); note.textContent="저장 완료"; }
+    catch(e){ note.textContent=e?.code==="declined"?"저장을 취소했습니다":"지금은 저장할 수 없습니다"; }
+  }else{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    note.textContent="다운로드를 시작했습니다 (환경에 따라 제한될 수 있음)";
+  }
+}
+</script>

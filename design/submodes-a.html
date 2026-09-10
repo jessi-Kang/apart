@@ -1,0 +1,422 @@
+<title>감별사 서브 모드 시안 A</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============ 서브 모드 시안 · A 접수 서류 ============
+     작명소 = "작명 신청서" / 우리 동네 = "관할구역 감별 조사서"
+     시안 A 디자인 시스템: 쿨 오프화이트 + 잉크 블랙 + 도장 레드, sharp radius */
+  :root{
+    --paper:#f6f6f3; --sheet:#fdfdfb; --ink:#1b1b1e; --ink-soft:#5c5c62;
+    --line:#d9d9d3; --stamp:#c73a2f; --stamp-soft:#f6e3e1; --radius:2px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:light}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"IBM Plex Mono",monospace}
+  [hidden]{display:none!important}
+  ::selection{background:var(--stamp-soft); color:var(--ink);}
+  :focus-visible{outline:2px solid var(--stamp); outline-offset:3px;}
+  button{-webkit-tap-highlight-color:transparent; font-family:inherit;}
+
+  .frame{min-height:100dvh; display:flex; flex-direction:column; padding:16px;}
+  .sheet{
+    background:var(--sheet); border:1px solid var(--line); border-radius:var(--radius);
+    flex:1; display:flex; flex-direction:column; width:100%;
+    box-shadow:0 1px 0 rgba(27,27,30,.04);
+  }
+  header{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:18px 20px; border-bottom:1px solid var(--line);
+  }
+  .brand{font-weight:700; font-size:16px; letter-spacing:-.02em; background:none; border:none; color:var(--ink); cursor:pointer; text-align:left; padding:0;}
+  .brand small{display:block; font-weight:400; color:var(--ink-soft); font-size:12px; margin-top:2px;}
+  .issue{font-size:12px; color:var(--ink-soft); text-align:right;}
+
+  .screen{flex:1; display:flex; flex-direction:column; padding:24px 20px;}
+  .mode-head{display:flex; align-items:center; gap:12px; margin-bottom:16px;}
+  .back{
+    background:var(--sheet); border:1px solid var(--line); border-radius:var(--radius);
+    padding:8px 14px; font-size:12.5px; font-weight:500; cursor:pointer; color:var(--ink);
+  }
+  .mode-head .name{font-weight:700; font-size:15px;}
+
+  /* ---- 홈 ---- */
+  .home h1{font-size:clamp(26px,6.5vw,36px); line-height:1.25; letter-spacing:-.03em; font-weight:700;}
+  .home h1 em{font-style:normal; color:var(--stamp);}
+  .home p.sub{margin-top:12px; color:var(--ink-soft); font-size:14.5px; line-height:1.65; max-width:34ch;}
+  .modes{margin-top:22px; border-top:1px solid var(--line);}
+  .mode{
+    width:100%; text-align:left; background:none; border:none; cursor:pointer;
+    display:flex; gap:14px; align-items:baseline; padding:18px 2px;
+    border-bottom:1px solid var(--line);
+  }
+  .mode:active{background:var(--paper);}
+  .mode .no{color:var(--ink-soft); font-size:12px; min-width:18px;}
+  .mode .tt{font-weight:700; font-size:17px; letter-spacing:-.02em;}
+  .mode .dd{display:block; font-weight:400; font-size:13px; color:var(--ink-soft); margin-top:4px; line-height:1.55;}
+  .mode .go-ic{margin-left:auto; color:var(--stamp); font-weight:700;}
+
+  /* ---- 버튼 공통 ---- */
+  .btn{
+    font-size:15px; font-weight:700; letter-spacing:-.01em; padding:16px 12px;
+    border-radius:var(--radius); cursor:pointer; transition:transform .12s ease;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn:disabled{opacity:.4; cursor:default;}
+  .btn-next{width:100%; background:var(--ink); color:var(--sheet); border:1px solid var(--ink);}
+  .btn-ghost{background:var(--sheet); color:var(--ink); border:1px solid var(--line); font-size:14px; padding:14px 12px;}
+
+  /* ---- 작명소: 신청서 ---- */
+  .field-label{font-size:12px; color:var(--ink-soft); margin:16px 0 8px;}
+  .preview{
+    border:1px dashed var(--line); border-radius:var(--radius); min-height:84px;
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:14px;
+  }
+  .preview .nm{font-size:clamp(22px,6vw,30px); font-weight:700; letter-spacing:-.03em; line-height:1.3; word-break:keep-all;}
+  .preview .ph{color:var(--ink-soft); font-size:14px;}
+  .egg{margin-top:10px; text-align:center; font-size:13px; color:var(--stamp); font-weight:700; min-height:18px;}
+  .pal{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--sheet);
+    color:var(--ink); font-size:14px; font-weight:500; padding:10px 14px; cursor:pointer;
+  }
+  .chip.on{background:var(--ink); color:var(--sheet); border-color:var(--ink);}
+  .chip:disabled{opacity:.35; cursor:default;}
+  .studio-actions{display:grid; grid-template-columns:1fr 1.6fr; gap:10px; margin-top:20px;}
+
+  /* ---- 작명소: 투표 ---- */
+  .vs-tip{font-size:14px; color:var(--ink-soft); line-height:1.6;}
+  .vs-tip b{color:var(--ink);}
+  .vs{display:grid; gap:10px; margin:18px 0 10px;}
+  .vs-card{
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--sheet);
+    padding:22px 16px; cursor:pointer; text-align:center;
+  }
+  .vs-card:active{background:var(--paper);}
+  .vs-card .nm{font-size:clamp(18px,5vw,23px); font-weight:700; letter-spacing:-.02em; word-break:keep-all;}
+  .vs-card .by{display:block; font-size:12px; color:var(--ink-soft); margin-top:8px;}
+  .vs-mid{text-align:center; color:var(--stamp); font-weight:700; font-size:14px;}
+  .vs-count{font-size:12px; color:var(--ink-soft); text-align:center;}
+
+  /* ---- 작명소: 명예의 전당 ---- */
+  .hall-win{
+    border:2px solid var(--stamp); border-radius:var(--radius); padding:24px 18px;
+    text-align:center; margin-bottom:6px;
+  }
+  .hall-win .label{display:inline-block; font-size:12px; font-weight:700; color:var(--stamp); border:1.5px solid currentColor; padding:4px 10px; transform:rotate(-2deg);}
+  .hall-win .nm{font-size:clamp(20px,5.5vw,27px); font-weight:700; letter-spacing:-.02em; margin-top:12px; word-break:keep-all;}
+  .hall-win .pct{margin-top:10px; font-size:13px; color:var(--ink-soft);}
+  .hall-win .pct b{color:var(--stamp);}
+  .hall-list{margin-top:8px;}
+  .hall-list li{
+    list-style:none; display:flex; align-items:baseline; gap:12px;
+    padding:11px 0; border-bottom:1px dashed var(--line); font-size:14px;
+  }
+  .hall-list .rank{font-size:12px; color:var(--ink-soft); min-width:18px;}
+  .hall-list .nm{font-weight:500;}
+  .hall-list .pct{margin-left:auto; color:var(--ink-soft); font-size:12.5px;}
+  .mine{margin-top:14px; font-size:13px; color:var(--ink-soft); text-align:center;}
+  .mine b{color:var(--stamp);}
+
+  /* ---- 우리 동네 ---- */
+  .geo-tip{font-size:14.5px; color:var(--ink-soft); line-height:1.65;}
+  .geo-list{margin-top:18px; border-top:1px solid var(--line);}
+  .geo{
+    width:100%; background:none; border:none; border-bottom:1px solid var(--line);
+    display:flex; align-items:baseline; gap:12px; padding:16px 2px; cursor:pointer; text-align:left;
+  }
+  .geo:active{background:var(--paper);}
+  .geo .nm{font-weight:700; font-size:16px;}
+  .geo .avg{margin-left:auto; font-size:12px; color:var(--ink-soft);}
+  .geo:disabled{cursor:default;}
+  .geo:disabled .nm{color:var(--ink-soft); font-weight:500;}
+
+  .counter{font-size:12px; color:var(--ink-soft);}
+  .stage{flex:1; display:flex; align-items:center; justify-content:center; text-align:center; padding:18px 0; min-height:140px;}
+  .qname{font-size:clamp(26px,7.5vw,38px); font-weight:700; letter-spacing:-.03em; line-height:1.3; word-break:keep-all; max-width:13ch;}
+  .choices{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .btn-real{background:var(--ink); color:var(--sheet); border:1px solid var(--ink); font-size:17px; padding:18px 12px;}
+  .btn-fake{background:var(--sheet); color:var(--stamp); border:1.5px solid var(--stamp); font-size:17px; padding:18px 12px;}
+  .verdict{border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:14px;}
+  .verdict .mark{display:inline-block; font-weight:700; font-size:13px; padding:5px 10px; border:1.5px solid currentColor; border-radius:var(--radius); transform:rotate(-2deg);}
+  .verdict.right .mark{color:var(--ink);}
+  .verdict.wrong .mark{color:var(--stamp);}
+  .verdict h3{margin-top:12px; font-size:16.5px; letter-spacing:-.02em;}
+  .verdict .meta{margin-top:8px; font-size:13px; color:var(--ink-soft); line-height:1.7;}
+
+  .geo-result .r-head{font-size:13px; color:var(--ink-soft);}
+  .geo-result .r-score{font-size:clamp(42px,12vw,64px); font-weight:700; letter-spacing:-.04em; line-height:1.05; margin-top:6px;}
+  .geo-badge{
+    display:inline-block; margin-top:16px; padding:11px 16px;
+    border:2px solid var(--stamp); color:var(--stamp); border-radius:var(--radius);
+    font-weight:700; font-size:clamp(16px,4.5vw,21px); transform:rotate(-2.5deg); word-break:keep-all;
+  }
+  .geo-avg{margin-top:18px; border-top:1px solid var(--line); padding-top:14px; font-size:13px; color:var(--ink-soft); line-height:1.8;}
+  .geo-avg b{color:var(--ink);}
+  .r-actions{margin-top:auto; padding-top:24px; display:grid; gap:10px;}
+
+  footer{
+    padding:14px 20px; border-top:1px solid var(--line);
+    font-size:12px; color:var(--ink-soft); display:flex; justify-content:space-between;
+  }
+
+  .rail{display:none;}
+
+  /* ============ 타블렛 ≥768 ============ */
+  @media (min-width:768px){
+    .frame{padding:40px; align-items:center;}
+    .sheet{max-width:640px;}
+    .screen{padding:36px 44px;}
+    header{padding:22px 44px;}
+    footer{padding:16px 44px;}
+    .vs{grid-template-columns:1fr auto 1fr; align-items:center;}
+  }
+
+  /* ============ 데스크탑 ≥1024 ============ */
+  @media (min-width:1024px){
+    .frame{
+      flex-direction:row; justify-content:center; align-items:stretch;
+      gap:48px; padding:56px 48px; max-width:1200px; margin:0 auto; width:100%;
+    }
+    .rail{display:flex; flex-direction:column; width:300px; flex-shrink:0; padding-top:8px;}
+    .rail h2{font-size:32px; font-weight:700; letter-spacing:-.03em; line-height:1.3; word-break:keep-all;}
+    .rail h2 em{font-style:normal; color:var(--stamp);}
+    .rail .note{
+      margin-top:auto; font-size:13px; color:var(--ink-soft); line-height:1.7;
+      border-top:1px solid var(--line); padding-top:18px;
+    }
+    .sheet{max-width:560px; min-height:640px;}
+  }
+
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important; animation:none!important;} }
+</style>
+
+<div class="frame">
+  <aside class="rail">
+    <h2>서브 모드<br>접수처는 <em>이쪽</em>입니다</h2>
+    <p class="note">작명소: 가짜 이름 신청서 접수.<br>우리 동네: 관할구역 감별 조사.<br>둘 다 매일 자정 초기화됩니다.</p>
+  </aside>
+
+  <main class="sheet">
+    <header>
+      <button class="brand" onclick="show('s-home')">아파트 감별사<small>서브 모드 접수증 · 시안 A</small></button>
+      <div class="issue mono">#37<br>09.10</div>
+    </header>
+
+    <!-- ============ 홈 ============ -->
+    <section class="screen home" id="s-home">
+      <h1>감별 말고,<br>오늘은 <em>접수</em>하시죠</h1>
+      <p class="sub">가짜 이름을 직접 지어 접수하거나, 관할구역 감별 조사에 응하세요.</p>
+      <div class="modes">
+        <button class="mode" onclick="show('s-studio')">
+          <span class="no mono">1</span>
+          <span><span class="tt">작명소 · 작명 신청서</span><span class="dd">조각을 조립해 가장 그럴듯한 가짜 이름을 접수합니다</span></span>
+          <span class="go-ic">→</span>
+        </button>
+        <button class="mode" onclick="show('s-geo')">
+          <span class="no mono">2</span>
+          <span><span class="tt">우리 동네 · 관할구역 조사서</span><span class="dd">선택한 동네의 단지만 출제됩니다</span></span>
+          <span class="go-ic">→</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ 작명소: 신청서 ============ -->
+    <section class="screen" id="s-studio" hidden>
+      <div class="mode-head"><button class="back" onclick="show('s-home')">← 홈</button><span class="name">작명 신청서</span></div>
+      <p class="field-label">신청 단지명 (조각 2~4개)</p>
+      <div class="preview" id="st-preview"><span class="ph">아래 조각을 눌러 기입하세요</span></div>
+      <p class="egg" id="st-egg"></p>
+      <p class="field-label">브랜드</p>
+      <div class="pal" id="pal-brand"></div>
+      <p class="field-label">지역 조각</p>
+      <div class="pal" id="pal-geo"></div>
+      <p class="field-label">펫네임</p>
+      <div class="pal" id="pal-pet"></div>
+      <div class="studio-actions">
+        <button class="btn btn-ghost" onclick="stClear()">비우기</button>
+        <button class="btn btn-next" onclick="stSubmit()" id="st-submit" disabled>오늘의 대결에 접수</button>
+      </div>
+      <footer style="margin:20px -20px -24px; border-top:1px solid var(--line);"><span>1일 1작품</span><span class="mono">마감 23:00</span></footer>
+    </section>
+
+    <!-- ============ 작명소: 투표 ============ -->
+    <section class="screen" id="s-vote" hidden>
+      <div class="mode-head"><button class="back" onclick="show('s-home')">← 홈</button><span class="name">오늘의 대결</span></div>
+      <p class="vs-tip">둘 중 <b>더 진짜 같은 쪽</b>에 도장을 찍으세요.<br>내 작품도 다른 사람의 대결에 올라갑니다.</p>
+      <div class="vs" id="vs-wrap"></div>
+      <p class="vs-count mono" id="vs-count"></p>
+    </section>
+
+    <!-- ============ 작명소: 명예의 전당 ============ -->
+    <section class="screen" id="s-hall" hidden>
+      <div class="mode-head"><button class="back" onclick="show('s-home')">← 홈</button><span class="name">명예의 전당</span></div>
+      <div class="hall-win">
+        <span class="label">어제의 우승작</span>
+        <p class="nm">힐스테이트 리버센트 에듀포레</p>
+        <p class="pct">득표율 <b>61%</b> · 지은이 반포주공감별러</p>
+      </div>
+      <ul class="hall-list" id="hall-list"></ul>
+      <p class="mine" id="mine"></p>
+      <div class="r-actions">
+        <button class="btn btn-next" onclick="show('s-studio')">나도 하나 더 짓기</button>
+        <button class="btn btn-ghost" onclick="show('s-home')">홈으로</button>
+      </div>
+    </section>
+
+    <!-- ============ 우리 동네: 지역 선택 ============ -->
+    <section class="screen" id="s-geo" hidden>
+      <div class="mode-head"><button class="back" onclick="show('s-home')">← 홈</button><span class="name">관할구역 조사서</span></div>
+      <p class="geo-tip">관할구역을 선택하면 그 동네 단지만 출제됩니다. 동네 사람이면 만점이 기본입니다.</p>
+      <div class="geo-list">
+        <button class="geo" onclick="geoStart()"><span class="nm">송파구</span><span class="avg mono">평균 6.8/10</span></button>
+        <button class="geo" disabled><span class="nm">강남구</span><span class="avg">시안에서는 송파구만</span></button>
+        <button class="geo" disabled><span class="nm">마포구</span><span class="avg">시안에서는 송파구만</span></button>
+      </div>
+    </section>
+
+    <!-- ============ 우리 동네: 문제 ============ -->
+    <section class="screen" id="s-geoquiz" hidden>
+      <div class="mode-head"><button class="back" onclick="show('s-geo')">← 지역</button><span class="name">송파구 감별 조사</span></div>
+      <p class="counter mono" id="gq-num">01 / 03</p>
+      <div class="stage"><h2 class="qname" id="gq-name"></h2></div>
+      <div class="verdict" id="gq-verdict" hidden>
+        <span class="mark" id="gq-mark"></span>
+        <h3 id="gq-title"></h3>
+        <p class="meta" id="gq-meta"></p>
+      </div>
+      <div class="choices" id="gq-choices">
+        <button class="btn btn-real" onclick="gqAnswer(true)">진짜</button>
+        <button class="btn btn-fake" onclick="gqAnswer(false)">가짜</button>
+      </div>
+      <div class="choices" id="gq-nextwrap" hidden>
+        <button class="btn btn-next" style="grid-column:1/-1" onclick="gqNext()" id="gq-nextbtn">다음 문제</button>
+      </div>
+    </section>
+
+    <!-- ============ 우리 동네: 결과 ============ -->
+    <section class="screen geo-result" id="s-georesult" hidden>
+      <p class="r-head mono">송파구 감별 조사 결과</p>
+      <p class="r-score" id="gr-score"></p>
+      <span class="geo-badge" id="gr-badge"></span>
+      <p class="geo-avg">송파구 평균 <b>6.8 / 10</b> · 오늘 1,842명 조사 완료<br>만점자에게는 "송파 토박이" 직인이 발급됩니다</p>
+      <div class="r-actions">
+        <button class="btn btn-next" onclick="geoShare()" id="gr-share">동네 카페에 자랑하기</button>
+        <button class="btn btn-ghost" onclick="show('s-geo')">다른 동네 조사</button>
+      </div>
+    </section>
+
+    <footer>
+      <span>단지 정보 출처: 공공데이터포털 K-apt</span>
+      <span class="mono">매일 00:00 초기화</span>
+    </footer>
+  </main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const SCREENS=["s-home","s-studio","s-vote","s-hall","s-geo","s-geoquiz","s-georesult"];
+function show(id){ SCREENS.forEach(s=>$(s).hidden=(s!==id)); }
+
+/* ---- 작명소 ---- */
+const PAL={
+  brand:["래미안","자이","힐스테이트","푸르지오","더샵","e편한세상"],
+  geo:["한강","센트럴","리버","원베일리","레이크","파크"],
+  pet:["포레","에듀","노블","퍼스티지","어반","블리스"],
+};
+const REAL_SET=new Set(["래미안 원베일리"]);
+let stPieces=[], myName="";
+function stRenderPal(){
+  [["brand","pal-brand"],["geo","pal-geo"],["pet","pal-pet"]].forEach(([k,id])=>{
+    $(id).innerHTML=PAL[k].map(p=>{
+      const on=stPieces.includes(p);
+      const full=stPieces.length>=4 && !on;
+      return `<button class="chip ${on?'on':''}" ${full?'disabled':''} onclick="stToggle('${p}')">${p}</button>`;
+    }).join("");
+  });
+  const nm=stPieces.join(" ");
+  $("st-preview").innerHTML=stPieces.length?`<span class="nm">${nm}</span>`:`<span class="ph">아래 조각을 눌러 기입하세요</span>`;
+  $("st-submit").disabled=stPieces.length<2;
+  $("st-egg").textContent=REAL_SET.has(nm)?"※ 반려: 이거… 진짜 있는 아파트입니다":"";
+}
+function stToggle(p){
+  const i=stPieces.indexOf(p);
+  if(i>=0) stPieces.splice(i,1);
+  else if(stPieces.length<4) stPieces.push(p);
+  stRenderPal();
+}
+function stClear(){ stPieces=[]; stRenderPal(); }
+function stSubmit(){ myName=stPieces.join(" "); vsI=0; vsRender(); show("s-vote"); }
+stRenderPal();
+
+/* ---- 투표 ---- */
+const VS=[
+ [{n:"자이 레이크 퍼스티지",by:"당산동주민"},{n:"더샵 한강 블리스",by:"성산맘"}],
+ [{n:"푸르지오 센트럴 에듀포레",by:"입주예정자"},{n:"e편한세상 리버 노블어반",by:"청약9수생"}],
+ [{n:"힐스테이트 파크 그랑노블",by:"국평선호자"},{n:"래미안 레이크 어반포레",by:"모델하우스VIP"}],
+];
+let vsI=0;
+function vsRender(){
+  const [a,b]=VS[vsI];
+  $("vs-wrap").innerHTML=`
+    <button class="vs-card" onclick="vsPick()"><span class="nm">${a.n}</span><span class="by">지은이 ${a.by}</span></button>
+    <div class="vs-mid">VS</div>
+    <button class="vs-card" onclick="vsPick()"><span class="nm">${b.n}</span><span class="by">지은이 ${b.by}</span></button>`;
+  $("vs-count").textContent=`대결 ${vsI+1} / 3`;
+}
+function vsPick(){
+  vsI++;
+  if(vsI<VS.length){ vsRender(); }
+  else{
+    $("hall-list").innerHTML=[
+      ["2","자이 더 레이크 노블","54%"],["3","푸르지오 원 그랑센트","49%"],["4","더샵 리버 퍼스티지","44%"],
+    ].map(([r,n,p])=>`<li><span class="rank mono">${r}</span><span class="nm">${n}</span><span class="pct mono">${p}</span></li>`).join("");
+    $("mine").innerHTML=myName?`내 작품 <b>"${myName}"</b> 접수 완료 · 결과는 자정에 공개됩니다`:"";
+    show("s-hall");
+  }
+}
+
+/* ---- 우리 동네 (송파구 데모) ---- */
+const GQ=[
+ {n:"잠실엘스",real:true,meta:"서울 송파구 잠실동<br>2008년 준공 · 5,678세대"},
+ {n:"송파 자이 레이크에듀",real:false,meta:"석촌호수는 있지만, 이 이름은 없습니다"},
+ {n:"파크리오",real:true,meta:"서울 송파구 신천동<br>2008년 준공 · 6,864세대"},
+];
+let gqI=0, gqScore=0;
+function geoStart(){ gqI=0; gqScore=0; show("s-geoquiz"); gqRender(); }
+function gqRender(){
+  $("gq-name").textContent=GQ[gqI].n;
+  $("gq-num").textContent=String(gqI+1).padStart(2,"0")+" / 03";
+  $("gq-verdict").hidden=true; $("gq-choices").hidden=false; $("gq-nextwrap").hidden=true;
+}
+function gqAnswer(saidReal){
+  const q=GQ[gqI], ok=saidReal===q.real;
+  if(ok) gqScore++;
+  const v=$("gq-verdict");
+  v.hidden=false; v.className="verdict "+(ok?"right":"wrong");
+  $("gq-mark").textContent=ok?"정답":"오답";
+  $("gq-title").textContent=q.real?"진짜 있는 아파트입니다":"AI가 지은 이름입니다";
+  $("gq-meta").innerHTML=q.meta;
+  $("gq-choices").hidden=true; $("gq-nextwrap").hidden=false;
+  $("gq-nextbtn").textContent=(gqI===GQ.length-1)?"조사 결과 보기":"다음 문제";
+}
+function gqNext(){
+  gqI++;
+  if(gqI<GQ.length){ gqRender(); }
+  else{
+    $("gr-score").textContent=gqScore+" / 3";
+    $("gr-badge").textContent=gqScore===3?"송파 토박이":gqScore===2?"송파 생활권":"관광객";
+    show("s-georesult");
+  }
+}
+function geoShare(){
+  const t=`아파트 감별사 · 송파구 ${gqScore}/3 🏢\n송파 사람이면 만점 아닌가요?\napt-gam.kr`;
+  navigator.clipboard?.writeText(t).then(()=>{ $("gr-share").textContent="복사 완료. 붙여넣기만 하면 됩니다"; });
+}
+</script>

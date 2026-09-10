@@ -8,6 +8,7 @@
   - 검증 명령: `~/.claude/skills/impeccable/scripts/impeccable detect --json <파일들>`
   - 이 프로젝트에는 impeccable 디자인 훅이 켜져 있다(`.impeccable/config.json`). 훅이 동작하지 않는 세션에서는 위 명령을 수동 실행한다.
   - 디텍터 경고는 실제 배경/전경 페어를 코드에서 확인해 검증하고, 실제 이슈만 수정한다. 오탐이면 사유를 남긴다.
+- 그리드·판정 등 시각 요소는 이모지가 아닌 그래픽(SVG/캔버스)으로 그린다. 이모지는 클립보드 공유 텍스트에만.
 - 새 UI를 만들 때는 taste-skill(`~/.claude/skills/taste-skill`)의 안티-슬롭 원칙을 따른다: em-dash 금지, eyebrow 남용 금지, 단일 액센트, 모바일 퍼스트(`min-height:100dvh`, 768/1024 브레이크포인트), `prefers-reduced-motion` 대응.
 
 ## 시안 구성
@@ -16,6 +17,8 @@
 |---|---|
 | `design/sian-a-document.html` | 접수 서류 콘셉트. 라이트, 잉크 블랙 + 도장 레드, sharp radius |
 | `design/sian-b-nightboard.html` | 야간 전광판 콘셉트. 다크, 일렉트릭 그린, soft radius |
-| `design/sian-c-gameshow.html` | O/X 게임쇼 콘셉트. 코발트 + 크림, pill 버튼 |
+| `design/sian-c-gameshow.html` | **확정 방향.** 게임 선택 홈 + 본편 O/X + 이름 조립 + 진짜 찾기, db 기록판 |
+| `design/submodes-a.html` / `design/submodes-c.html` | 서브 모드(작명소·우리 동네) 시안, A/C 스타일 |
+| `design/sharecard-a.html` / `design/sharecard-c.html` | "창문 점등" 이미지 공유 카드 시안, 캔버스 렌더 + 이미지 저장 |
 
-세 시안 모두 동일한 코어 루프(인트로 → 10문제 → 정답 공개 → 등급/공유)를 담은 인터랙티브 목업이며, 모바일 퍼스트 반응형(모바일/타블렛 768px/데스크탑 1024px)이다.
+시안 A~C는 동일한 코어 루프(인트로 → 10문제 → 정답 공개 → 등급/공유)를 담은 인터랙티브 목업이며, 모바일 퍼스트 반응형(모바일/타블렛 768px/데스크탑 1024px)이다.

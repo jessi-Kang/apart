@@ -1,0 +1,233 @@
+<title>감별사 공유 카드 시안 A</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============ 공유 카드 시안 · A 접수 서류 ============
+     콘셉트: 감별 결과 접수증. 잉크 아파트 도장 + 붉은 소인.
+     카드 전체를 캔버스로 렌더 → 미리보기와 저장 이미지가 동일 */
+  :root{
+    --paper:#f6f6f3; --sheet:#fdfdfb; --ink:#1b1b1e; --ink-soft:#5c5c62;
+    --line:#d9d9d3; --stamp:#c73a2f; --stamp-soft:#f6e3e1; --radius:2px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:light}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"IBM Plex Mono",monospace}
+  [hidden]{display:none!important}
+  ::selection{background:var(--stamp-soft); color:var(--ink);}
+  :focus-visible{outline:2px solid var(--stamp); outline-offset:3px;}
+  button{-webkit-tap-highlight-color:transparent; font-family:inherit;}
+
+  .app{min-height:100dvh; display:flex; flex-direction:column; padding:20px 16px; max-width:560px; margin:0 auto;}
+  header{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding-bottom:16px; border-bottom:1px solid var(--line);
+  }
+  .brand{font-weight:700; font-size:16px; letter-spacing:-.02em;}
+  .brand small{display:block; font-weight:400; color:var(--ink-soft); font-size:12px; margin-top:2px;}
+  .issue{font-size:12px; color:var(--ink-soft); text-align:right;}
+
+  h1{font-size:clamp(26px,6.5vw,36px); line-height:1.25; letter-spacing:-.03em; font-weight:700; margin-top:20px;}
+  h1 em{font-style:normal; color:var(--stamp);}
+  .sub{margin-top:10px; font-size:14px; line-height:1.65; color:var(--ink-soft); max-width:36ch;}
+
+  .variant{margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;}
+  .vbtn{
+    border:1px solid var(--line); background:var(--sheet); color:var(--ink);
+    border-radius:var(--radius); padding:9px 14px; font-size:13px; font-weight:500; cursor:pointer;
+  }
+  .vbtn.on{background:var(--ink); color:var(--sheet); border-color:var(--ink);}
+
+  .cards{margin-top:20px; display:grid; gap:22px;}
+  .cardbox h2{font-size:14.5px; font-weight:700; margin-bottom:4px;}
+  .cardbox p.fmt{font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
+  canvas{
+    width:100%; height:auto; display:block;
+    border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:0 1px 0 rgba(27,27,30,.04);
+  }
+  .save{
+    margin-top:12px; width:100%; border:1px solid var(--ink); border-radius:var(--radius);
+    background:var(--ink); color:var(--sheet); font-size:14.5px; font-weight:700; padding:15px;
+    cursor:pointer; transition:transform .12s ease;
+  }
+  .save:active{transform:translateY(1px);}
+  .save:disabled{opacity:.5; cursor:default;}
+  .save-note{margin-top:8px; font-size:12px; color:var(--ink-soft); text-align:center; min-height:16px;}
+
+  footer{
+    margin-top:auto; padding-top:20px; border-top:1px solid var(--line);
+    font-size:12px; color:var(--ink-soft); display:flex; justify-content:space-between;
+  }
+
+  @media (min-width:768px){
+    .app{max-width:860px; padding:40px 24px;}
+    .cards{grid-template-columns:1.4fr 1fr; align-items:start;}
+  }
+  @media (min-width:1024px){ .app{max-width:1040px;} }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important;} }
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">아파트 감별사<small>공유 카드 시안 A · 접수 서류</small></div>
+    <div class="issue mono">#37<br>09.10</div>
+  </header>
+
+  <h1>감별 결과를<br><em>접수증</em>으로 발급합니다</h1>
+  <p class="sub">결과 공유용 이미지 카드. 잉크로 찍힌 아파트의 창문 10개가 그날의 정답 그리드, 등급은 붉은 소인으로 찍힙니다.</p>
+
+  <div class="variant" id="variants" role="group" aria-label="점수 예시 선택"></div>
+
+  <div class="cards">
+    <div class="cardbox">
+      <h2>정방형 · 피드용</h2>
+      <p class="fmt mono">1080 × 1080 / 인스타 피드, 카톡</p>
+      <canvas id="cv-sq" width="1080" height="1080" aria-label="정방형 공유 카드 미리보기"></canvas>
+      <button class="save" onclick="saveCard('sq')">이미지로 저장</button>
+      <p class="save-note" id="note-sq"></p>
+    </div>
+    <div class="cardbox">
+      <h2>세로형 · 스토리용</h2>
+      <p class="fmt mono">1080 × 1920 / 인스타 스토리, 릴스</p>
+      <canvas id="cv-st" width="1080" height="1920" aria-label="세로형 공유 카드 미리보기"></canvas>
+      <button class="save" onclick="saveCard('st')">이미지로 저장</button>
+      <p class="save-note" id="note-st"></p>
+    </div>
+  </div>
+
+  <footer><span>미리보기가 곧 저장 이미지입니다</span><span class="mono">apt-gam.kr</span></footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const A={paper:"#f6f6f3", sheet:"#fdfdfb", ink:"#1b1b1e", soft:"#5c5c62",
+         line:"#d9d9d3", stamp:"#c73a2f"};
+const SAMPLES=[
+ {label:"3/10 외지인", marks:[1,0,0,1,0,0,1,0,0,0], grade:"외지인"},
+ {label:"8/10 눈팅러", marks:[1,1,0,1,1,1,0,1,1,1], grade:"부동산 카페 눈팅러"},
+ {label:"10/10 만점", marks:[1,1,1,1,1,1,1,1,1,1], grade:"시어머니도 못 찾는 이름 감별사"},
+];
+let cur=1;
+function sans(px,w=700){ return `${w} ${px}px "IBM Plex Sans KR",sans-serif`; }
+function mono(px,w=500){ return `${w} ${px}px "IBM Plex Mono",monospace`; }
+
+/* 잉크 아파트: 창문 2열×5행 = 정답 그리드 (정답=잉크 채움, 오답=빈 창) */
+function drawBuilding(ctx, cx, top, w, h, marks){
+  const x=cx-w/2, lw=w*.02;
+  ctx.strokeStyle=A.ink; ctx.lineWidth=lw; ctx.lineJoin="round";
+  ctx.fillStyle=A.sheet;
+  ctx.beginPath(); ctx.roundRect(x, top, w, h, w*.02); ctx.fill(); ctx.stroke();
+  // 옥탑
+  ctx.beginPath(); ctx.roundRect(cx-w*.16, top-h*.07, w*.32, h*.07, [w*.02,w*.02,0,0]); ctx.fill(); ctx.stroke();
+  const cols=2, rows=5;
+  const gw=w*.28, gh=h*.105, gapx=w*.14, gapy=h*.038;
+  const gx=cx-(gw*cols+gapx)/2, gy=top+h*.06;
+  for(let i=0;i<10;i++){
+    const wx=gx+(i%cols)*(gw+gapx), wy=gy+Math.floor(i/cols)*(gh+gapy);
+    if(marks[i]){
+      ctx.fillStyle=A.ink;
+      ctx.beginPath(); ctx.roundRect(wx, wy, gw, gh, w*.012); ctx.fill();
+    }else{
+      ctx.strokeStyle=A.stamp; ctx.lineWidth=lw*.75;
+      ctx.beginPath(); ctx.roundRect(wx, wy, gw, gh, w*.012); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(wx+gw*.28, wy+gh*.28); ctx.lineTo(wx+gw*.72, wy+gh*.72);
+      ctx.moveTo(wx+gw*.72, wy+gh*.28); ctx.lineTo(wx+gw*.28, wy+gh*.72);
+      ctx.stroke();
+      ctx.strokeStyle=A.ink; ctx.lineWidth=lw;
+    }
+  }
+  // 얼굴 + 문
+  const fy=top+h*.885;
+  ctx.fillStyle=A.ink;
+  ctx.beginPath(); ctx.arc(cx-w*.10, fy, w*.02, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx+w*.10, fy, w*.02, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle=A.ink; ctx.lineWidth=lw*.8;
+  ctx.beginPath(); ctx.arc(cx, fy+w*.012, w*.045, Math.PI*.15, Math.PI*.85); ctx.stroke();
+}
+
+function drawCard(ctx, W, H, s){
+  const score=s.marks.filter(Boolean).length;
+  const story=H>W;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=A.paper; ctx.fillRect(0,0,W,H);
+  // 시트
+  const m=story?70:60;
+  ctx.fillStyle=A.sheet; ctx.strokeStyle=A.line; ctx.lineWidth=3;
+  ctx.fillRect(m,m,W-m*2,H-m*2); ctx.strokeRect(m,m,W-m*2,H-m*2);
+  ctx.textAlign="center";
+  // 헤더
+  ctx.fillStyle=A.ink; ctx.font=sans(story?54:48);
+  ctx.fillText("아파트 감별 결과 통지서", W/2, m+(story?130:110));
+  ctx.fillStyle=A.soft; ctx.font=mono(story?30:27);
+  ctx.fillText("제37호 / 2026.09.10", W/2, m+(story?185:158));
+  ctx.strokeStyle=A.line; ctx.beginPath();
+  ctx.moveTo(m+60, m+(story?225:192)); ctx.lineTo(W-m-60, m+(story?225:192)); ctx.stroke();
+  // 캐릭터
+  const bw=story?430:370, bh=story?600:490;
+  drawBuilding(ctx, W/2, m+(story?330:260), bw, bh, s.marks);
+  // 점수
+  ctx.fillStyle=A.ink; ctx.font=sans(story?170:135);
+  const sy=m+(story?1130:870);
+  ctx.fillText(`${score} / 10`, W/2, sy);
+  // 등급 소인 (붉은 도장, 기울임)
+  ctx.save();
+  ctx.translate(W/2, sy+(story?135:110));
+  ctx.rotate(-.045);
+  ctx.font=sans(score===10?(story?40:34):(story?46:40));
+  const tw=ctx.measureText(s.grade).width+(story?90:76);
+  const th=story?100:88;
+  ctx.strokeStyle=A.stamp; ctx.lineWidth=6;
+  ctx.strokeRect(-tw/2, -th/2, tw, th);
+  ctx.fillStyle=A.stamp;
+  ctx.fillText(s.grade, 0, th*.17);
+  ctx.restore();
+  // 하단
+  ctx.fillStyle=A.soft; ctx.font=mono(story?28:25);
+  ctx.fillText("apt-gam.kr", W/2, H-m-(story?60:44));
+  if(story){
+    ctx.font=sans(30,500);
+    ctx.fillText("당신의 감별력은 몇 점입니까", W/2, H-m-120);
+  }
+}
+
+function renderAll(){
+  const s=SAMPLES[cur];
+  drawCard($("cv-sq").getContext("2d"), 1080, 1080, s);
+  drawCard($("cv-st").getContext("2d"), 1080, 1920, s);
+  $("variants").innerHTML=SAMPLES.map((v,i)=>
+    `<button class="vbtn ${i===cur?'on':''}" onclick="setVar(${i})">${v.label}</button>`).join("");
+}
+function setVar(i){ cur=i; renderAll(); }
+
+let dl=null;
+(async ()=>{
+  document.fonts && await document.fonts.ready;
+  renderAll();
+  try{ dl=await window.claude?.use?.("downloads"); }catch(e){ dl=null; }
+})();
+renderAll();
+
+async function saveCard(which){
+  const cv=$(which==="sq"?"cv-sq":"cv-st");
+  const note=$(which==="sq"?"note-sq":"note-st");
+  const blob=await new Promise(res=>cv.toBlob(res,"image/png"));
+  const filename=`apt-gam-37-${which==="sq"?"feed":"story"}.png`;
+  if(dl){
+    try{ await dl.save({filename, data:blob}); note.textContent="저장 완료"; }
+    catch(e){ note.textContent=e?.code==="declined"?"저장을 취소했습니다":"지금은 저장할 수 없습니다"; }
+  }else{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    note.textContent="다운로드를 시작했습니다 (환경에 따라 제한될 수 있음)";
+  }
+}
+</script>

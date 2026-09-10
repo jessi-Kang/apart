@@ -13,6 +13,8 @@
 | [03. 데이터·콘텐츠 파이프라인](docs/03-content-pipeline.md) | K-apt 실단지 수집·정제, LLM 가짜 이름 배치 생성, 검수 프로세스, 일일 편성 |
 | [04. 기술 사양](docs/04-tech-spec.md) | 스택, 데이터 모델, API 설계, 비용 구조 |
 | [05. 확산·운영·지표](docs/05-growth-and-ops.md) | 바이럴 루트, KPI, 운영 루틴, 리스크 대응, 로드맵 |
+| [06. 게임 모드 확장](docs/06-game-modes.md) | 이름 조립, 진짜 찾기 등 추가 게임 타입과 배치 전략 |
+| [07. 플로우·계정·기록](docs/07-account-and-records.md) | 게임 선택 홈 플로우, Google 로그인, 기록판·랭킹 |
 
 ## 현재 단계
 
