@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { Stamp } from "@/components/Stamp";
 import { gradeFor } from "@/lib/grades";
-import { bumpStreak, loadResult, saveResult, type ReviewItem, type SavedResult } from "@/lib/local";
+import { bumpStreak, comboState, loadResult, saveResult, type ReviewItem, type SavedResult } from "@/lib/local";
+import { shareCardImage } from "@/lib/sharecard";
 import { buildSlug } from "@/lib/slug";
 
 interface TodayResponse {
@@ -36,6 +37,8 @@ export default function PlayPage() {
   const [streak, setStreak] = useState(0);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
+  const [practice, setPractice] = useState(false);
 
   useEffect(() => {
     fetch("/api/quiz/today")
@@ -68,7 +71,7 @@ export default function PlayPage() {
       const res = await fetch("/api/quiz/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: quiz.date, no: item.no, choice }),
+        body: JSON.stringify({ date: quiz.date, no: item.no, choice, practice }),
       });
       if (!res.ok) throw new Error("answer_failed");
       const data = (await res.json()) as AnswerResponse;
@@ -91,7 +94,11 @@ export default function PlayPage() {
       setPhase("question");
       return;
     }
-    // 완주 처리
+    // 완주 처리 (연습 재도전은 기록·집계에 넣지 않는다)
+    if (practice) {
+      setPhase("result");
+      return;
+    }
     const score = marks.filter(Boolean).length;
     saveResult({ date: quiz.date, marks, review });
     setStreak(bumpStreak(quiz.date));
@@ -120,6 +127,37 @@ export default function PlayPage() {
     const url = `${location.origin}/r/${buildSlug(quiz.date, marks)}`;
     const text = `아파트 감별사 #${quiz.episode} 🏢\n${grid} ${score}/10\n${grade.name}\n${url}`;
     navigator.clipboard?.writeText(text).then(() => setCopied(true));
+  }
+
+  function restart() {
+    setPractice(true);
+    setIdx(0);
+    setMarks([]);
+    setReview([]);
+    setReveal(null);
+    setImgState("idle");
+    setCopied(false);
+    setPhase("question");
+  }
+
+  async function shareImage() {
+    if (!quiz || imgState === "busy") return;
+    setImgState("busy");
+    try {
+      const result = await shareCardImage({
+        episode: quiz.episode,
+        date: quiz.date,
+        score,
+        marks,
+        gradeName: grade.name,
+        topPct,
+        streak,
+        bestCombo: comboState().best,
+      });
+      setImgState(result);
+    } catch {
+      setImgState("failed");
+    }
   }
 
   const ep = quiz?.episode ?? "";
@@ -238,7 +276,7 @@ export default function PlayPage() {
 
         {phase === "result" && quiz && (
           <section className="screen result">
-            <p className="score-label mono">감별 결과</p>
+            <p className="score-label mono">{practice ? "연습 감별 결과 — 기록·집계 미반영" : "감별 결과"}</p>
             <p className="big">{score} / 10</p>
             <Stamp>{grade.name}</Stamp>
             <p className="grade-desc">{grade.desc}</p>
@@ -266,8 +304,22 @@ export default function PlayPage() {
               ))}
             </ul>
             <div className="result-actions">
-              <button className="btn btn-next" onClick={share}>
-                {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "결과 복사해서 자랑하기"}
+              <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
+                {imgState === "busy"
+                  ? "통지서를 발급하는 중"
+                  : imgState === "shared"
+                    ? "공유 완료. 한 장 더 발급됩니다"
+                    : imgState === "downloaded"
+                      ? "저장 완료. 갤러리에서 확인하세요"
+                      : imgState === "failed"
+                        ? "발급 실패. 다시 시도해 주세요"
+                        : "결과 통지서 이미지로 자랑하기"}
+              </button>
+              <button className="btn btn-ghost" onClick={share}>
+                {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "텍스트로 복사하기"}
+              </button>
+              <button className="btn btn-ghost" onClick={restart}>
+                다시 감별하기 (연습 · 기록 미반영)
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
