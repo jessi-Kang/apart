@@ -29,7 +29,9 @@
 - 스택: Next.js 15 (App Router) + TypeScript, 런타임 추가 의존성 0. 집계는 `web/lib/stats.ts`의 JSON 파일 스토어(단일 인스턴스 전제) — 트래픽이 붙으면 이 모듈만 Postgres/Turso 구현으로 교체한다.
 - 정답은 클라이언트에 절대 내려주지 않는다. 판정은 `/api/quiz/answer`에서만.
 - 시드 데이터(`web/data/*.json`)는 샘플이다. 단지 메타데이터는 편성 전 K-apt로 재검증해야 하며, docs/03 파이프라인 구현 시 교체된다.
-- 명령: `cd web && npm run dev` (개발), `npm run build && npm start` (프로드 확인), `npm run typecheck`.
+- 명령: `cd web && npm run dev` (개발), `npm run build && npm start` (프로드 확인), `npm run typecheck`, `npm run validate-pool` (출제 풀 검증).
+- 집계 DB: Neon Postgres (프로젝트 frosty-term-36707081, DB `aptgam`, 테이블 question_stats·score_dist). 연결 문자열은 `web/.env.local`(로컬)과 Vercel 배포의 env로만 주입하고 절대 커밋하지 않는다.
+- 배포: Vercel 프로젝트 `apt-gam` → https://apt-gam-jessikang.vercel.app (현재 세션에서 수동 배포. 대시보드에서 Git 연결 시 푸시 자동 배포로 전환)
 
 ## 커밋 규칙
 
