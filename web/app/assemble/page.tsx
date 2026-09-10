@@ -35,6 +35,7 @@ export default function AssemblePage() {
   const [marks, setMarks] = useState<boolean[]>([]);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [practice, setPractice] = useState(false);
 
   useEffect(() => {
     fetch("/api/assemble/today")
@@ -100,12 +101,24 @@ export default function AssemblePage() {
       setPhase("solve");
       return;
     }
-    try {
-      localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
-    } catch {
-      /* 무시 */
+    if (!practice) {
+      try {
+        localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
+      } catch {
+        /* 무시 */
+      }
     }
     setPhase("done");
+  }
+
+  function restart() {
+    setPractice(true);
+    setIdx(0);
+    setPicked([]);
+    setReveal(null);
+    setMarks([]);
+    setCopied(false);
+    setPhase("solve");
   }
 
   const success = marks.filter(Boolean).length;
@@ -242,7 +255,7 @@ export default function AssemblePage() {
 
         {phase === "done" && quiz && (
           <section className="screen result">
-            <p className="score-label mono">이름 조립 결과</p>
+            <p className="score-label mono">{practice ? "연습 조립 결과 — 기록 미반영" : "이름 조립 결과"}</p>
             <p className="big">{success} / 3</p>
             <p className="grade-desc">
               {success === 3
@@ -254,6 +267,9 @@ export default function AssemblePage() {
             <div className="result-actions">
               <button className="btn btn-next" onClick={share}>
                 {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "결과 복사해서 자랑하기"}
+              </button>
+              <button className="btn btn-ghost" onClick={restart}>
+                다시 조립하기 (연습 · 기록 미반영)
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
