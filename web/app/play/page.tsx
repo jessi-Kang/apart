@@ -6,6 +6,7 @@ import { GridTile } from "@/components/GridTile";
 import { Stamp } from "@/components/Stamp";
 import { gradeFor } from "@/lib/grades";
 import { bumpStreak, loadResult, saveResult, type ReviewItem, type SavedResult } from "@/lib/local";
+import { buildSlug } from "@/lib/slug";
 
 interface TodayResponse {
   date: string;
@@ -116,7 +117,8 @@ export default function PlayPage() {
   function share() {
     if (!quiz) return;
     const grid = marks.map((m) => (m ? "🟩" : "⬛")).join("");
-    const text = `아파트 감별사 #${quiz.episode} 🏢\n${grid} ${score}/10\n${grade.name}\napt-gam.kr`;
+    const url = `${location.origin}/r/${buildSlug(quiz.date, marks)}`;
+    const text = `아파트 감별사 #${quiz.episode} 🏢\n${grid} ${score}/10\n${grade.name}\n${url}`;
     navigator.clipboard?.writeText(text).then(() => setCopied(true));
   }
 

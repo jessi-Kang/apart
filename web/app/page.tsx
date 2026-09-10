@@ -69,8 +69,16 @@ export default function HomePage() {
                 <span className="dd">개발 예정 창구 (M3)</span>
               </span>
             </div>
-            <div className="mode lock">
+            <Link className="mode" href="/yesterday">
               <span className="no mono">3</span>
+              <span>
+                <span className="tt">어제의 정답 대장</span>
+                <span className="dd">어제 10문제 정답 열람 · 전국이 얼마나 속았나</span>
+              </span>
+              <span className="go-ic">→</span>
+            </Link>
+            <div className="mode lock">
+              <span className="no mono">4</span>
               <span>
                 <span className="tt">작명소 · 우리 동네</span>
                 <span className="dd">2단계 개설 예정 창구</span>
