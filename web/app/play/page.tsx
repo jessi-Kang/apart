@@ -7,6 +7,9 @@ import { Stamp } from "@/components/Stamp";
 import { gradeFor } from "@/lib/grades";
 import { bumpStreak, comboState, loadResult, saveResult, type ReviewItem, type SavedResult } from "@/lib/local";
 import { shareCardImage } from "@/lib/sharecard";
+import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
+import { SoundToggle } from "@/components/SoundToggle";
+import { CloseX } from "@/components/CloseX";
 import { buildSlug } from "@/lib/slug";
 
 interface TodayResponse {
@@ -66,6 +69,7 @@ export default function PlayPage() {
   async function answer(choice: "real" | "fake") {
     if (!quiz || busy) return;
     setBusy(true);
+    sfxTap();
     try {
       const item = quiz.items[idx];
       const res = await fetch("/api/quiz/answer", {
@@ -78,6 +82,8 @@ export default function PlayPage() {
       setReveal(data);
       setMarks((m) => [...m, data.correct]);
       setReview((r) => [...r, { no: item.no, name: item.name, kind: data.kind, correct: data.correct }]);
+      if (data.correct) sfxStampRight();
+      else sfxStampWrong();
       setPhase("reveal");
     } catch {
       setPhase("error");
@@ -95,6 +101,7 @@ export default function PlayPage() {
       return;
     }
     // 완주 처리 (연습 재도전은 기록·집계에 넣지 않는다)
+    sfxResult();
     if (practice) {
       setPhase("result");
       return;
@@ -188,13 +195,16 @@ export default function PlayPage() {
           <Link className="brand" href="/">
             아파트 감별사<small>진짜 단지명 판별 접수증</small>
           </Link>
-          {quiz && (
-            <div className="issue mono">
-              #{ep}
-              <br />
-              {mm}.{dd}
-            </div>
-          )}
+          <div className="head-right">
+            {quiz && (
+              <div className="issue mono">
+                #{ep}
+                <br />
+                {mm}.{dd}
+              </div>
+            )}
+            <CloseX inProgress={(phase === "question" || phase === "reveal") && marks.length < 10} />
+          </div>
         </header>
 
         {phase === "loading" && (
@@ -329,6 +339,7 @@ export default function PlayPage() {
         )}
 
         <footer className="sheet-footer">
+          <SoundToggle />
           <span>이름만 보고 판단합니다. 검색은 반칙.</span>
           <span className="mono">내일 00:00 새 문제</span>
         </footer>
