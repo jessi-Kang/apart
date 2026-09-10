@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   if (body.date !== today || !Number.isInteger(body.score) || body.score! < 0 || body.score! > 10) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
-  recordFinish(today, body.score!);
-  const { top, sample } = topPercent(today, body.score!);
+  await recordFinish(today, body.score!);
+  const { top, sample } = await topPercent(today, body.score!);
   return NextResponse.json({ top, sample });
 }

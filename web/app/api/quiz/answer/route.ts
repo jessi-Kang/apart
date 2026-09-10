@@ -26,8 +26,8 @@ export async function POST(req: Request) {
 
   const item = quizForDate(today)[no! - 1];
   const correct = choice === item.kind;
-  recordAnswer(today, no!, correct);
-  const { rate, sample } = answerRate(today, no!);
+  await recordAnswer(today, no!, correct);
+  const { rate, sample } = await answerRate(today, no!);
 
   if (item.kind === "real") {
     const r = item.real!;
