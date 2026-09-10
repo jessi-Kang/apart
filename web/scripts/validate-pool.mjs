@@ -29,7 +29,7 @@ const norm = (s) => s.replace(/\s+/g, "").toLowerCase();
 
 function editDistance(a, b) {
   const m = a.length, n = b.length;
-  if (Math.abs(m - n) > 2) return 3; // 조기 종료: 2 초과면 정확값 불필요
+  if (Math.abs(m - n) > 4) return 99; // 조기 종료: 주의 구간(≤4)보다 확실히 먼 값 반환
   const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
   for (let j = 0; j <= n; j++) dp[0][j] = j;
   for (let i = 1; i <= m; i++)
