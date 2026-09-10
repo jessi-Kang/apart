@@ -282,7 +282,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 /* ---- 제한시간 바 ---- */
 .timerbar { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
 .timerbar .track { flex: 1; height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; }
-.timerbar i { display: block; height: 100%; background: var(--ink); transition: width 0.1s linear; }
+.timerbar i { display: block; height: 100%; width: 100%; background: var(--ink); transform-origin: left; transition: transform 0.1s linear; }
 .timerbar.low i { background: var(--stamp); }
 .timerbar span { font-size: 12px; color: var(--ink-soft); min-width: 2ch; text-align: right; }
 .timerbar.low span { color: var(--stamp); font-weight: 700; }
