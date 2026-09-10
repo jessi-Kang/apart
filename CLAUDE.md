@@ -16,9 +16,9 @@
 | 파일 | 방향 |
 |---|---|
 | `design/sian-a-document.html` | 접수 서류 콘셉트. 라이트, 잉크 블랙 + 도장 레드, sharp radius |
-| `design/sian-b-nightboard.html` | 야간 전광판 콘셉트. 다크, 일렉트릭 그린, soft radius |
+| `design/sian-b-nightboard.html` | 야간 전광판 콘셉트. **디벨롭 중단** (확정 방향 아님, 수정 금지) |
 | `design/sian-c-gameshow.html` | **확정 방향.** 게임 선택 홈 + 본편 O/X + 이름 조립 + 진짜 찾기, db 기록판 |
 | `design/submodes-a.html` / `design/submodes-c.html` | 서브 모드(작명소·우리 동네) 시안, A/C 스타일 |
-| `design/sharecard-a.html` / `design/sharecard-c.html` | "창문 점등" 이미지 공유 카드 시안, 캔버스 렌더 + 이미지 저장 |
+| `design/sharecard-a.html` / `design/sharecard-c.html` | 이미지 공유 카드 시안. **보류** (품질 미달 판정, 재작업 전까지 디벨롭 금지) |
 
 시안 A~C는 동일한 코어 루프(인트로 → 10문제 → 정답 공개 → 등급/공유)를 담은 인터랙티브 목업이며, 모바일 퍼스트 반응형(모바일/타블렛 768px/데스크탑 1024px)이다.
