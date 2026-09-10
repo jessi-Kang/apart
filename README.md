@@ -28,9 +28,21 @@
 | `sian-b-nightboard.html` | 디벨롭 중단 |
 | `sharecard-*.html` | 이미지 공유 카드 1차안. 보류(재작업 예정) |
 
+## 개발 (`web/`)
+
+M1 개발 진행 중. Next.js 15 + TypeScript, 확정 디자인 A 적용.
+
+```bash
+cd web
+npm install
+npm run dev        # http://localhost:3000
+```
+
+현재 구현: 본편 감별 O/X 코어 루프 (데일리 시드 출제 → 서버 판정 → 등급/공유 → 스트릭·전국 정답률 집계).
+
 ## 현재 단계
 
-**기획 + 디자인 시안** — 구현은 [로드맵](docs/05-growth-and-ops.md#5-로드맵)의 M1부터 시작한다. 디자인 파일 수정 시 impeccable 검증이 필수다(`CLAUDE.md` 참조).
+**M1 개발** — 범위는 [로드맵](docs/05-growth-and-ops.md#5-로드맵) 참조. 디자인 파일 수정 시 impeccable 검증이 필수다(`CLAUDE.md` 참조).
 
 ## 핵심 설계 원칙 (요약)
 
