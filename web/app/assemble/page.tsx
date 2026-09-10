@@ -2,12 +2,21 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
-import { SoundToggle } from "@/components/SoundToggle";
+import { GridTile } from "@/components/GridTile";
 import { CloseX } from "@/components/CloseX";
+import { SoundToggle } from "@/components/SoundToggle";
+import { bumpEndlessBest, endlessBest } from "@/lib/local";
+import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
 interface Puzzle {
   no: number;
+  pieces: string[];
+  answerLen: number;
+  hint: { location: string; builtYear: number; households: number };
+}
+
+interface EndlessPuzzle {
+  id: string;
   pieces: string[];
   answerLen: number;
   hint: { location: string; builtYear: number; households: number };
@@ -38,9 +47,16 @@ export default function AssemblePage() {
   const [marks, setMarks] = useState<boolean[]>([]);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [practice, setPractice] = useState(false);
+
+  // 무한 조립 (데일리 3문제 후 랜덤 새 퍼즐 연속)
+  const [endless, setEndless] = useState(false);
+  const [epz, setEpz] = useState<EndlessPuzzle | null>(null);
+  const [run, setRun] = useState(0);
+  const [eCount, setECount] = useState(0);
+  const [eBest, setEBest] = useState(0);
 
   useEffect(() => {
+    setEBest(endlessBest("assemble"));
     fetch("/api/assemble/today")
       .then((r) => r.json())
       .then((data: TodayResponse) => {
@@ -63,7 +79,31 @@ export default function AssemblePage() {
       .catch(() => setPhase("error"));
   }, []);
 
-  const puzzle = quiz?.items[idx];
+  const puzzle: Puzzle | EndlessPuzzle | undefined = endless ? (epz ?? undefined) : quiz?.items[idx];
+
+  async function fetchEndless() {
+    const res = await fetch("/api/endless/assemble");
+    if (!res.ok) throw new Error("endless_failed");
+    setEpz((await res.json()) as EndlessPuzzle);
+  }
+
+  async function startEndless() {
+    sfxTap();
+    setBusy(true);
+    try {
+      await fetchEndless();
+      setEndless(true);
+      setRun(0);
+      setECount(0);
+      setPicked([]);
+      setReveal(null);
+      setPhase("solve");
+    } catch {
+      setPhase("error");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function pick(k: number) {
     if (!puzzle || phase !== "solve" || picked.includes(k) || picked.length >= puzzle.answerLen) return;
@@ -77,20 +117,41 @@ export default function AssemblePage() {
   }
 
   async function check() {
-    if (!quiz || !puzzle || busy || picked.length !== puzzle.answerLen) return;
+    if (!puzzle || busy || picked.length !== puzzle.answerLen) return;
     setBusy(true);
+    sfxTap();
     try {
-      const res = await fetch("/api/assemble/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: quiz.date, no: puzzle.no, guess: picked.map((k) => puzzle.pieces[k]) }),
-      });
+      const guess = picked.map((k) => puzzle.pieces[k]);
+      const res = endless
+        ? await fetch("/api/endless/assemble", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: (puzzle as EndlessPuzzle).id, guess }),
+          })
+        : await fetch("/api/assemble/check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date: quiz!.date, no: (puzzle as Puzzle).no, guess }),
+          });
       if (!res.ok) throw new Error("check_failed");
       const data = (await res.json()) as CheckResponse;
       setReveal(data);
-      setMarks((m) => [...m, data.correct]);
-      if (data.correct) sfxStampRight();
-      else sfxStampWrong();
+      if (endless) {
+        setECount((c) => c + 1);
+        if (data.correct) {
+          const nextRun = run + 1;
+          setRun(nextRun);
+          setEBest(bumpEndlessBest("assemble", nextRun));
+          sfxStampRight();
+        } else {
+          setRun(0);
+          sfxStampWrong();
+        }
+      } else {
+        setMarks((m) => [...m, data.correct]);
+        if (data.correct) sfxStampRight();
+        else sfxStampWrong();
+      }
       setPhase("reveal");
     } catch {
       setPhase("error");
@@ -99,7 +160,22 @@ export default function AssemblePage() {
     }
   }
 
-  function next() {
+  async function next() {
+    sfxTap();
+    if (endless) {
+      setBusy(true);
+      try {
+        await fetchEndless();
+        setPicked([]);
+        setReveal(null);
+        setPhase("solve");
+      } catch {
+        setPhase("error");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     if (!quiz) return;
     if (idx + 1 < quiz.items.length) {
       setIdx(idx + 1);
@@ -109,30 +185,19 @@ export default function AssemblePage() {
       return;
     }
     sfxResult();
-    if (!practice) {
-      try {
-        localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
-      } catch {
-        /* 무시 */
-      }
+    try {
+      localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
+    } catch {
+      /* 무시 */
     }
     setPhase("done");
-  }
-
-  function restart() {
-    setPractice(true);
-    setIdx(0);
-    setPicked([]);
-    setReveal(null);
-    setMarks([]);
-    setCopied(false);
-    setPhase("solve");
   }
 
   const success = marks.filter(Boolean).length;
 
   function share() {
     if (!quiz) return;
+    sfxTap();
     const grid = marks.map((m) => (m ? "🟩" : "⬛")).join("");
     const text = `아파트 감별사 #${quiz.episode} 이름 조립 🧩\n${grid} ${success}/3 조립 성공\n${location.origin}`;
     navigator.clipboard?.writeText(text).then(() => setCopied(true));
@@ -164,7 +229,7 @@ export default function AssemblePage() {
       <main className="sheet">
         <header className="sheet-header">
           <Link className="brand" href="/">
-            아파트 감별사<small>이름 조립 신청서</small>
+            아파트 감별사<small>{endless ? "무한 조립 신청서" : "이름 조립 신청서"}</small>
           </Link>
           <div className="head-right">
             {quiz && (
@@ -174,7 +239,7 @@ export default function AssemblePage() {
                 {mm}.{dd}
               </div>
             )}
-            <CloseX inProgress={phase === "solve" || phase === "reveal"} />
+            <CloseX inProgress={!endless && (phase === "solve" || phase === "reveal")} />
           </div>
         </header>
 
@@ -199,12 +264,14 @@ export default function AssemblePage() {
           </section>
         )}
 
-        {(phase === "solve" || phase === "reveal") && quiz && puzzle && (
+        {(phase === "solve" || phase === "reveal") && puzzle && (
           <section className="screen">
             <p className="qlabel mono">
-              {String(idx + 1).padStart(2, "0")} / 03
+              {endless
+                ? `무한 ${eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 ${run} · 최고 ${eBest}`
+                : `${String(idx + 1).padStart(2, "0")} / 03`}
             </p>
-            <div className="hintcard paper-in" key={puzzle.no}>
+            <div className="hintcard paper-in" key={endless ? `e${eCount}` : (puzzle as Puzzle).no}>
               이 단지를 조립하세요: <b>{puzzle.hint.location}</b>
               <br />
               {puzzle.hint.builtYear}년 준공 · {puzzle.hint.households.toLocaleString()}세대
@@ -234,20 +301,33 @@ export default function AssemblePage() {
             </div>
 
             {phase === "reveal" && reveal && (
-              <div className={`verdict ${reveal.correct ? "right" : "wrong"}`}>
-                <span className="mark">{reveal.correct ? "정답" : "오답"}</span>
-                <h3>{reveal.answer}</h3>
-                <p className="meta">
-                  {reveal.meta.location}
-                  <br />
-                  {reveal.meta.builtYear}년 준공 · {reveal.meta.households.toLocaleString()}세대
-                </p>
-              </div>
+              <>
+                <div className={`verdict ${reveal.correct ? "right" : "wrong"}`}>
+                  <span className="mark">{reveal.correct ? "정답" : "오답"}</span>
+                  <h3>{reveal.answer}</h3>
+                  <p className="meta">
+                    {reveal.meta.location}
+                    <br />
+                    {reveal.meta.builtYear}년 준공 · {reveal.meta.households.toLocaleString()}세대
+                  </p>
+                </div>
+                {endless && (
+                  <p className="combo-line">
+                    {reveal.correct ? (
+                      <>
+                        연속 <b>{run}</b>개 조립 중 · 최고 기록 {eBest}
+                      </>
+                    ) : (
+                      <>연속이 끊겼습니다. 최고 기록 {eBest}</>
+                    )}
+                  </p>
+                )}
+              </>
             )}
 
             {phase === "solve" ? (
               <div className="choices">
-                <button className="btn btn-ghost" onClick={() => setPicked([])}>
+                <button className="btn btn-ghost" onClick={() => { sfxTap(); setPicked([]); }}>
                   비우기
                 </button>
                 <button className="btn btn-next" onClick={check} disabled={busy || picked.length !== puzzle.answerLen}>
@@ -256,8 +336,8 @@ export default function AssemblePage() {
               </div>
             ) : (
               <div className="choices">
-                <button className="btn btn-next full" onClick={next}>
-                  {idx + 1 === quiz.items.length ? "결과 보기" : "다음 문제"}
+                <button className="btn btn-next full" onClick={next} disabled={busy}>
+                  {endless ? "다음 퍼즐 계속" : idx + 1 === quiz!.items.length ? "결과 보기" : "다음 문제"}
                 </button>
               </div>
             )}
@@ -266,21 +346,29 @@ export default function AssemblePage() {
 
         {phase === "done" && quiz && (
           <section className="screen result">
-            <p className="score-label mono">{practice ? "연습 조립 결과 — 기록 미반영" : "이름 조립 결과"}</p>
+            <p className="score-label mono">이름 조립 결과</p>
             <p className="big">{success} / 3</p>
+            <div className="grid-line" role="img" aria-label={`3문제 중 ${success}문제 조립 성공`}>
+              {marks.map((m, k) => (
+                <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
+                  <GridTile ok={m} />
+                </span>
+              ))}
+            </div>
             <p className="grade-desc">
               {success === 3
                 ? "설계도 없이도 조립하는 수준. 완벽합니다."
                 : success >= 1
-                  ? "감은 잡혔습니다. 내일 새 문제로 다시 오세요."
-                  : "함정 조각에 전부 속았습니다. 내일 설욕전을."}
+                  ? "감은 잡혔습니다. 무한 조립으로 더 쌓아 보세요."
+                  : "함정 조각에 전부 속았습니다. 무한 조립으로 설욕을."}
             </p>
+            <p className="top-note">무한 조립 최고 연속 {eBest}</p>
             <div className="result-actions">
-              <button className="btn btn-next" onClick={share}>
-                {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "결과 복사해서 자랑하기"}
+              <button className="btn btn-next" onClick={startEndless} disabled={busy}>
+                무한 조립 시작 — 랜덤 새 퍼즐
               </button>
-              <button className="btn btn-ghost" onClick={restart}>
-                다시 조립하기 (연습 · 기록 미반영)
+              <button className="btn btn-ghost" onClick={share}>
+                {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "결과 복사해서 자랑하기"}
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
@@ -291,8 +379,8 @@ export default function AssemblePage() {
 
         <footer className="sheet-footer">
           <SoundToggle />
-          <span>조각을 순서대로 눌러 이름을 완성하세요</span>
-          <span className="mono">내일 00:00 새 문제</span>
+          <span>{endless ? "틀려도 계속됩니다. 연속 기록에 도전하세요." : "조각을 순서대로 눌러 이름을 완성하세요"}</span>
+          <span className="mono">{endless ? "무한 조립 중" : "내일 00:00 새 문제"}</span>
         </footer>
       </main>
     </div>

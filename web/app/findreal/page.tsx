@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { GridTile } from "@/components/GridTile";
+import { CloseX } from "@/components/CloseX";
+import { SoundToggle } from "@/components/SoundToggle";
 import { applyComboPick, comboState } from "@/lib/local";
 import { sfxCombo, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
-import { SoundToggle } from "@/components/SoundToggle";
-import { CloseX } from "@/components/CloseX";
 
 interface Round {
   no: number;
@@ -38,7 +39,11 @@ export default function FindRealPage() {
   const [combo, setCombo] = useState({ current: 0, best: 0 });
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [practice, setPractice] = useState(false);
+
+  // 무한 라운드 (데일리 3라운드 후에도 콤보는 계속 이어진다)
+  const [endless, setEndless] = useState(false);
+  const [eOptions, setEOptions] = useState<string[] | null>(null);
+  const [eCount, setECount] = useState(0);
 
   useEffect(() => {
     setCombo(comboState());
@@ -64,30 +69,61 @@ export default function FindRealPage() {
       .catch(() => setPhase("error"));
   }, []);
 
-  const round = quiz?.items[idx];
+  const options = endless ? eOptions : quiz?.items[idx]?.options;
+  const roundNo = endless ? null : quiz?.items[idx]?.no;
+
+  async function fetchEndless() {
+    const res = await fetch("/api/endless/find");
+    if (!res.ok) throw new Error("endless_failed");
+    const data = (await res.json()) as { options: string[] };
+    setEOptions(data.options);
+  }
+
+  async function startEndless() {
+    sfxTap();
+    setBusy(true);
+    try {
+      await fetchEndless();
+      setEndless(true);
+      setECount(0);
+      setPicked(null);
+      setReveal(null);
+      setPhase("solve");
+    } catch {
+      setPhase("error");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function pick(option: string) {
-    if (!quiz || !round || busy || phase !== "solve") return;
+    if (!options || busy || phase !== "solve") return;
     setBusy(true);
     sfxTap();
     try {
-      const res = await fetch("/api/findreal/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: quiz.date, no: round.no, pick: option }),
-      });
+      const res = endless
+        ? await fetch("/api/endless/find", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ options, pick: option }),
+          })
+        : await fetch("/api/findreal/check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date: quiz!.date, no: roundNo, pick: option }),
+          });
       if (!res.ok) throw new Error("check_failed");
       const data = (await res.json()) as CheckResponse;
       setPicked(option);
       setReveal(data);
-      setMarks((m) => [...m, data.correct]);
+      if (!endless) setMarks((m) => [...m, data.correct]);
+      else setECount((c) => c + 1);
       if (data.correct) sfxStampRight();
       else sfxStampWrong();
-      if (!practice) {
-        const next = applyComboPick(data.correct); // 연습은 콤보에 반영 안 함
-        setCombo(next);
-        if (next.current >= 2) sfxCombo();
-      }
+      // 콤보는 데일리·무한 공통 기록 — 어디서든 이어지고 어디서든 끊긴다
+      const next = applyComboPick(data.correct);
+      setCombo(next);
+      if (next.current >= 2) sfxCombo();
       setPhase("reveal");
     } catch {
       setPhase("error");
@@ -96,7 +132,22 @@ export default function FindRealPage() {
     }
   }
 
-  function next() {
+  async function next() {
+    sfxTap();
+    if (endless) {
+      setBusy(true);
+      try {
+        await fetchEndless();
+        setPicked(null);
+        setReveal(null);
+        setPhase("solve");
+      } catch {
+        setPhase("error");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     if (!quiz) return;
     if (idx + 1 < quiz.items.length) {
       setIdx(idx + 1);
@@ -106,30 +157,19 @@ export default function FindRealPage() {
       return;
     }
     sfxResult();
-    if (!practice) {
-      try {
-        localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
-      } catch {
-        /* 무시 */
-      }
+    try {
+      localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
+    } catch {
+      /* 무시 */
     }
     setPhase("done");
-  }
-
-  function restart() {
-    setPractice(true);
-    setIdx(0);
-    setPicked(null);
-    setReveal(null);
-    setMarks([]);
-    setCopied(false);
-    setPhase("solve");
   }
 
   const hits = marks.filter(Boolean).length;
 
   function share() {
     if (!quiz) return;
+    sfxTap();
     const grid = marks.map((m) => (m ? "🟩" : "⬛")).join("");
     const comboLine = combo.current > 0 ? ` · 연속 ${combo.current}개 적중 중` : "";
     const text = `아파트 감별사 #${quiz.episode} 진짜 찾기 🎯\n${grid} ${hits}/3 적중${comboLine} (최고 ${combo.best})\n${location.origin}`;
@@ -164,7 +204,7 @@ export default function FindRealPage() {
       <main className="sheet">
         <header className="sheet-header">
           <Link className="brand" href="/">
-            아파트 감별사<small>진짜 찾기 감정서</small>
+            아파트 감별사<small>{endless ? "무한 찾기 감정서" : "진짜 찾기 감정서"}</small>
           </Link>
           <div className="head-right">
             {quiz && (
@@ -174,7 +214,7 @@ export default function FindRealPage() {
                 {mm}.{dd}
               </div>
             )}
-            <CloseX inProgress={phase === "solve" || phase === "reveal"} />
+            <CloseX inProgress={!endless && (phase === "solve" || phase === "reveal")} />
           </div>
         </header>
 
@@ -199,20 +239,21 @@ export default function FindRealPage() {
           </section>
         )}
 
-        {(phase === "solve" || phase === "reveal") && quiz && round && (
+        {(phase === "solve" || phase === "reveal") && options && (
           <section className="screen">
             <p className="qlabel mono">
-              {String(idx + 1).padStart(2, "0")} / 03
+              {endless
+                ? `무한 ${eCount + (phase === "solve" ? 1 : 0)}라운드 · 연속 ${combo.current} · 최고 ${combo.best}`
+                : `${String(idx + 1).padStart(2, "0")} / 03`}
             </p>
             <p className="pick-tip">
               이 중 <b>진짜는 하나</b>. 나머지 셋은 AI가 지은 이름입니다.
             </p>
 
-            <div className="pick-list paper-in" key={round.no}>
-              {round.options.map((option) => {
+            <div className="pick-list paper-in" key={endless ? `e${eCount}` : `d${idx}`}>
+              {options.map((option) => {
                 const isAnswer = reveal?.answer === option;
-                const cls =
-                  phase === "reveal" ? `pick ${isAnswer ? "hit" : "miss"}` : "pick";
+                const cls = phase === "reveal" ? `pick ${isAnswer ? "hit" : "miss"}` : "pick";
                 return (
                   <button
                     key={option}
@@ -239,9 +280,7 @@ export default function FindRealPage() {
                   </p>
                 </div>
                 <p className="combo-line">
-                  {practice ? (
-                    <>연습 라운드 — 콤보에 반영되지 않습니다</>
-                  ) : reveal.correct ? (
+                  {reveal.correct ? (
                     <>
                       연속 <b>{combo.current}</b>개 적중 중{combo.current >= combo.best && combo.best > 1 ? " · 최고 기록" : ""}
                     </>
@@ -250,8 +289,8 @@ export default function FindRealPage() {
                   )}
                 </p>
                 <div className="choices">
-                  <button className="btn btn-next full" onClick={next}>
-                    {idx + 1 === quiz.items.length ? "결과 보기" : "다음 라운드"}
+                  <button className="btn btn-next full" onClick={next} disabled={busy}>
+                    {endless ? "다음 라운드 계속" : idx + 1 === quiz!.items.length ? "결과 보기" : "다음 라운드"}
                   </button>
                 </div>
               </>
@@ -261,21 +300,28 @@ export default function FindRealPage() {
 
         {phase === "done" && quiz && (
           <section className="screen result">
-            <p className="score-label mono">{practice ? "연습 감정 결과 — 기록 미반영" : "진짜 찾기 감정 결과"}</p>
+            <p className="score-label mono">진짜 찾기 감정 결과</p>
             <p className="big">{hits} / 3</p>
+            <div className="grid-line" role="img" aria-label={`3라운드 중 ${hits}라운드 적중`}>
+              {marks.map((m, k) => (
+                <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
+                  <GridTile ok={m} />
+                </span>
+              ))}
+            </div>
             <p className="grade-desc">
               {combo.current > 0
-                ? `연속 ${combo.current}개 적중 중 · 최고 기록 ${combo.best}. 내일 이어집니다.`
+                ? `연속 ${combo.current}개 적중 중 · 최고 기록 ${combo.best}. 무한 라운드에서 이어가세요.`
                 : combo.best > 0
-                  ? `최고 기록 ${combo.best}. 내일 새 라운드로 다시 쌓으세요.`
-                  : "내일 새 라운드에서 첫 콤보를 시작하세요."}
+                  ? `최고 기록 ${combo.best}. 무한 라운드에서 다시 쌓으세요.`
+                  : "무한 라운드에서 첫 콤보를 시작하세요."}
             </p>
             <div className="result-actions">
-              <button className="btn btn-next" onClick={share}>
-                {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "결과 복사해서 자랑하기"}
+              <button className="btn btn-next" onClick={startEndless} disabled={busy}>
+                무한으로 계속 찾기 — 콤보 이어가기
               </button>
-              <button className="btn btn-ghost" onClick={restart}>
-                다시 찾기 (연습 · 콤보 미반영)
+              <button className="btn btn-ghost" onClick={share}>
+                {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "결과 복사해서 자랑하기"}
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
@@ -286,8 +332,8 @@ export default function FindRealPage() {
 
         <footer className="sheet-footer">
           <SoundToggle />
-          <span>진짜 하나를 골라 누르세요</span>
-          <span className="mono">내일 00:00 새 라운드</span>
+          <span>{endless ? "오판하면 콤보가 끊깁니다. 신중하게." : "진짜 하나를 골라 누르세요"}</span>
+          <span className="mono">{endless ? "무한 감정 중" : "내일 00:00 새 라운드"}</span>
         </footer>
       </main>
     </div>

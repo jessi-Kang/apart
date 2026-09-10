@@ -98,6 +98,25 @@ export function applyComboPick(correct: boolean): ComboState {
   return next;
 }
 
+/** 무한 모드 최고 연속 기록 (모드별) */
+export function endlessBest(mode: "ox" | "assemble"): number {
+  try {
+    return Number(localStorage.getItem(`aptgam:endless:${mode}`) ?? 0) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function bumpEndlessBest(mode: "ox" | "assemble", streak: number): number {
+  const best = Math.max(endlessBest(mode), streak);
+  try {
+    localStorage.setItem(`aptgam:endless:${mode}`, String(best));
+  } catch {
+    /* 무시 */
+  }
+  return best;
+}
+
 /** 홈 표시용: 오늘 기준 유효한 스트릭 (오늘 또는 어제 완주 기록만 인정) */
 export function currentStreak(date: string): { count: number; playedToday: boolean } {
   try {
