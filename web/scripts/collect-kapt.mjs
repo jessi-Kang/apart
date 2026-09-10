@@ -71,9 +71,11 @@ function normalizeName(raw) {
     .trim();
 }
 
-/** 차수 표기 제거한 대표 키 ("래미안OO 1차" → "래미안OO") */
+/** 차수 표기 제거한 대표 키 ("래미안OO 1차" → "래미안OO").
+ * 검증기(validate-pool)의 중복 판정과 같게 공백을 전부 제거해 비교한다 —
+ * "청광플러스원아파트"와 "청광플러스원 아파트"는 같은 단지다. */
 function familyKey(name) {
-  return name.replace(/\s*\d+(차|단지)$/g, "").trim();
+  return name.replace(/\s*\d+(차|단지)$/g, "").replace(/\s+/g, "").toLowerCase();
 }
 
 function difficultyOf(name) {
@@ -139,7 +141,8 @@ for (const sido of SIDO_CODES) {
     if (calls >= LIMIT) break;
     scanned++;
     const name = normalizeName(String(row.kaptName ?? ""));
-    if (!name || seen.has(familyKey(name)) || doneCodes.has(String(row.kaptCode))) continue;
+    // 20자 초과는 카드 UI가 깨지고 검증기 형식 규칙에도 걸린다 — 풀에서 제외
+    if (!name || name.length > 20 || seen.has(familyKey(name)) || doneCodes.has(String(row.kaptCode))) continue;
     calls++;
     let info;
     try {
