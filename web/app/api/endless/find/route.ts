@@ -1,0 +1,21 @@
+import { NextResponse } from "next/server";
+import { randomFind, judgeFind } from "@/lib/endless";
+
+export const dynamic = "force-dynamic";
+
+/** 무한 진짜 찾기: GET = 랜덤 4지선다, POST = 판정 */
+export function GET() {
+  return NextResponse.json(randomFind());
+}
+
+export async function POST(req: Request) {
+  let body: { options?: unknown; pick?: unknown };
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+  const result = judgeFind(body.options, body.pick);
+  if (!result) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  return NextResponse.json(result);
+}

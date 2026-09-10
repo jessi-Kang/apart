@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { Stamp } from "@/components/Stamp";
+import { CloseX } from "@/components/CloseX";
+import { SoundToggle } from "@/components/SoundToggle";
 import { gradeFor } from "@/lib/grades";
-import { bumpStreak, comboState, loadResult, saveResult, type ReviewItem, type SavedResult } from "@/lib/local";
+import { bumpStreak, bumpEndlessBest, comboState, endlessBest, loadResult, saveResult, type ReviewItem, type SavedResult } from "@/lib/local";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
-import { SoundToggle } from "@/components/SoundToggle";
-import { CloseX } from "@/components/CloseX";
 
 interface TodayResponse {
   date: string;
@@ -22,8 +22,8 @@ interface AnswerResponse {
   kind: "real" | "fake";
   meta?: { location: string; builtYear: number; households: number };
   hint?: string;
-  rate: number | null;
-  sample: number;
+  rate?: number | null;
+  sample?: number;
 }
 
 type Phase = "loading" | "question" | "reveal" | "result" | "error";
@@ -39,9 +39,16 @@ export default function PlayPage() {
   const [streak, setStreak] = useState(0);
   const [busy, setBusy] = useState(false);
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
-  const [practice, setPractice] = useState(false);
+
+  // 무한 감별 (데일리 완주 후 랜덤 새 문제 연속 — 집계 미반영)
+  const [endless, setEndless] = useState(false);
+  const [eq, setEq] = useState<string | null>(null);
+  const [run, setRun] = useState(0); // 현재 연속 정답
+  const [eCount, setECount] = useState(0); // 이번 세션에서 푼 문제 수
+  const [eBest, setEBest] = useState(0);
 
   useEffect(() => {
+    setEBest(endlessBest("ox"));
     fetch("/api/quiz/today")
       .then((r) => r.json())
       .then((data: TodayResponse) => {
@@ -64,16 +71,64 @@ export default function PlayPage() {
     setPhase("result");
   }
 
+  async function fetchEndless() {
+    const res = await fetch("/api/endless/ox");
+    if (!res.ok) throw new Error("endless_failed");
+    const data = (await res.json()) as { name: string };
+    setEq(data.name);
+  }
+
+  async function startEndless() {
+    sfxTap();
+    setBusy(true);
+    try {
+      await fetchEndless();
+      setEndless(true);
+      setRun(0);
+      setECount(0);
+      setReveal(null);
+      setPhase("question");
+    } catch {
+      setPhase("error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function answer(choice: "real" | "fake") {
-    if (!quiz || busy) return;
+    if (busy || phase !== "question") return;
     setBusy(true);
     sfxTap();
     try {
+      if (endless) {
+        if (!eq) throw new Error("no_question");
+        const res = await fetch("/api/endless/ox", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: eq, choice }),
+        });
+        if (!res.ok) throw new Error("answer_failed");
+        const data = (await res.json()) as AnswerResponse;
+        setReveal(data);
+        setECount((c) => c + 1);
+        if (data.correct) {
+          const nextRun = run + 1;
+          setRun(nextRun);
+          setEBest(bumpEndlessBest("ox", nextRun));
+          sfxStampRight();
+        } else {
+          setRun(0);
+          sfxStampWrong();
+        }
+        setPhase("reveal");
+        return;
+      }
+      if (!quiz) return;
       const item = quiz.items[idx];
       const res = await fetch("/api/quiz/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: quiz.date, no: item.no, choice, practice }),
+        body: JSON.stringify({ date: quiz.date, no: item.no, choice }),
       });
       if (!res.ok) throw new Error("answer_failed");
       const data = (await res.json()) as AnswerResponse;
@@ -91,6 +146,20 @@ export default function PlayPage() {
   }
 
   async function next() {
+    sfxTap();
+    if (endless) {
+      setBusy(true);
+      try {
+        await fetchEndless();
+        setReveal(null);
+        setPhase("question");
+      } catch {
+        setPhase("error");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     if (!quiz) return;
     if (idx + 1 < quiz.items.length) {
       setIdx(idx + 1);
@@ -98,12 +167,8 @@ export default function PlayPage() {
       setPhase("question");
       return;
     }
-    // 완주 처리 (연습 재도전은 기록·집계에 넣지 않는다)
+    // 완주 처리
     sfxResult();
-    if (practice) {
-      setPhase("result");
-      return;
-    }
     const score = marks.filter(Boolean).length;
     saveResult({ date: quiz.date, marks, review });
     setStreak(bumpStreak(quiz.date));
@@ -126,18 +191,9 @@ export default function PlayPage() {
   const score = marks.filter(Boolean).length;
   const grade = useMemo(() => gradeFor(score), [score]);
 
-  function restart() {
-    setPractice(true);
-    setIdx(0);
-    setMarks([]);
-    setReview([]);
-    setReveal(null);
-    setImgState("idle");
-    setPhase("question");
-  }
-
   async function shareImage() {
     if (!quiz || imgState === "busy") return;
+    sfxTap();
     setImgState("busy");
     try {
       const result = await shareCardImage({
@@ -158,6 +214,7 @@ export default function PlayPage() {
 
   const ep = quiz?.episode ?? "";
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
+  const currentName = endless ? eq : quiz?.items[idx]?.name;
 
   return (
     <div className="frame">
@@ -182,7 +239,7 @@ export default function PlayPage() {
       <main className="sheet">
         <header className="sheet-header">
           <Link className="brand" href="/">
-            아파트 감별사<small>진짜 단지명 판별 접수증</small>
+            아파트 감별사<small>{endless ? "무한 감별 접수증" : "진짜 단지명 판별 접수증"}</small>
           </Link>
           <div className="head-right">
             {quiz && (
@@ -192,7 +249,7 @@ export default function PlayPage() {
                 {mm}.{dd}
               </div>
             )}
-            <CloseX inProgress={(phase === "question" || phase === "reveal") && marks.length < 10} />
+            <CloseX inProgress={!endless && (phase === "question" || phase === "reveal") && marks.length < 10} />
           </div>
         </header>
 
@@ -217,18 +274,26 @@ export default function PlayPage() {
           </section>
         )}
 
-        {(phase === "question" || phase === "reveal") && quiz && (
+        {(phase === "question" || phase === "reveal") && currentName && (
           <section className="screen">
-            <div className="progress" aria-hidden="true">
-              {quiz.items.map((_, k) => (
-                <i key={k} className={k < idx ? "done" : k === idx ? "now" : ""} />
-              ))}
-            </div>
-            <p className="qlabel mono">
-              {String(idx + 1).padStart(2, "0")} / 10
-            </p>
-            <div className="qname-wrap paper-in" key={idx}>
-              <h2 className="qname">{quiz.items[idx].name}</h2>
+            {endless ? (
+              <p className="qlabel mono">
+                무한 {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 {run} · 최고 {eBest}
+              </p>
+            ) : (
+              <>
+                <div className="progress" aria-hidden="true">
+                  {quiz!.items.map((_, k) => (
+                    <i key={k} className={k < idx ? "done" : k === idx ? "now" : ""} />
+                  ))}
+                </div>
+                <p className="qlabel mono">
+                  {String(idx + 1).padStart(2, "0")} / 10
+                </p>
+              </>
+            )}
+            <div className="qname-wrap paper-in" key={`${endless ? "e" : "d"}-${endless ? eCount : idx}`}>
+              <h2 className="qname">{currentName}</h2>
             </div>
 
             {phase === "reveal" && reveal && (
@@ -247,9 +312,13 @@ export default function PlayPage() {
                   )}
                 </p>
                 <p className="rate">
-                  {reveal.rate !== null
-                    ? `이 문제, 지금까지 ${reveal.rate}%가 맞혔습니다`
-                    : "전국 정답률 집계 중"}
+                  {endless
+                    ? reveal.correct
+                      ? `연속 ${run}문제 적중 중 · 최고 기록 ${eBest}`
+                      : `연속이 끊겼습니다. 최고 기록 ${eBest}`
+                    : reveal.rate != null
+                      ? `이 문제, 지금까지 ${reveal.rate}%가 맞혔습니다`
+                      : "전국 정답률 집계 중"}
                 </p>
               </div>
             )}
@@ -265,8 +334,8 @@ export default function PlayPage() {
               </div>
             ) : (
               <div className="choices">
-                <button className="btn btn-next full" onClick={next}>
-                  {idx + 1 === quiz.items.length ? "감별 등급 확인" : "다음 문제"}
+                <button className="btn btn-next full" onClick={next} disabled={busy}>
+                  {endless ? "다음 문제 계속" : idx + 1 === quiz!.items.length ? "감별 등급 확인" : "다음 문제"}
                 </button>
               </div>
             )}
@@ -275,7 +344,7 @@ export default function PlayPage() {
 
         {phase === "result" && quiz && (
           <section className="screen result">
-            <p className="score-label mono">{practice ? "연습 감별 결과 — 기록·집계 미반영" : "감별 결과"}</p>
+            <p className="score-label mono">감별 결과</p>
             <p className="big">{score} / 10</p>
             <Stamp>{grade.name}</Stamp>
             <p className="grade-desc">{grade.desc}</p>
@@ -292,7 +361,8 @@ export default function PlayPage() {
                   오늘 전국 상위 <b>{topPct}%</b> ·{" "}
                 </>
               )}
-              {streak > 0 && <>{streak}일 연속 감별 중</>}
+              {streak > 0 && <>{streak}일 연속 감별 중 · </>}
+              무한 감별 최고 연속 {eBest}
             </p>
             <ul className="review">
               {review.map((r) => (
@@ -314,8 +384,8 @@ export default function PlayPage() {
                         ? "발급 실패. 다시 시도해 주세요"
                         : "결과 통지서 이미지로 자랑하기"}
               </button>
-              <button className="btn btn-ghost" onClick={restart}>
-                다시 감별하기 (연습 · 기록 미반영)
+              <button className="btn btn-next" onClick={startEndless} disabled={busy}>
+                무한 감별 시작 — 랜덤 새 문제
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
@@ -326,8 +396,8 @@ export default function PlayPage() {
 
         <footer className="sheet-footer">
           <SoundToggle />
-          <span>이름만 보고 판단합니다. 검색은 반칙.</span>
-          <span className="mono">내일 00:00 새 문제</span>
+          <span>{endless ? "틀려도 계속됩니다. 연속 기록에 도전하세요." : "이름만 보고 판단합니다. 검색은 반칙."}</span>
+          <span className="mono">{endless ? "무한 감별 중" : "내일 00:00 새 문제"}</span>
         </footer>
       </main>
     </div>
