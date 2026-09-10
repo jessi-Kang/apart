@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "validate-pool": "node scripts/validate-pool.mjs",
+    "collect-kapt": "node scripts/collect-kapt.mjs"
   },
   "dependencies": {
     "next": "^15.1.6",

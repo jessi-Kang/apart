@@ -30,10 +30,17 @@ function load(): Store {
 }
 
 function persist(store: Store) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  const tmp = FILE + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(store));
-  fs.renameSync(tmp, FILE);
+  // 서버리스(읽기 전용 FS)에서는 파일 쓰기가 실패한다. 그 경우 메모리 캐시로만
+  // 동작한다(인스턴스 생존 동안 유효). 집계가 유실될 수 있지만 게임 진행을
+  // 막지 않는 것이 우선 — 영속 스토어는 M2에서 Postgres로 교체 예정.
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const tmp = FILE + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(store));
+    fs.renameSync(tmp, FILE);
+  } catch {
+    /* 메모리 폴백 */
+  }
 }
 
 function dayOf(store: Store, date: string): DayStats {
