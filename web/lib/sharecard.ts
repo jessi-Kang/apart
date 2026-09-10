@@ -138,6 +138,25 @@ function drawTile(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   ctx.restore();
 }
 
+/** 도장 테두리용 거친 사각 경로: 변을 잘게 쪼개고 지터를 준다
+ * (웹의 feTurbulence 질감을 캔버스에서 재현 — 결과 화면 Stamp와 같은 인상) */
+function roughRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, jitter: number) {
+  const seg = 14; // 지터 점 간격(px)
+  ctx.beginPath();
+  const pts: [number, number][] = [];
+  for (let t = 0; t < w; t += seg) pts.push([x + t, y]);
+  for (let t = 0; t < h; t += seg) pts.push([x + w, y + t]);
+  for (let t = 0; t < w; t += seg) pts.push([x + w - t, y + h]);
+  for (let t = 0; t < h; t += seg) pts.push([x, y + h - t]);
+  pts.forEach(([px, py], i) => {
+    const jx = px + (Math.random() * 2 - 1) * jitter;
+    const jy = py + (Math.random() * 2 - 1) * jitter;
+    if (i === 0) ctx.moveTo(jx, jy);
+    else ctx.lineTo(jx, jy);
+  });
+  ctx.closePath();
+}
+
 /** 등급 도장: Stamp 컴포넌트의 거친 이중 테두리 사각 */
 function drawGradeStamp(ctx: CanvasRenderingContext2D, cx: number, cy: number, text: string) {
   ctx.save();
@@ -148,17 +167,14 @@ function drawGradeStamp(ctx: CanvasRenderingContext2D, cx: number, cy: number, t
   const w = tw + 96;
   const h = 118;
   ctx.strokeStyle = STAMP;
+  ctx.lineJoin = "round";
   ctx.lineWidth = 7;
-  ctx.beginPath();
-  ctx.roundRect(-w / 2, -h / 2, w, h, 6);
+  roughRectPath(ctx, -w / 2, -h / 2, w, h, 2.6);
   ctx.stroke();
-  // 인주 얼룩 느낌: 살짝 어긋난 얇은 보조 테두리
-  ctx.globalAlpha = 0.35;
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.roundRect(-w / 2 + 5, -h / 2 + 5, w - 10, h - 10, 4);
+  // 안쪽 보조 테두리도 거칠게 — 인주가 이중으로 눌린 자국
+  ctx.lineWidth = 3;
+  roughRectPath(ctx, -w / 2 + 10, -h / 2 + 10, w - 20, h - 20, 2.2);
   ctx.stroke();
-  ctx.globalAlpha = 1;
   ctx.fillStyle = STAMP;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
