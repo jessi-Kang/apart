@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { CloseX } from "@/components/CloseX";
 import { SoundToggle } from "@/components/SoundToggle";
-import { bumpEndlessBest, endlessBest } from "@/lib/local";
+import { TimerBar } from "@/components/TimerBar";
+import { bumpEndlessRecord, endlessRecord, type EndlessRecord } from "@/lib/local";
 import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
 interface Puzzle {
@@ -37,6 +38,10 @@ interface CheckResponse {
 type Phase = "loading" | "solve" | "reveal" | "done" | "error";
 
 const RESULT_KEY = "aptgam:assemble";
+const TIME_LIMIT = 40; // 초 — 조각을 읽고 조립할 시간이 필요하다
+
+const fmtSec = (ms: number | null | undefined) =>
+  ms == null ? null : `${(ms / 1000).toFixed(1)}초`;
 
 export default function AssemblePage() {
   const [quiz, setQuiz] = useState<TodayResponse | null>(null);
@@ -44,19 +49,22 @@ export default function AssemblePage() {
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number[]>([]);
   const [reveal, setReveal] = useState<CheckResponse | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
   const [marks, setMarks] = useState<boolean[]>([]);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // 무한 조립 (데일리 3문제 후 랜덤 새 퍼즐 연속)
+  // 무한 조립
   const [endless, setEndless] = useState(false);
   const [epz, setEpz] = useState<EndlessPuzzle | null>(null);
   const [run, setRun] = useState(0);
   const [eCount, setECount] = useState(0);
-  const [eBest, setEBest] = useState(0);
+  const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
+  const runTimes = useRef<number[]>([]);
+  const qStart = useRef(0);
 
   useEffect(() => {
-    setEBest(endlessBest("assemble"));
+    setERec(endlessRecord("assemble"));
     fetch("/api/assemble/today")
       .then((r) => r.json())
       .then((data: TodayResponse) => {
@@ -79,6 +87,10 @@ export default function AssemblePage() {
       .catch(() => setPhase("error"));
   }, []);
 
+  useEffect(() => {
+    if (phase === "solve") qStart.current = Date.now();
+  }, [phase, idx, eCount]);
+
   const puzzle: Puzzle | EndlessPuzzle | undefined = endless ? (epz ?? undefined) : quiz?.items[idx];
 
   async function fetchEndless() {
@@ -95,6 +107,7 @@ export default function AssemblePage() {
       setEndless(true);
       setRun(0);
       setECount(0);
+      runTimes.current = [];
       setPicked([]);
       setReveal(null);
       setPhase("solve");
@@ -116,10 +129,16 @@ export default function AssemblePage() {
     setPicked((p) => p.filter((_, i) => i !== slot));
   }
 
-  async function check() {
-    if (!puzzle || busy || picked.length !== puzzle.answerLen) return;
+  const runAvgMs = () =>
+    runTimes.current.length ? Math.round(runTimes.current.reduce((a, b) => a + b, 0) / runTimes.current.length) : null;
+
+  /** fromTimeout=true면 미완성 조립이라도 그대로 제출한다 (시간 초과) */
+  async function check(fromTimeout = false) {
+    if (!puzzle || busy || phase !== "solve") return;
+    if (!fromTimeout && picked.length !== puzzle.answerLen) return;
     setBusy(true);
-    sfxTap();
+    if (!fromTimeout) sfxTap();
+    const dt = Date.now() - qStart.current;
     try {
       const guess = picked.map((k) => puzzle.pieces[k]);
       const res = endless
@@ -136,14 +155,17 @@ export default function AssemblePage() {
       if (!res.ok) throw new Error("check_failed");
       const data = (await res.json()) as CheckResponse;
       setReveal(data);
+      setTimedOut(fromTimeout && !data.correct);
       if (endless) {
         setECount((c) => c + 1);
         if (data.correct) {
+          runTimes.current.push(dt);
           const nextRun = run + 1;
           setRun(nextRun);
-          setEBest(bumpEndlessBest("assemble", nextRun));
+          setERec(bumpEndlessRecord("assemble", nextRun, runAvgMs()));
           sfxStampRight();
         } else {
+          runTimes.current = [];
           setRun(0);
           sfxStampWrong();
         }
@@ -194,12 +216,13 @@ export default function AssemblePage() {
   }
 
   const success = marks.filter(Boolean).length;
+  const total = quiz?.items.length ?? 10;
 
   function share() {
     if (!quiz) return;
     sfxTap();
     const grid = marks.map((m) => (m ? "🟩" : "⬛")).join("");
-    const text = `아파트 감별사 #${quiz.episode} 이름 조립 🧩\n${grid} ${success}/3 조립 성공\n${location.origin}`;
+    const text = `아파트 감별사 #${quiz.episode} 이름 조립 🧩\n${grid} ${success}/${total} 조립 성공\n${location.origin}`;
     navigator.clipboard?.writeText(text).then(() => setCopied(true));
   }
 
@@ -222,25 +245,20 @@ export default function AssemblePage() {
         <p className="note">
           조각에는 함정이 섞여 있습니다.
           <br />
-          매일 자정에 새 3문제가 나옵니다.
+          매일 자정에 새 10문제가 나옵니다.
         </p>
       </aside>
 
       <main className="sheet">
         <header className="sheet-header">
           <Link className="brand" href="/">
-            아파트 감별사<small>{endless ? "무한 조립 신청서" : "이름 조립 신청서"}</small>
+            아파트 감별사
+            <small>
+              {endless ? "무한 조립 신청서" : "이름 조립 신청서"}
+              {quiz && ` · 제${ep}호 ${mm}.${dd}`}
+            </small>
           </Link>
-          <div className="head-right">
-            {quiz && (
-              <div className="issue mono">
-                #{ep}
-                <br />
-                {mm}.{dd}
-              </div>
-            )}
-            <CloseX inProgress={!endless && (phase === "solve" || phase === "reveal")} />
-          </div>
+          <CloseX inProgress={!endless && (phase === "solve" || phase === "reveal")} />
         </header>
 
         {phase === "loading" && (
@@ -268,14 +286,21 @@ export default function AssemblePage() {
           <section className="screen">
             <p className="qlabel mono">
               {endless
-                ? `무한 ${eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 ${run} · 최고 ${eBest}`
-                : `${String(idx + 1).padStart(2, "0")} / 03`}
+                ? `무한 ${eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 ${run} · 최고 ${eRec.best}`
+                : `${String(idx + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`}
             </p>
             <div className="hintcard paper-in" key={endless ? `e${eCount}` : (puzzle as Puzzle).no}>
               이 단지를 조립하세요: <b>{puzzle.hint.location}</b>
               <br />
               {puzzle.hint.builtYear}년 준공 · {puzzle.hint.households.toLocaleString()}세대
             </div>
+
+            <TimerBar
+              seconds={TIME_LIMIT}
+              active={phase === "solve"}
+              resetKey={endless ? `e${eCount}` : idx}
+              onExpire={() => check(true)}
+            />
 
             <div className="slots">
               {Array.from({ length: puzzle.answerLen }, (_, k) => {
@@ -303,7 +328,7 @@ export default function AssemblePage() {
             {phase === "reveal" && reveal && (
               <>
                 <div className={`verdict ${reveal.correct ? "right" : "wrong"}`}>
-                  <span className="mark">{reveal.correct ? "정답" : "오답"}</span>
+                  <span className="mark">{timedOut ? "시간 초과" : reveal.correct ? "정답" : "오답"}</span>
                   <h3>{reveal.answer}</h3>
                   <p className="meta">
                     {reveal.meta.location}
@@ -315,10 +340,14 @@ export default function AssemblePage() {
                   <p className="combo-line">
                     {reveal.correct ? (
                       <>
-                        연속 <b>{run}</b>개 조립 중 · 최고 기록 {eBest}
+                        연속 <b>{run}</b>개 · 평균 {fmtSec(runAvgMs()) ?? "-"} · 최고 {eRec.best}
+                        {fmtSec(eRec.avgMs) ? ` (${fmtSec(eRec.avgMs)})` : ""}
                       </>
                     ) : (
-                      <>연속이 끊겼습니다. 최고 기록 {eBest}</>
+                      <>
+                        연속이 끊겼습니다 · 최고 {eRec.best}
+                        {fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}
+                      </>
                     )}
                   </p>
                 )}
@@ -330,14 +359,14 @@ export default function AssemblePage() {
                 <button className="btn btn-ghost" onClick={() => { sfxTap(); setPicked([]); }}>
                   비우기
                 </button>
-                <button className="btn btn-next" onClick={check} disabled={busy || picked.length !== puzzle.answerLen}>
+                <button className="btn btn-next" onClick={() => check()} disabled={busy || picked.length !== puzzle.answerLen}>
                   확인
                 </button>
               </div>
             ) : (
               <div className="choices">
                 <button className="btn btn-next full" onClick={next} disabled={busy}>
-                  {endless ? "다음 퍼즐 계속" : idx + 1 === quiz!.items.length ? "결과 보기" : "다음 문제"}
+                  {endless ? "다음 퍼즐 계속" : idx + 1 === total ? "결과 보기" : "다음 문제"}
                 </button>
               </div>
             )}
@@ -347,8 +376,10 @@ export default function AssemblePage() {
         {phase === "done" && quiz && (
           <section className="screen result">
             <p className="score-label mono">이름 조립 결과</p>
-            <p className="big">{success} / 3</p>
-            <div className="grid-line" role="img" aria-label={`3문제 중 ${success}문제 조립 성공`}>
+            <p className="big">
+              {success} / {total}
+            </p>
+            <div className="grid-line" role="img" aria-label={`${total}문제 중 ${success}문제 조립 성공`}>
               {marks.map((m, k) => (
                 <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
                   <GridTile ok={m} />
@@ -356,13 +387,18 @@ export default function AssemblePage() {
               ))}
             </div>
             <p className="grade-desc">
-              {success === 3
+              {success === total
                 ? "설계도 없이도 조립하는 수준. 완벽합니다."
-                : success >= 1
-                  ? "감은 잡혔습니다. 무한 조립으로 더 쌓아 보세요."
-                  : "함정 조각에 전부 속았습니다. 무한 조립으로 설욕을."}
+                : success >= 7
+                  ? "감별사급 조립 실력입니다. 무한 조립에서 기록을 세우세요."
+                  : success >= 4
+                    ? "감은 잡혔습니다. 무한 조립으로 더 쌓아 보세요."
+                    : "함정 조각에 많이 속았습니다. 무한 조립으로 설욕을."}
             </p>
-            <p className="top-note">무한 조립 최고 연속 {eBest}</p>
+            <p className="top-note">
+              무한 조립 최고 연속 {eRec.best}
+              {fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}
+            </p>
             <div className="result-actions">
               <button className="btn btn-next" onClick={startEndless} disabled={busy}>
                 무한 조립 시작 — 랜덤 새 퍼즐

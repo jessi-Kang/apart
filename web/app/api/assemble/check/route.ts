@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const today = kstDateString();
   const guessOk =
     Array.isArray(body.guess) && body.guess.length <= 6 && body.guess.every((g) => typeof g === "string" && g.length <= 20);
-  if (body.date !== today || !Number.isInteger(body.no) || body.no! < 1 || body.no! > 3 || !guessOk) {
+  if (body.date !== today || !Number.isInteger(body.no) || body.no! < 1 || body.no! > 10 || !guessOk) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
   const result = checkAssemble(today, body.no!, body.guess as string[]);

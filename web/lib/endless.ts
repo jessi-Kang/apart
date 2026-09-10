@@ -35,7 +35,7 @@ export function randomOx(): { name: string } {
 
 export function judgeOx(
   name: string,
-  choice: "real" | "fake",
+  choice: "real" | "fake" | "timeout", // timeout = 시간 초과 (무조건 오답)
 ):
   | { correct: boolean; kind: "real"; meta: ReturnType<typeof metaOf> }
   | { correct: boolean; kind: "fake"; hint: string }
@@ -64,21 +64,24 @@ export function randomFind(): { options: string[] } {
 
 export function judgeFind(
   options: unknown,
-  pickName: unknown,
+  pickName: unknown, // null = 시간 초과 (오답 처리, 정답은 공개)
 ): { correct: boolean; answer: string; meta: ReturnType<typeof metaOf> } | null {
   if (
     !Array.isArray(options) ||
     options.length !== 4 ||
     !options.every((o) => typeof o === "string" && o.length <= 30) ||
-    typeof pickName !== "string" ||
-    !options.includes(pickName)
+    (pickName !== null && (typeof pickName !== "string" || !options.includes(pickName)))
   )
     return null;
   const reals = options.map((o) => realByName.get(normName(o))).filter((a): a is Apartment => Boolean(a));
   const allKnown = options.every((o) => realByName.has(normName(o)) || fakeByName.has(normName(o)));
   if (reals.length !== 1 || !allKnown) return null; // 조작된 보기 거부
   const real = reals[0];
-  return { correct: normName(pickName) === normName(real.name), answer: real.name, meta: metaOf(real) };
+  return {
+    correct: pickName !== null && normName(pickName as string) === normName(real.name),
+    answer: real.name,
+    meta: metaOf(real),
+  };
 }
 
 /* ---------- 이름 조립 ---------- */

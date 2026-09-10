@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { CloseX } from "@/components/CloseX";
 import { SoundToggle } from "@/components/SoundToggle";
-import { applyComboPick, comboState } from "@/lib/local";
+import { TimerBar } from "@/components/TimerBar";
+import { applyComboPick, comboState, type ComboState } from "@/lib/local";
 import { sfxCombo, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
 interface Round {
@@ -28,6 +29,10 @@ interface CheckResponse {
 type Phase = "loading" | "solve" | "reveal" | "done" | "error";
 
 const RESULT_KEY = "aptgam:findreal";
+const TIME_LIMIT = 15; // 초 — 4개를 읽고 고를 시간
+
+const fmtSec = (ms: number | null | undefined) =>
+  ms == null ? null : `${(ms / 1000).toFixed(1)}초`;
 
 export default function FindRealPage() {
   const [quiz, setQuiz] = useState<TodayResponse | null>(null);
@@ -35,15 +40,17 @@ export default function FindRealPage() {
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [reveal, setReveal] = useState<CheckResponse | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
   const [marks, setMarks] = useState<boolean[]>([]);
-  const [combo, setCombo] = useState({ current: 0, best: 0 });
+  const [combo, setCombo] = useState<ComboState>({ current: 0, best: 0 });
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // 무한 라운드 (데일리 3라운드 후에도 콤보는 계속 이어진다)
+  // 무한 라운드 (콤보는 데일리·무한 공통으로 이어진다)
   const [endless, setEndless] = useState(false);
   const [eOptions, setEOptions] = useState<string[] | null>(null);
   const [eCount, setECount] = useState(0);
+  const qStart = useRef(0);
 
   useEffect(() => {
     setCombo(comboState());
@@ -69,14 +76,18 @@ export default function FindRealPage() {
       .catch(() => setPhase("error"));
   }, []);
 
+  useEffect(() => {
+    if (phase === "solve") qStart.current = Date.now();
+  }, [phase, idx, eCount]);
+
   const options = endless ? eOptions : quiz?.items[idx]?.options;
   const roundNo = endless ? null : quiz?.items[idx]?.no;
+  const total = quiz?.items.length ?? 10;
 
   async function fetchEndless() {
     const res = await fetch("/api/endless/find");
     if (!res.ok) throw new Error("endless_failed");
-    const data = (await res.json()) as { options: string[] };
-    setEOptions(data.options);
+    setEOptions(((await res.json()) as { options: string[] }).options);
   }
 
   async function startEndless() {
@@ -96,32 +107,37 @@ export default function FindRealPage() {
     }
   }
 
-  async function pick(option: string) {
+  /** option=null이면 시간 초과 제출 */
+  async function pick(option: string | null) {
     if (!options || busy || phase !== "solve") return;
     setBusy(true);
-    sfxTap();
+    if (option !== null) sfxTap();
+    const dt = Date.now() - qStart.current;
     try {
       const res = endless
         ? await fetch("/api/endless/find", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ options, pick: option }),
+            body: JSON.stringify(option === null ? { options, timeout: true } : { options, pick: option }),
           })
         : await fetch("/api/findreal/check", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ date: quiz!.date, no: roundNo, pick: option }),
+            body: JSON.stringify(
+              option === null ? { date: quiz!.date, no: roundNo, timeout: true } : { date: quiz!.date, no: roundNo, pick: option },
+            ),
           });
       if (!res.ok) throw new Error("check_failed");
       const data = (await res.json()) as CheckResponse;
       setPicked(option);
       setReveal(data);
+      setTimedOut(option === null);
       if (!endless) setMarks((m) => [...m, data.correct]);
       else setECount((c) => c + 1);
       if (data.correct) sfxStampRight();
       else sfxStampWrong();
-      // 콤보는 데일리·무한 공통 기록 — 어디서든 이어지고 어디서든 끊긴다
-      const next = applyComboPick(data.correct);
+      // 콤보는 데일리·무한 공통 기록 — 풀이 시간도 함께 쌓는다
+      const next = applyComboPick(data.correct, dt);
       setCombo(next);
       if (next.current >= 2) sfxCombo();
       setPhase("reveal");
@@ -166,13 +182,14 @@ export default function FindRealPage() {
   }
 
   const hits = marks.filter(Boolean).length;
+  const runAvg = combo.runCount ? fmtSec((combo.runTotalMs ?? 0) / combo.runCount) : null;
 
   function share() {
     if (!quiz) return;
     sfxTap();
     const grid = marks.map((m) => (m ? "🟩" : "⬛")).join("");
     const comboLine = combo.current > 0 ? ` · 연속 ${combo.current}개 적중 중` : "";
-    const text = `아파트 감별사 #${quiz.episode} 진짜 찾기 🎯\n${grid} ${hits}/3 적중${comboLine} (최고 ${combo.best})\n${location.origin}`;
+    const text = `아파트 감별사 #${quiz.episode} 진짜 찾기 🎯\n${grid} ${hits}/${total} 적중${comboLine} (최고 ${combo.best})\n${location.origin}`;
     navigator.clipboard?.writeText(text).then(() => setCopied(true));
   }
 
@@ -204,18 +221,13 @@ export default function FindRealPage() {
       <main className="sheet">
         <header className="sheet-header">
           <Link className="brand" href="/">
-            아파트 감별사<small>{endless ? "무한 찾기 감정서" : "진짜 찾기 감정서"}</small>
+            아파트 감별사
+            <small>
+              {endless ? "무한 찾기 감정서" : "진짜 찾기 감정서"}
+              {quiz && ` · 제${ep}호 ${mm}.${dd}`}
+            </small>
           </Link>
-          <div className="head-right">
-            {quiz && (
-              <div className="issue mono">
-                #{ep}
-                <br />
-                {mm}.{dd}
-              </div>
-            )}
-            <CloseX inProgress={!endless && (phase === "solve" || phase === "reveal")} />
-          </div>
+          <CloseX inProgress={!endless && (phase === "solve" || phase === "reveal")} />
         </header>
 
         {phase === "loading" && (
@@ -244,11 +256,18 @@ export default function FindRealPage() {
             <p className="qlabel mono">
               {endless
                 ? `무한 ${eCount + (phase === "solve" ? 1 : 0)}라운드 · 연속 ${combo.current} · 최고 ${combo.best}`
-                : `${String(idx + 1).padStart(2, "0")} / 03`}
+                : `${String(idx + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`}
             </p>
             <p className="pick-tip">
               이 중 <b>진짜는 하나</b>. 나머지 셋은 AI가 지은 이름입니다.
             </p>
+
+            <TimerBar
+              seconds={TIME_LIMIT}
+              active={phase === "solve"}
+              resetKey={endless ? `e${eCount}` : idx}
+              onExpire={() => pick(null)}
+            />
 
             <div className="pick-list paper-in" key={endless ? `e${eCount}` : `d${idx}`}>
               {options.map((option) => {
@@ -271,7 +290,7 @@ export default function FindRealPage() {
             {phase === "reveal" && reveal && (
               <>
                 <div className={`verdict ${reveal.correct ? "right" : "wrong"}`}>
-                  <span className="mark">{reveal.correct ? "적중" : "오판"}</span>
+                  <span className="mark">{timedOut ? "시간 초과" : reveal.correct ? "적중" : "오판"}</span>
                   <h3>진짜는 &ldquo;{reveal.answer}&rdquo;</h3>
                   <p className="meta">
                     {reveal.meta.location}
@@ -282,15 +301,19 @@ export default function FindRealPage() {
                 <p className="combo-line">
                   {reveal.correct ? (
                     <>
-                      연속 <b>{combo.current}</b>개 적중 중{combo.current >= combo.best && combo.best > 1 ? " · 최고 기록" : ""}
+                      연속 <b>{combo.current}</b>개 적중 중{runAvg ? ` · 평균 ${runAvg}` : ""}
+                      {combo.current >= combo.best && combo.best > 1 ? " · 최고 기록" : ""}
                     </>
                   ) : (
-                    <>콤보가 끊겼습니다. 최고 기록 {combo.best}</>
+                    <>
+                      콤보가 끊겼습니다 · 최고 {combo.best}
+                      {fmtSec(combo.bestAvgMs) ? ` (평균 ${fmtSec(combo.bestAvgMs)})` : ""}
+                    </>
                   )}
                 </p>
                 <div className="choices">
                   <button className="btn btn-next full" onClick={next} disabled={busy}>
-                    {endless ? "다음 라운드 계속" : idx + 1 === quiz!.items.length ? "결과 보기" : "다음 라운드"}
+                    {endless ? "다음 라운드 계속" : idx + 1 === total ? "결과 보기" : "다음 라운드"}
                   </button>
                 </div>
               </>
@@ -301,8 +324,10 @@ export default function FindRealPage() {
         {phase === "done" && quiz && (
           <section className="screen result">
             <p className="score-label mono">진짜 찾기 감정 결과</p>
-            <p className="big">{hits} / 3</p>
-            <div className="grid-line" role="img" aria-label={`3라운드 중 ${hits}라운드 적중`}>
+            <p className="big">
+              {hits} / {total}
+            </p>
+            <div className="grid-line" role="img" aria-label={`${total}라운드 중 ${hits}라운드 적중`}>
               {marks.map((m, k) => (
                 <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
                   <GridTile ok={m} />
@@ -313,7 +338,7 @@ export default function FindRealPage() {
               {combo.current > 0
                 ? `연속 ${combo.current}개 적중 중 · 최고 기록 ${combo.best}. 무한 라운드에서 이어가세요.`
                 : combo.best > 0
-                  ? `최고 기록 ${combo.best}. 무한 라운드에서 다시 쌓으세요.`
+                  ? `최고 기록 ${combo.best}${fmtSec(combo.bestAvgMs) ? ` (평균 ${fmtSec(combo.bestAvgMs)})` : ""}. 무한 라운드에서 다시 쌓으세요.`
                   : "무한 라운드에서 첫 콤보를 시작하세요."}
             </p>
             <div className="result-actions">

@@ -16,9 +16,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
   const nameOk = typeof body.name === "string" && body.name.length <= 30;
-  const choiceOk = body.choice === "real" || body.choice === "fake";
+  const choiceOk = body.choice === "real" || body.choice === "fake" || body.choice === "timeout";
   if (!nameOk || !choiceOk) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
-  const result = judgeOx(body.name as string, body.choice as "real" | "fake");
+  const result = judgeOx(body.name as string, body.choice as "real" | "fake" | "timeout");
   if (!result) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   return NextResponse.json(result);
 }
