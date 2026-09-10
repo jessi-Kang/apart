@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t">
+  <title id="t">아파트 감별사 아이콘</title>
+  <!-- 종이 바탕 -->
+  <rect x="2" y="2" width="60" height="60" rx="6" fill="#fdfdfb" stroke="#1b1b1e" stroke-width="3"/>
+  <!-- 잉크 아파트 몸체 -->
+  <rect x="16" y="14" width="24" height="38" rx="2" fill="#1b1b1e"/>
+  <!-- 옥탑 -->
+  <rect x="22" y="9" width="12" height="5" rx="1.5" fill="#1b1b1e"/>
+  <!-- 창문 2x4 (불 켜진 창 = 종이색) -->
+  <g fill="#fdfdfb">
+    <rect x="20" y="19" width="6" height="5" rx="1"/>
+    <rect x="30" y="19" width="6" height="5" rx="1"/>
+    <rect x="20" y="27" width="6" height="5" rx="1"/>
+    <rect x="30" y="27" width="6" height="5" rx="1"/>
+    <rect x="20" y="35" width="6" height="5" rx="1"/>
+    <rect x="30" y="35" width="6" height="5" rx="1"/>
+    <rect x="26" y="44" width="6" height="8" rx="1"/>
+  </g>
+  <!-- 판정 도장: 붉은 체크 소인 -->
+  <g transform="rotate(-12 46 44)">
+    <circle cx="46" cy="44" r="11" fill="#fdfdfb" stroke="#c73a2f" stroke-width="3"/>
+    <path d="M40.5 44.5l3.5 3.5 7-8" fill="none" stroke="#c73a2f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
