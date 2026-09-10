@@ -89,6 +89,9 @@ export default async function ResultPage({ params }: Props) {
         <footer className="sheet-footer">
           <span>하루 10문제 · 매일 자정 갱신</span>
           <span className="mono">apt-gam</span>
+          <span className="copyright">
+            © 2026 아파트 감별사 · <a href="mailto:jihyun.kang@me.com">jihyun.kang@me.com</a>
+          </span>
         </footer>
       </main>
     </div>

@@ -52,6 +52,9 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   gap: 12px; align-items: baseline;
 }
 .sheet-footer span:last-child { flex-shrink: 0; white-space: nowrap; }
+.sheet-footer { flex-wrap: wrap; }
+.sheet-footer .copyright { flex-basis: 100%; white-space: normal; margin-top: 2px; }
+.sheet-footer .copyright a { color: inherit; text-underline-offset: 3px; }
 @media (max-width: 479px) {
   .sheet-footer { flex-direction: column; gap: 3px; align-items: flex-start; }
   .sheet-footer span:last-child { white-space: normal; }
