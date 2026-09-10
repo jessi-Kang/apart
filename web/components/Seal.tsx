@@ -33,19 +33,17 @@ export function Seal({ size = 104 }: { size?: number }) {
           <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" />
         </filter>
       </defs>
+      {/* 거칠기 필터는 도형(원·글리프)에만 건다 — 모바일 GPU에서 텍스트에
+          displacement 필터를 걸면 글자가 깨지는 사례가 있어 텍스트는 무필터 */}
       <g filter="url(#seal-rough)">
         <g fill="none" stroke="var(--stamp)">
           <circle cx="100" cy="100" r="92" strokeWidth="5" />
           <circle cx="100" cy="100" r="84" strokeWidth="1.6" />
           <circle cx="100" cy="100" r="52" strokeWidth="1.6" />
         </g>
-        <g transform="translate(100 100)" fill="var(--stamp)">
-          <RingText text="아파트 감별사" top size={17.5} />
-          <RingText text="감별민원 접수처" top={false} size={15} />
-          <circle cx="-72" cy="0" r="3" />
-          <circle cx="72" cy="0" r="3" />
-        </g>
         <g fill="var(--stamp)">
+          <circle cx="28" cy="100" r="3" />
+          <circle cx="172" cy="100" r="3" />
           <rect x="84" y="72" width="32" height="52" rx="2" />
           <rect x="92" y="65" width="16" height="7" rx="1.5" />
         </g>
@@ -58,6 +56,10 @@ export function Seal({ size = 104 }: { size?: number }) {
           <rect x="103" y="103" width="8" height="7" rx="1" />
           <rect x="96" y="114" width="8" height="10" rx="1" />
         </g>
+      </g>
+      <g transform="translate(100 100)" fill="var(--stamp)">
+        <RingText text="아파트 감별사" top size={17.5} />
+        <RingText text="감별민원 접수처" top={false} size={15} />
       </g>
     </svg>
   );
