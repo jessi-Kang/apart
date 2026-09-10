@@ -109,11 +109,16 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 /* ---- 결과 ---- */
 .result .score-label { font-size: 13px; color: var(--ink-soft); }
 .result .big { font-size: clamp(46px, 13vw, 72px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.05; margin-top: 6px; }
-.grade-stamp {
-  display: inline-block; margin-top: 18px; padding: 12px 18px;
-  border: 2px solid var(--stamp); color: var(--stamp); border-radius: var(--radius);
+.stamp {
+  position: relative; display: inline-block; margin-top: 18px;
+  color: var(--stamp); transform: rotate(-2.5deg); align-self: flex-start;
+  max-width: 100%;
+}
+.stamp-frame { position: absolute; inset: 0; width: 100%; height: 100%; }
+.stamp-text {
+  position: relative; display: block; padding: 14px 22px;
   font-weight: 700; font-size: clamp(18px, 5vw, 24px); letter-spacing: -0.02em;
-  transform: rotate(-2.5deg); word-break: keep-all; align-self: flex-start;
+  word-break: keep-all;
 }
 .grade-desc { margin-top: 16px; color: var(--ink-soft); font-size: 14px; line-height: 1.65; max-width: 32ch; }
 .grid-line { margin-top: 22px; display: flex; gap: 6px; flex-wrap: wrap; }

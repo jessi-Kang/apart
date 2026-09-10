@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { GridTile } from "@/components/GridTile";
+import { Stamp } from "@/components/Stamp";
 import { gradeFor } from "@/lib/grades";
 import { bumpStreak, loadResult, saveResult, type ReviewItem, type SavedResult } from "@/lib/local";
 
@@ -237,7 +238,7 @@ export default function PlayPage() {
           <section className="screen result">
             <p className="score-label mono">감별 결과</p>
             <p className="big">{score} / 10</p>
-            <span className="grade-stamp">{grade.name}</span>
+            <Stamp>{grade.name}</Stamp>
             <p className="grade-desc">{grade.desc}</p>
             <div className="grid-line" role="img" aria-label={`10문제 중 ${score}문제 정답`}>
               {marks.map((m, k) => (
