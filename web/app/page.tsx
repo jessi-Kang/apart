@@ -2,6 +2,7 @@ import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { answerRates } from "@/lib/stats";
 import { ComboStatus, HomeStatus } from "@/components/HomeStatus";
+import { Seal } from "@/components/Seal";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,9 @@ export default async function HomePage() {
         </header>
 
         <section className="screen home">
+          <div className="home-seal" aria-hidden="true">
+            <Seal size={104} />
+          </div>
           <h1>
             오늘 처리할
             <br />
