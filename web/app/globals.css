@@ -136,6 +136,24 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .review .tag.f { color: var(--stamp); }
 .result-actions { margin-top: auto; padding-top: 24px; display: grid; gap: 10px; }
 
+/* ---- 이름 조립 ---- */
+.hintcard { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); margin-top: 10px; }
+.hintcard b { color: var(--stamp); font-weight: 700; }
+.slots { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 22px 0 6px; min-height: 52px; }
+.slot {
+  min-width: 80px; height: 52px; border-radius: var(--radius); display: grid; place-items: center;
+  border: 1.5px dashed var(--line); font-size: 17px; font-weight: 700; letter-spacing: -0.02em;
+  padding: 0 14px; cursor: pointer; background: none; color: var(--ink);
+}
+.slot.filled { border: 1px solid var(--ink); background: var(--ink); color: var(--sheet); }
+.pool { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin: 16px 0 20px; flex: 1; align-content: flex-start; }
+.tile {
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--sheet); color: var(--ink);
+  font-size: 16px; font-weight: 700; letter-spacing: -0.02em; padding: 13px 16px; cursor: pointer;
+  transition: opacity 0.12s ease; height: fit-content;
+}
+.tile.used { opacity: 0.25; pointer-events: none; }
+
 /* ---- 어제 정답 열람 ---- */
 .ans-title { font-size: clamp(22px, 5.5vw, 28px); letter-spacing: -0.03em; font-weight: 700; }
 .ans-title em { font-style: normal; color: var(--stamp); }

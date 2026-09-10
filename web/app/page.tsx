@@ -62,13 +62,14 @@ export default function HomePage() {
               </span>
               <span className="go-ic">→</span>
             </Link>
-            <div className="mode lock">
+            <Link className="mode" href="/assemble">
               <span className="no mono">2</span>
               <span>
-                <span className="tt">이름 조립 · 진짜 찾기</span>
-                <span className="dd">개발 예정 창구 (M3)</span>
+                <span className="tt">이름 조립</span>
+                <span className="dd">힌트 보고 실존 단지명 조립 · 매일 새 3문제</span>
               </span>
-            </div>
+              <span className="go-ic">→</span>
+            </Link>
             <Link className="mode" href="/yesterday">
               <span className="no mono">3</span>
               <span>
