@@ -35,6 +35,7 @@ export default function FindRealPage() {
   const [combo, setCombo] = useState({ current: 0, best: 0 });
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [practice, setPractice] = useState(false);
 
   useEffect(() => {
     setCombo(comboState());
@@ -76,7 +77,7 @@ export default function FindRealPage() {
       setPicked(option);
       setReveal(data);
       setMarks((m) => [...m, data.correct]);
-      setCombo(applyComboPick(data.correct));
+      if (!practice) setCombo(applyComboPick(data.correct)); // 연습은 콤보에 반영 안 함
       setPhase("reveal");
     } catch {
       setPhase("error");
@@ -94,12 +95,24 @@ export default function FindRealPage() {
       setPhase("solve");
       return;
     }
-    try {
-      localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
-    } catch {
-      /* 무시 */
+    if (!practice) {
+      try {
+        localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
+      } catch {
+        /* 무시 */
+      }
     }
     setPhase("done");
+  }
+
+  function restart() {
+    setPractice(true);
+    setIdx(0);
+    setPicked(null);
+    setReveal(null);
+    setMarks([]);
+    setCopied(false);
+    setPhase("solve");
   }
 
   const hits = marks.filter(Boolean).length;
@@ -212,7 +225,9 @@ export default function FindRealPage() {
                   </p>
                 </div>
                 <p className="combo-line">
-                  {reveal.correct ? (
+                  {practice ? (
+                    <>연습 라운드 — 콤보에 반영되지 않습니다</>
+                  ) : reveal.correct ? (
                     <>
                       연속 <b>{combo.current}</b>개 적중 중{combo.current >= combo.best && combo.best > 1 ? " · 최고 기록" : ""}
                     </>
@@ -232,7 +247,7 @@ export default function FindRealPage() {
 
         {phase === "done" && quiz && (
           <section className="screen result">
-            <p className="score-label mono">진짜 찾기 감정 결과</p>
+            <p className="score-label mono">{practice ? "연습 감정 결과 — 기록 미반영" : "진짜 찾기 감정 결과"}</p>
             <p className="big">{hits} / 3</p>
             <p className="grade-desc">
               {combo.current > 0
@@ -244,6 +259,9 @@ export default function FindRealPage() {
             <div className="result-actions">
               <button className="btn btn-next" onClick={share}>
                 {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "결과 복사해서 자랑하기"}
+              </button>
+              <button className="btn btn-ghost" onClick={restart}>
+                다시 찾기 (연습 · 콤보 미반영)
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기

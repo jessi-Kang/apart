@@ -8,6 +8,7 @@ interface Body {
   date?: string;
   no?: number;
   choice?: "real" | "fake";
+  practice?: boolean; // 다시 하기(연습): 판정만 하고 집계에 넣지 않는다
 }
 
 /** 서버 판정: 정답 여부 + 공개 정보(실단지 메타 / 가짜 힌트) + 전국 정답률 */
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
 
   const item = quizForDate(today)[no! - 1];
   const correct = choice === item.kind;
-  await recordAnswer(today, no!, correct);
+  if (body.practice !== true) await recordAnswer(today, no!, correct);
   const { rate, sample } = await answerRate(today, no!);
 
   if (item.kind === "real") {
