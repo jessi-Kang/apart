@@ -16,9 +16,21 @@
 | [06. 게임 모드 확장](docs/06-game-modes.md) | 이름 조립, 진짜 찾기 등 추가 게임 타입과 배치 전략 |
 | [07. 플로우·계정·기록](docs/07-account-and-records.md) | 게임 선택 홈 플로우, Google 로그인, 기록판·랭킹 |
 
+## 디자인 시안 (`design/`)
+
+디자인 방향은 **C(게임쇼 팝)** 로 확정. 모든 시안은 모바일 퍼스트 반응형(768px/1024px) 인터랙티브 목업이다.
+
+| 파일 | 상태 |
+|---|---|
+| `sian-c-gameshow.html` | **확정.** 게임 선택 홈 + 감별 O/X + 이름 조립 + 진짜 찾기 + 기록판 |
+| `sian-a-document.html` | 대안 방향(접수 서류). 확장 타입 동일 반영 |
+| `submodes-a.html` · `submodes-c.html` | 서브 모드(작명소·우리 동네) 시안 |
+| `sian-b-nightboard.html` | 디벨롭 중단 |
+| `sharecard-*.html` | 이미지 공유 카드 1차안. 보류(재작업 예정) |
+
 ## 현재 단계
 
-**기획** — 이 리포지토리는 현재 기획 문서만 담고 있다. 구현은 [로드맵](docs/05-growth-and-ops.md#5-로드맵)의 M1부터 시작한다.
+**기획 + 디자인 시안** — 구현은 [로드맵](docs/05-growth-and-ops.md#5-로드맵)의 M1부터 시작한다. 디자인 파일 수정 시 impeccable 검증이 필수다(`CLAUDE.md` 참조).
 
 ## 핵심 설계 원칙 (요약)
 

@@ -4,14 +4,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  /* ============ 시안 A · 접수 서류 ============
-     콘셉트: 청약 접수증. 종이 위의 잉크, 판정 도장.
-     팔레트: 쿨 오프화이트 + 잉크 블랙 + 도장 레드(단일 액센트)
-     radius: all-sharp(2px) / 폰트: IBM Plex Sans KR + Mono */
+  /* ============ 시안 A 확장판 · 접수 서류 ============
+     콘셉트: 감별 민원 창구. 종이 위의 잉크, 판정 도장, 접수 대장.
+     구성: 홈(접수 창구 목록) + 본편 감별 O/X + 이름 조립 + 진짜 찾기 + 접수 대장(db)
+     팔레트: 쿨 오프화이트 + 잉크 블랙 + 도장 레드(단일 액센트) / radius: sharp(2px) */
   :root{
     --paper:#f6f6f3; --sheet:#fdfdfb; --ink:#1b1b1e; --ink-soft:#5c5c62;
-    --line:#d9d9d3; --stamp:#c73a2f; --stamp-soft:#f6e3e1;
-    --ok:#1b1b1e; --radius:2px;
+    --line:#d9d9d3; --stamp:#c73a2f; --stamp-soft:#f6e3e1; --radius:2px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{color-scheme:light}
@@ -21,8 +20,10 @@
     -webkit-font-smoothing:antialiased;
   }
   .mono{font-family:"IBM Plex Mono",monospace}
+  [hidden]{display:none!important}
   ::selection{background:var(--stamp-soft); color:var(--ink);}
   :focus-visible{outline:2px solid var(--stamp); outline-offset:3px;}
+  button{-webkit-tap-highlight-color:transparent; font-family:inherit;}
 
   .frame{min-height:100dvh; display:flex; flex-direction:column; padding:16px;}
   .sheet{
@@ -30,44 +31,80 @@
     flex:1; display:flex; flex-direction:column; width:100%;
     box-shadow:0 1px 0 rgba(27,27,30,.04);
   }
-
-  /* ---- 헤더 ---- */
   header{
     display:flex; justify-content:space-between; align-items:baseline;
     padding:18px 20px; border-bottom:1px solid var(--line);
   }
-  .brand{font-weight:700; font-size:16px; letter-spacing:-.02em;}
+  .brand{font-weight:700; font-size:16px; letter-spacing:-.02em; background:none; border:none; color:var(--ink); cursor:pointer; text-align:left; padding:0;}
   .brand small{display:block; font-weight:400; color:var(--ink-soft); font-size:12px; margin-top:2px;}
   .issue{font-size:12px; color:var(--ink-soft); text-align:right;}
 
-  /* ---- 공통 화면 전환 ---- */
   .screen{flex:1; display:flex; flex-direction:column; padding:24px 20px;}
-  [hidden]{display:none!important}
-
-  /* ---- 인트로 ---- */
-  .intro h1{font-size:clamp(28px,7vw,40px); line-height:1.2; letter-spacing:-.03em; font-weight:700;}
-  .intro h1 em{font-style:normal; color:var(--stamp);}
-  .intro p{margin-top:14px; color:var(--ink-soft); font-size:15px; line-height:1.65; max-width:34ch;}
-  .rules{margin-top:22px; border-top:1px solid var(--line);}
-  .rules li{
-    list-style:none; display:flex; gap:12px; padding:12px 0;
-    border-bottom:1px solid var(--line); font-size:14px;
+  .mode-head{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .back{
+    background:var(--sheet); border:1px solid var(--line); border-radius:var(--radius);
+    padding:8px 14px; font-size:12.5px; font-weight:500; cursor:pointer; color:var(--ink);
   }
-  .rules .no{color:var(--ink-soft); font-size:12px; padding-top:2px; min-width:16px;}
+  .mode-head .name{font-weight:700; font-size:15px;}
 
-  /* ---- 문제 ---- */
-  .progress{display:flex; gap:5px; margin-bottom:8px;}
+  /* ---- 홈: 접수 창구 ---- */
+  .home h1{font-size:clamp(26px,6.5vw,36px); line-height:1.25; letter-spacing:-.03em; font-weight:700;}
+  .home h1 em{font-style:normal; color:var(--stamp);}
+  .home .sub{margin-top:12px; color:var(--ink-soft); font-size:14.5px; line-height:1.65; max-width:34ch;}
+  .modes{margin-top:20px; border-top:1px solid var(--line);}
+  .mode{
+    width:100%; text-align:left; background:none; border:none; cursor:pointer;
+    display:flex; gap:14px; align-items:baseline; padding:17px 2px;
+    border-bottom:1px solid var(--line);
+  }
+  .mode:active{background:var(--paper);}
+  .mode .no{color:var(--ink-soft); font-size:12px; min-width:18px;}
+  .mode .tt{font-weight:700; font-size:16.5px; letter-spacing:-.02em;}
+  .mode .tt .daily{
+    display:inline-block; margin-left:8px; font-size:11px; font-weight:700; color:var(--stamp);
+    border:1.5px solid currentColor; border-radius:var(--radius); padding:2px 7px; transform:rotate(-2deg);
+  }
+  .mode .dd{display:block; font-weight:400; font-size:13px; color:var(--ink-soft); margin-top:4px; line-height:1.55;}
+  .mode .go-ic{margin-left:auto; color:var(--stamp); font-weight:700;}
+  .mode.lock{cursor:default;}
+  .mode.lock .tt{color:var(--ink-soft); font-weight:500;}
+  .mode.lock:active{background:none;}
+
+  /* ---- 접수 대장 (db) ---- */
+  .ledger{margin-top:20px; border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px;}
+  .ledger h3{font-size:14px; font-weight:700;}
+  .ledger .sub{font-size:12px; color:var(--ink-soft); margin-top:3px;}
+  .ledger ul{margin-top:8px;}
+  .ledger li{
+    list-style:none; display:flex; align-items:baseline; gap:10px;
+    padding:9px 0; border-bottom:1px dashed var(--line); font-size:13.5px;
+  }
+  .ledger li:last-child{border-bottom:none;}
+  .ledger .who{font-weight:700;}
+  .ledger .gr{font-size:12px; color:var(--ink-soft);}
+  .ledger .sc{margin-left:auto; font-weight:700; color:var(--stamp);}
+
+  /* ---- 버튼 공통 ---- */
+  .btn{
+    font-size:15px; font-weight:700; letter-spacing:-.01em; padding:16px 12px;
+    border-radius:var(--radius); cursor:pointer; transition:transform .12s ease;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn:disabled{opacity:.4; cursor:default;}
+  .btn-next{width:100%; background:var(--ink); color:var(--sheet); border:1px solid var(--ink);}
+  .btn-ghost{background:var(--sheet); color:var(--ink); border:1px solid var(--line); font-size:14px; padding:14px 12px;}
+
+  /* ---- 본편 문제 ---- */
+  .progress{display:flex; gap:5px;}
   .progress i{height:3px; flex:1; background:var(--line); border-radius:99px;}
   .progress i.done{background:var(--ink);}
   .progress i.now{background:var(--stamp);}
   .qlabel{font-size:12px; color:var(--ink-soft); margin-top:10px;}
-  .qname-wrap{flex:1; display:flex; align-items:center; justify-content:center; padding:20px 0; min-height:180px;}
+  .qname-wrap{flex:1; display:flex; align-items:center; justify-content:center; padding:20px 0; min-height:150px;}
   .qname{
     font-size:clamp(30px,8.5vw,44px); font-weight:700; letter-spacing:-.03em;
     line-height:1.28; text-align:center; word-break:keep-all; max-width:14ch;
   }
-
-  /* ---- 판정 결과 패널 ---- */
   .verdict{border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:16px;}
   .verdict .mark{
     display:inline-block; font-weight:700; font-size:13px; padding:5px 10px;
@@ -78,51 +115,74 @@
   .verdict h3{margin-top:12px; font-size:17px; letter-spacing:-.02em;}
   .verdict .meta{margin-top:8px; font-size:13px; color:var(--ink-soft); line-height:1.7;}
   .verdict .rate{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--ink-soft);}
-
-  /* ---- 버튼 ---- */
   .choices{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-  .btn{
-    font-family:inherit; font-size:17px; font-weight:700; letter-spacing:-.01em;
-    padding:18px 12px; border-radius:var(--radius); cursor:pointer;
-    transition:transform .12s ease, background .12s ease;
-    -webkit-tap-highlight-color:transparent;
-  }
-  .btn:active{transform:translateY(1px);}
-  .btn-real{background:var(--ink); color:var(--sheet); border:1px solid var(--ink);}
-  .btn-fake{background:var(--sheet); color:var(--stamp); border:1.5px solid var(--stamp);}
-  .btn-next{width:100%; background:var(--ink); color:var(--sheet); border:1px solid var(--ink); font-size:15px; padding:16px 12px;}
+  .btn-real{background:var(--ink); color:var(--sheet); border:1px solid var(--ink); font-size:17px; padding:18px 12px;}
+  .btn-fake{background:var(--sheet); color:var(--stamp); border:1.5px solid var(--stamp); font-size:17px; padding:18px 12px;}
 
   /* ---- 결과 ---- */
   .result .score{font-size:13px; color:var(--ink-soft);}
-  .result .big{
-    font-size:clamp(46px,13vw,72px); font-weight:700; letter-spacing:-.04em; line-height:1.05; margin-top:6px;
-  }
+  .result .big{font-size:clamp(46px,13vw,72px); font-weight:700; letter-spacing:-.04em; line-height:1.05; margin-top:6px;}
   .grade-stamp{
     display:inline-block; margin-top:18px; padding:12px 18px;
     border:2px solid var(--stamp); color:var(--stamp); border-radius:var(--radius);
     font-weight:700; font-size:clamp(18px,5vw,24px); letter-spacing:-.02em;
-    transform:rotate(-2.5deg); word-break:keep-all;
+    transform:rotate(-2.5deg); word-break:keep-all; align-self:flex-start;
   }
   .grade-desc{margin-top:16px; color:var(--ink-soft); font-size:14px; line-height:1.65; max-width:32ch;}
   .grid-line{margin-top:22px; display:flex; gap:6px; flex-wrap:wrap;}
   .grid-line svg{display:block;}
-  .result-actions{margin-top:auto; padding-top:24px; display:grid; gap:10px;}
-  .btn-ghost{background:var(--sheet); color:var(--ink); border:1px solid var(--line); font-size:14px; padding:14px 12px;}
-  .review{margin-top:20px; border-top:1px solid var(--line);}
-  .review li{
-    list-style:none; display:flex; justify-content:space-between; gap:12px;
-    padding:11px 0; border-bottom:1px dashed var(--line); font-size:13.5px;
+  .register{margin-top:20px; border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px;}
+  .register label{font-size:12px; color:var(--ink-soft); display:block;}
+  .register-row{display:flex; gap:8px; margin-top:8px;}
+  .register input{
+    flex:1; min-width:0; border:1px solid var(--line); border-radius:var(--radius);
+    background:var(--sheet); color:var(--ink); padding:12px 14px; font-size:15px; font-family:inherit;
   }
-  .review .nm{font-weight:500;}
-  .review .tag{color:var(--ink-soft); font-size:12px; white-space:nowrap;}
-  .review .tag.f{color:var(--stamp);}
+  .register input::placeholder{color:var(--ink-soft);}
+  .register input:focus{outline:2px solid var(--stamp); outline-offset:2px;}
+  .btn-reg{background:var(--ink); color:var(--sheet); border:1px solid var(--ink); font-size:13.5px; padding:12px 16px;}
+  .register-note{font-size:12px; color:var(--ink-soft); margin-top:8px;}
+  .result-actions{margin-top:auto; padding-top:24px; display:grid; gap:10px;}
+
+  /* ---- 이름 조립 ---- */
+  .hintcard{border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; font-size:13.5px; line-height:1.7; color:var(--ink-soft);}
+  .hintcard b{color:var(--stamp); font-weight:700;}
+  .slots{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:22px 0 6px; min-height:52px;}
+  .slot{
+    min-width:80px; height:52px; border-radius:var(--radius); display:grid; place-items:center;
+    border:1.5px dashed var(--line); font-size:17px; font-weight:700; letter-spacing:-.02em;
+    padding:0 14px; cursor:pointer; background:none; color:var(--ink);
+  }
+  .slot.filled{border:1px solid var(--ink); background:var(--ink); color:var(--sheet);}
+  .pool{display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin:16px 0 20px;}
+  .tile{
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--sheet); color:var(--ink);
+    font-size:16px; font-weight:700; letter-spacing:-.02em; padding:13px 16px; cursor:pointer;
+    transition:opacity .12s ease;
+  }
+  .tile.used{opacity:.25; pointer-events:none;}
+
+  /* ---- 진짜 찾기 ---- */
+  .pick-tip{font-size:13.5px; color:var(--ink-soft); line-height:1.6;}
+  .pick-tip b{color:var(--ink);}
+  .pick-list{display:grid; gap:9px; margin:16px 0;}
+  .pick{
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--sheet); color:var(--ink);
+    font-size:16px; font-weight:700; letter-spacing:-.02em; padding:17px 14px; cursor:pointer;
+    text-align:center; word-break:keep-all;
+  }
+  .pick:active{background:var(--paper);}
+  .pick.hit{background:var(--ink); color:var(--sheet); border-color:var(--ink);}
+  .pick.miss{opacity:.4;}
+  .pick:disabled{cursor:default;}
+  .combo{font-size:13px; color:var(--ink-soft); margin-top:6px;}
+  .combo b{color:var(--stamp);}
 
   footer{
     padding:14px 20px; border-top:1px solid var(--line);
     font-size:12px; color:var(--ink-soft); display:flex; justify-content:space-between;
   }
 
-  /* ---- 사이드 레일 (데스크탑 전용) ---- */
   .rail{display:none;}
 
   /* ============ 타블렛 ≥768 ============ */
@@ -141,17 +201,15 @@
       flex-direction:row; justify-content:center; align-items:stretch;
       gap:48px; padding:56px 48px; max-width:1200px; margin:0 auto; width:100%;
     }
-    .rail{
-      display:flex; flex-direction:column; width:300px; flex-shrink:0; padding-top:8px;
-    }
-    .rail h2{font-size:34px; font-weight:700; letter-spacing:-.03em; line-height:1.25;}
+    .rail{display:flex; flex-direction:column; width:300px; flex-shrink:0; padding-top:8px;}
+    .rail h2{font-size:34px; font-weight:700; letter-spacing:-.03em; line-height:1.25; word-break:keep-all;}
     .rail h2 em{font-style:normal; color:var(--stamp);}
     .rail .date{margin-top:14px; font-size:13px; color:var(--ink-soft);}
     .rail .note{
       margin-top:auto; font-size:13px; color:var(--ink-soft); line-height:1.7;
       border-top:1px solid var(--line); padding-top:18px;
     }
-    .sheet{max-width:560px; min-height:640px;}
+    .sheet{max-width:560px; min-height:660px;}
     .qname{font-size:40px;}
   }
 
@@ -162,33 +220,54 @@
 
 <div class="frame">
   <aside class="rail">
-    <h2>오늘의 감별<br>접수를 <em>시작</em>합니다</h2>
+    <h2>감별 민원은<br>이 창구에서 <em>접수</em>합니다</h2>
     <p class="date mono">제37호 / 9월 10일 수요일</p>
-    <p class="note">실존 단지명은 공공데이터(K-apt) 기준.<br>가짜 이름은 AI가 지었습니다.<br>문제는 매일 자정에 바뀝니다.</p>
+    <p class="note">실존 단지명은 공공데이터(K-apt) 기준.<br>가짜 이름은 AI가 지었습니다.<br>본편 문제는 매일 자정에 바뀝니다.</p>
   </aside>
 
   <main class="sheet">
     <header>
-      <div class="brand">아파트 감별사<small>진짜 단지명 판별 접수증</small></div>
+      <button class="brand" onclick="goHome()">아파트 감별사<small>감별 민원 접수 창구 · 시안 A</small></button>
       <div class="issue mono">#37<br>09.10</div>
     </header>
 
-    <!-- 인트로 -->
-    <section class="screen intro" id="s-intro">
-      <h1>이거 진짜 있는<br>아파트일까요, <em>아닐까요</em></h1>
-      <p>화면에 뜨는 단지명이 실존하면 진짜, AI가 지어낸 이름이면 가짜. 하루 10문제.</p>
-      <ul class="rules">
-        <li><span class="no mono">1</span>이름만 보고 판단합니다. 검색은 반칙.</li>
-        <li><span class="no mono">2</span>정답마다 실제 위치와 준공년도가 공개됩니다.</li>
-        <li><span class="no mono">3</span>10문제가 끝나면 감별 등급이 발급됩니다.</li>
-      </ul>
-      <div class="result-actions">
-        <button class="btn btn-next" onclick="start()">감별 시작</button>
+    <!-- ============ 홈: 접수 창구 목록 ============ -->
+    <section class="screen home" id="s-home">
+      <h1>오늘 처리할<br>감별 민원을 <em>선택</em>하세요</h1>
+      <p class="sub">진짜 아파트와 AI가 지은 이름을 가려내는 데일리 게임. 본편은 하루 한 번입니다.</p>
+      <div class="modes">
+        <button class="mode" onclick="startOX()">
+          <span class="no mono">1</span>
+          <span><span class="tt">감별 O/X<span class="daily">오늘의 본편</span></span><span class="dd">오늘 미접수 · 6일 연속 접수 중</span></span>
+          <span class="go-ic">→</span>
+        </button>
+        <button class="mode" onclick="startPuzzle()">
+          <span class="no mono">2</span>
+          <span><span class="tt">이름 조립</span><span class="dd">매일 새 3문제 · 오늘 0 / 3</span></span>
+          <span class="go-ic">→</span>
+        </button>
+        <button class="mode" onclick="startPick()">
+          <span class="no mono">3</span>
+          <span><span class="tt">진짜 찾기</span><span class="dd">매일 3라운드 · 내 최고 콤보 7 갱신 도전</span></span>
+          <span class="go-ic">→</span>
+        </button>
+        <div class="mode lock">
+          <span class="no mono">4</span>
+          <span><span class="tt">작명소 · 우리 동네</span><span class="dd">2단계 개설 예정 창구</span></span>
+        </div>
       </div>
+
+      <div class="ledger" id="records" hidden>
+        <h3>오늘의 접수 대장</h3>
+        <p class="sub">로그인한 계정으로 등록된 감별 기록</p>
+        <ul id="records-list"></ul>
+      </div>
+      <div class="result-actions" style="margin-top:auto; padding-top:20px;"></div>
     </section>
 
-    <!-- 문제 -->
-    <section class="screen" id="s-quiz" hidden>
+    <!-- ============ 본편: 감별 O/X ============ -->
+    <section class="screen" id="s-ox" hidden>
+      <div class="mode-head"><button class="back" onclick="goHome()">← 창구</button><span class="name">감별 O/X · 본편</span></div>
       <div class="progress" id="progress"></div>
       <p class="qlabel mono" id="qnum">01 / 10</p>
       <div class="qname-wrap"><h2 class="qname" id="qname"></h2></div>
@@ -209,28 +288,90 @@
       </div>
     </section>
 
-    <!-- 결과 -->
+    <!-- ============ 본편 결과 ============ -->
     <section class="screen result" id="s-result" hidden>
       <p class="score mono">감별 결과</p>
       <p class="big" id="r-score"></p>
       <span class="grade-stamp" id="r-grade"></span>
       <p class="grade-desc" id="r-desc"></p>
       <div class="grid-line" id="r-grid" role="img" aria-label="문제별 정답 그리드"></div>
-      <ul class="review" id="r-review"></ul>
+
+      <div class="register" id="register" hidden>
+        <label for="nick">접수 대장에 남길 이름</label>
+        <div class="register-row">
+          <input id="nick" maxlength="12" placeholder="닉네임" autocomplete="nickname">
+          <button class="btn btn-reg" onclick="registerRecord()" id="regbtn">기록 등록</button>
+        </div>
+        <p class="register-note" id="regnote">등록하면 이 페이지를 보는 모두의 접수 대장에 공유됩니다</p>
+      </div>
+
       <div class="result-actions">
         <button class="btn btn-next" onclick="share()" id="sharebtn">결과 복사해서 자랑하기</button>
-        <button class="btn btn-ghost" onclick="location.reload()">처음부터 다시 보기</button>
+        <button class="btn btn-ghost" onclick="goHome()">창구로 돌아가기</button>
+      </div>
+    </section>
+
+    <!-- ============ 이름 조립 ============ -->
+    <section class="screen" id="s-puzzle" hidden>
+      <div class="mode-head"><button class="back" onclick="goHome()">← 창구</button><span class="name">이름 조립</span></div>
+      <p class="qlabel mono" id="pz-num">01 / 03</p>
+      <div class="hintcard" id="pz-hint" style="margin-top:10px"></div>
+      <div class="slots" id="pz-slots"></div>
+      <div class="pool" id="pz-pool"></div>
+
+      <div class="verdict" id="pz-verdict" hidden>
+        <span class="mark" id="pz-mark"></span>
+        <h3 id="pz-title"></h3>
+        <p class="meta" id="pz-meta"></p>
+      </div>
+
+      <div class="choices">
+        <button class="btn btn-ghost" onclick="pzClear()" id="pz-clear">비우기</button>
+        <button class="btn btn-next" onclick="pzCheck()" id="pz-check" disabled>확인</button>
+      </div>
+      <div class="choices" id="pz-nextwrap" hidden style="margin-top:10px">
+        <button class="btn btn-next" style="grid-column:1/-1" onclick="pzNext()" id="pz-nextbtn">다음 문제</button>
+      </div>
+    </section>
+
+    <!-- ============ 진짜 찾기 ============ -->
+    <section class="screen" id="s-pick" hidden>
+      <div class="mode-head"><button class="back" onclick="goHome()">← 창구</button><span class="name">진짜 찾기</span></div>
+      <p class="qlabel mono" id="pk-num">01 / 03</p>
+      <p class="pick-tip" style="margin-top:10px">이 중 <b>진짜는 하나</b>. 나머지 셋은 AI 작품입니다.</p>
+      <div class="pick-list" id="pk-list"></div>
+
+      <div class="verdict" id="pk-verdict" hidden>
+        <span class="mark" id="pk-mark"></span>
+        <h3 id="pk-title"></h3>
+        <p class="meta" id="pk-meta"></p>
+      </div>
+      <p class="combo" id="pk-combo"></p>
+
+      <div class="choices" id="pk-nextwrap" hidden>
+        <button class="btn btn-next" style="grid-column:1/-1" onclick="pkNext()" id="pk-nextbtn">다음 라운드</button>
       </div>
     </section>
 
     <footer>
       <span>단지 정보 출처: 공공데이터포털 K-apt</span>
-      <span class="mono">내일 00:00 새 문제</span>
+      <span class="mono">본편 갱신 00:00</span>
     </footer>
   </main>
 </div>
 
 <script>
+const $=id=>document.getElementById(id);
+function gridTile(ok){
+  return ok
+   ? `<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="2" fill="#1b1b1e"/><path d="M7 13.5l4 4 8-8.5" stroke="#fdfdfb" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+   : `<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1.75" y="1.75" width="22.5" height="22.5" rx="2" fill="none" stroke="#c73a2f" stroke-width="1.5"/><path d="M8.5 8.5l9 9M17.5 8.5l-9 9" stroke="#c73a2f" stroke-width="2.2" stroke-linecap="round"/></svg>`;
+}
+const SCREENS=["s-home","s-ox","s-result","s-puzzle","s-pick"];
+function show(id){ SCREENS.forEach(s=>$(s).hidden=(s!==id)); }
+function goHome(){ show("s-home"); }
+
+/* ============ 본편: 감별 O/X ============ */
 const Q=[
  {n:"헬리오시티",real:true,meta:"서울 송파구 가락동\n2018년 준공 · 9,510세대",rate:88},
  {n:"e편한세상 더 프라임 노블",real:false,hint:"실존 브랜드에 없는 조합을 붙였습니다",rate:61},
@@ -244,15 +385,7 @@ const Q=[
  {n:"롯데캐슬 스카이 퍼스티지",real:false,hint:"하늘과 명예를 동시에 약속했습니다",rate:29},
 ];
 let i=0, marks=[];
-const $=id=>document.getElementById(id);
-function gridTile(ok){
-  return ok
-   ? `<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="2" fill="#1b1b1e"/><path d="M7 13.5l4 4 8-8.5" stroke="#fdfdfb" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-   : `<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1.75" y="1.75" width="22.5" height="22.5" rx="2" fill="none" stroke="#c73a2f" stroke-width="1.5"/><path d="M8.5 8.5l9 9M17.5 8.5l-9 9" stroke="#c73a2f" stroke-width="2.2" stroke-linecap="round"/></svg>`;
-}
-
-function start(){ $("s-intro").hidden=true; $("s-quiz").hidden=false; render(); }
-
+function startOX(){ i=0; marks=[]; show("s-ox"); render(); }
 function render(){
   const q=Q[i];
   $("qname").textContent=q.n;
@@ -260,7 +393,6 @@ function render(){
   $("progress").innerHTML=Q.map((_,k)=>`<i class="${k<i?'done':k===i?'now':''}"></i>`).join("");
   $("verdict").hidden=true; $("choices").hidden=false; $("nextwrap").hidden=true;
 }
-
 function answer(saidReal){
   const q=Q[i], ok=saidReal===q.real;
   marks.push(ok);
@@ -273,7 +405,6 @@ function answer(saidReal){
   $("choices").hidden=true; $("nextwrap").hidden=false;
   $("nextbtn").textContent=(i===Q.length-1)?"감별 등급 확인":"다음 문제";
 }
-
 function next(){ i++; if(i<Q.length){render();} else{finish();} }
 
 const GRADES=[
@@ -282,22 +413,152 @@ const GRADES=[
  {min:7,name:"부동산 카페 눈팅러",desc:"매일 눈팅한 짬은 못 속입니다. 상위권 감별력."},
  {min:9,name:"시어머니도 못 찾는 이름 감별사",desc:"이름만 봐도 평면도가 보이는 수준. 최고 등급입니다."},
 ];
+let lastResult=null;
 function finish(){
   const s=marks.filter(Boolean).length;
   const g=[...GRADES].reverse().find(g=>s>=g.min);
-  $("s-quiz").hidden=true; $("s-result").hidden=false;
+  show("s-result");
   $("r-score").textContent=s+" / 10";
   $("r-grade").textContent=g.name;
   $("r-desc").textContent=g.desc;
   $("r-grid").innerHTML=marks.map(gridTile).join("");
-  $("r-review").innerHTML=Q.map((q,k)=>
-    `<li><span class="nm">${marks[k]?"":"✗ "}${q.n}</span><span class="tag ${q.real?'':'f'}">${q.real?"진짜":"가짜"}</span></li>`
-  ).join("");
+  $("sharebtn").textContent="결과 복사해서 자랑하기";
+  lastResult={s, g:g.name};
+  if(dbRef){ $("register").hidden=false; $("regbtn").disabled=false; $("regbtn").textContent="기록 등록"; }
 }
 function share(){
   const s=marks.filter(Boolean).length;
   const g=[...GRADES].reverse().find(g=>s>=g.min);
   const t=`아파트 감별사 #37 🏢\n${marks.map(m=>m?"🟩":"⬛").join("")} ${s}/10\n${g.name}\napt-gam.kr`;
   navigator.clipboard?.writeText(t).then(()=>{ $("sharebtn").textContent="복사 완료. 붙여넣기만 하면 됩니다"; });
+}
+
+/* ============ 이름 조립 ============ */
+const PZQ=[
+ {ans:["래미안","원","베일리"],decoy:["리버","노블"],
+  hint:"<b>서울 서초구 반포동</b><br>2023년 준공 · 2,990세대의 대단지입니다",
+  meta:"서울 서초구 반포동<br>2023년 준공 · 2,990세대"},
+ {ans:["올림픽파크","포레온"],decoy:["에듀","그랑","센트럴"],
+  hint:"<b>서울 강동구 둔촌동</b><br>12,032세대, 국내 최대 규모 단지입니다",
+  meta:"서울 강동구 둔촌동<br>2024년 입주 · 12,032세대"},
+ {ans:["디에이치","아너","힐즈"],decoy:["포레","퍼스티지"],
+  hint:"<b>서울 강남구 개포동</b><br>2019년 준공 · 1,320세대입니다",
+  meta:"서울 강남구 개포동<br>2019년 준공 · 1,320세대"},
+];
+let pzI=0, pzPicked=[], pzScore=0, pzPool=[];
+function shuffle(a){ return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]); }
+function startPuzzle(){ pzI=0; pzScore=0; show("s-puzzle"); pzRender(); }
+function pzRender(){
+  const q=PZQ[pzI];
+  pzPicked=[]; pzPool=shuffle([...q.ans,...q.decoy]);
+  $("pz-num").textContent=String(pzI+1).padStart(2,"0")+" / 03";
+  $("pz-hint").innerHTML=q.hint;
+  $("pz-verdict").hidden=true; $("pz-nextwrap").hidden=true;
+  $("pz-check").disabled=true; $("pz-clear").disabled=false;
+  pzDraw();
+}
+function pzDraw(){
+  const q=PZQ[pzI];
+  $("pz-slots").innerHTML=q.ans.map((_,k)=>{
+    const p=pzPicked[k];
+    return `<button class="slot ${p!==undefined?'filled':''}" onclick="pzUnpick(${k})" aria-label="칸 ${k+1}">${p!==undefined?pzPool[p]:''}</button>`;
+  }).join("");
+  $("pz-pool").innerHTML=pzPool.map((t,k)=>
+    `<button class="tile ${pzPicked.includes(k)?'used':''}" onclick="pzPick(${k})">${t}</button>`
+  ).join("");
+  $("pz-check").disabled=(pzPicked.length!==q.ans.length);
+}
+function pzPick(k){
+  if(pzPicked.includes(k) || pzPicked.length>=PZQ[pzI].ans.length || !$("pz-verdict").hidden) return;
+  pzPicked.push(k); pzDraw();
+}
+function pzUnpick(slot){
+  if(!$("pz-verdict").hidden) return;
+  if(slot<pzPicked.length){ pzPicked.splice(slot,1); pzDraw(); }
+}
+function pzClear(){ if(!$("pz-verdict").hidden) return; pzPicked=[]; pzDraw(); }
+function pzCheck(){
+  const q=PZQ[pzI];
+  const ok=pzPicked.map(k=>pzPool[k]).join(" ")===q.ans.join(" ");
+  if(ok) pzScore++;
+  const v=$("pz-verdict");
+  v.hidden=false; v.className="verdict "+(ok?"right":"wrong");
+  $("pz-mark").textContent=ok?"정답":"오답";
+  $("pz-title").textContent=q.ans.join(" ");
+  $("pz-meta").innerHTML=q.meta;
+  $("pz-check").disabled=true; $("pz-clear").disabled=true;
+  $("pz-nextwrap").hidden=false;
+  $("pz-nextbtn").textContent=(pzI===PZQ.length-1)?`끝내기 (${pzScore}/3 조립 성공)`:"다음 문제";
+}
+function pzNext(){ pzI++; if(pzI<PZQ.length){pzRender();} else{goHome();} }
+
+/* ============ 진짜 찾기 ============ */
+const PKQ=[
+ {opts:["덕수궁 센트럴 푸르지오","경희궁 자이","힐스테이트 종로 그랑루체","인왕산 아이파크 스카이뷰"],real:1,
+  meta:"서울 종로구 홍파동<br>2017년 준공 · 2,415세대"},
+ {opts:["성수 더샵 리버노블","e편한세상 서울숲 에듀포레","트리마제","두산위브 리버 퍼스티지"],real:2,
+  meta:"서울 성동구 성수동<br>2017년 준공 · 688세대"},
+ {opts:["래미안 대치 스카이포레","자이 대치 노블어반","대치 푸르지오 에듀센트럴","은마"],real:3,
+  meta:"서울 강남구 대치동<br>1979년 준공 · 4,424세대"},
+];
+let pkI=0, pkCombo=0;
+function startPick(){ pkI=0; pkCombo=0; show("s-pick"); pkRender(); }
+function pkRender(){
+  const q=PKQ[pkI];
+  $("pk-num").textContent=String(pkI+1).padStart(2,"0")+" / 03";
+  $("pk-list").innerHTML=q.opts.map((o,k)=>
+    `<button class="pick" onclick="pkAnswer(${k})">${o}</button>`
+  ).join("");
+  $("pk-verdict").hidden=true; $("pk-nextwrap").hidden=true;
+  $("pk-combo").textContent="";
+}
+function pkAnswer(k){
+  const q=PKQ[pkI], ok=k===q.real;
+  pkCombo = ok ? pkCombo+1 : 0;
+  document.querySelectorAll("#pk-list .pick").forEach((b,idx)=>{
+    b.disabled=true;
+    b.classList.add(idx===q.real?"hit":"miss");
+  });
+  const v=$("pk-verdict");
+  v.hidden=false; v.className="verdict "+(ok?"right":"wrong");
+  $("pk-mark").textContent=ok?"적중":"오판";
+  $("pk-title").textContent=`진짜는 "${q.opts[q.real]}"`;
+  $("pk-meta").innerHTML=q.meta;
+  $("pk-combo").innerHTML=ok?`연속 <b>${pkCombo}</b>개 적중 중`:"콤보가 끊겼습니다";
+  $("pk-nextwrap").hidden=false;
+  $("pk-nextbtn").textContent=(pkI===PKQ.length-1)?"끝내기":"다음 라운드";
+}
+function pkNext(){ pkI++; if(pkI<PKQ.length){pkRender();} else{goHome();} }
+
+/* ============ 접수 대장 (db 캐퍼빌리티) ============ */
+let dbRef=null;
+(async ()=>{
+  try{
+    dbRef = await window.claude?.use?.("db");
+    if(!dbRef) return;
+    dbRef.collection("records").orderBy("ts","desc").limit(5).onSnapshot(snap=>{
+      const rows=snap.docs.map(d=>d.data()).filter(r=>r&&r.name);
+      if(!rows.length){ $("records").hidden=true; return; }
+      $("records").hidden=false;
+      $("records-list").innerHTML=rows.map(r=>
+        `<li><span class="who">${esc(r.name)}</span><span class="gr">${esc(r.grade||"")}</span><span class="sc mono">${Number(r.score)||0}/10</span></li>`
+      ).join("");
+    },()=>{ $("records").hidden=true; });
+  }catch(e){ /* db 미지원 뷰: 대장 비노출 */ }
+})();
+function esc(s){ return String(s).replace(/[<>&"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c])); }
+async function registerRecord(){
+  if(!dbRef || !lastResult) return;
+  const nick=$("nick").value.trim();
+  if(!nick){ $("regnote").textContent="닉네임을 입력해 주세요"; return; }
+  $("regbtn").disabled=true;
+  try{
+    await dbRef.collection("records").add({name:nick, score:lastResult.s, grade:lastResult.g, ts:Date.now()});
+    $("regnote").textContent="등록 완료. 창구 화면의 접수 대장에서 확인하세요";
+    $("regbtn").textContent="등록됨";
+  }catch(e){
+    $("regnote").textContent="지금은 등록할 수 없습니다. 잠시 후 다시 시도해 주세요";
+    $("regbtn").disabled=false;
+  }
 }
 </script>
