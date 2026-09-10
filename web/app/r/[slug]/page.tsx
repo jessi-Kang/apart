@@ -71,7 +71,9 @@ export default async function ResultPage({ params }: Props) {
           <p className="grade-desc">{grade.desc}</p>
           <div className="grid-line" role="img" aria-label={`10문제 중 ${r.score}문제 정답`}>
             {r.marks.map((m, k) => (
-              <GridTile key={k} ok={m} />
+              <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
+                <GridTile ok={m} />
+              </span>
             ))}
           </div>
           <div className="result-actions">

@@ -17,6 +17,7 @@ body {
   color: var(--ink);
   font-family: "IBM Plex Sans KR", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  word-break: keep-all; /* 한국어 어절 단위 줄바꿈. 긴 무공백 단지명은 아래 anywhere가 받는다 */
 }
 .mono { font-family: "IBM Plex Mono", monospace; }
 [hidden] { display: none !important; }
@@ -45,6 +46,10 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   gap: 12px; align-items: baseline;
 }
 .sheet-footer span:last-child { flex-shrink: 0; white-space: nowrap; }
+@media (max-width: 479px) {
+  .sheet-footer { flex-direction: column; gap: 3px; align-items: flex-start; }
+  .sheet-footer span:last-child { white-space: normal; }
+}
 
 /* ---- 홈 ---- */
 .home h1 { font-size: clamp(26px, 6.5vw, 36px); line-height: 1.25; letter-spacing: -0.03em; font-weight: 700; }
@@ -89,7 +94,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .qname-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 0; min-height: 150px; }
 .qname {
   font-size: clamp(30px, 8.5vw, 44px); font-weight: 700; letter-spacing: -0.03em;
-  line-height: 1.28; text-align: center; word-break: keep-all; max-width: 14ch;
+  line-height: 1.28; text-align: center; max-width: 14ch; overflow-wrap: anywhere;
 }
 .verdict { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
 .verdict .mark {
@@ -98,7 +103,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 .verdict.right .mark { color: var(--ink); }
 .verdict.wrong .mark { color: var(--stamp); }
-.verdict h3 { margin-top: 12px; font-size: 17px; letter-spacing: -0.02em; }
+.verdict h3 { margin-top: 12px; font-size: 17px; letter-spacing: -0.02em; overflow-wrap: anywhere; }
 .verdict .meta { margin-top: 8px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
 .verdict .rate { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--ink-soft); }
 .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -118,11 +123,16 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .stamp-text {
   position: relative; display: block; padding: 14px 22px;
   font-weight: 700; font-size: clamp(18px, 5vw, 24px); letter-spacing: -0.02em;
-  word-break: keep-all;
 }
 .grade-desc { margin-top: 16px; color: var(--ink-soft); font-size: 14px; line-height: 1.65; max-width: 32ch; }
-.grid-line { margin-top: 22px; display: flex; gap: 6px; flex-wrap: wrap; }
+.grid-line { margin-top: 22px; display: flex; gap: 6px; }
 .grid-line svg { display: block; }
+@media (max-width: 419px) {
+  /* 26px 고정 10칸은 360px대에서 줄이 꺾인다 — 한 줄 유지가 공유 그리드의 정체성 */
+  .grid-line { gap: 4px; }
+  .grid-line > * { flex: 1; min-width: 0; }
+  .grid-line svg { width: 100%; max-width: 26px; height: auto; margin: 0 auto; }
+}
 .top-note { margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
 .top-note b { color: var(--stamp); }
 .review { margin-top: 20px; border-top: 1px solid var(--line); }
@@ -130,7 +140,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   list-style: none; display: flex; justify-content: space-between; gap: 12px;
   padding: 11px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px;
 }
-.review .nm { font-weight: 500; }
+.review .nm { font-weight: 500; overflow-wrap: anywhere; }
 .review .nm.x { color: var(--ink-soft); }
 .review .tag { color: var(--ink-soft); font-size: 12px; white-space: nowrap; }
 .review .tag.f { color: var(--stamp); }
@@ -161,7 +171,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .pick {
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--sheet); color: var(--ink);
   font-size: 16px; font-weight: 700; letter-spacing: -0.02em; padding: 17px 14px; cursor: pointer;
-  text-align: center; word-break: keep-all; transition: opacity 0.12s ease;
+  text-align: center; overflow-wrap: anywhere; transition: opacity 0.12s ease;
 }
 .pick:active { background: var(--paper); }
 .pick.hit { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
@@ -180,7 +190,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 .answers .no { color: var(--ink-soft); font-size: 12px; }
 .answers .body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.answers .nm { font-weight: 700; font-size: 15px; letter-spacing: -0.02em; word-break: keep-all; }
+.answers .nm { font-weight: 700; font-size: 15px; letter-spacing: -0.02em; overflow-wrap: anywhere; }
 .answers .detail { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
 .answers .tag { margin-left: auto; color: var(--ink-soft); font-size: 12px; white-space: nowrap; }
 .answers .tag.f { color: var(--stamp); }
