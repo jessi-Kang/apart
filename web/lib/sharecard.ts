@@ -35,70 +35,82 @@ function font(weight: number, size: number, family = SANS) {
   return `${weight} ${size}px ${family}`;
 }
 
-/** 관인: Seal.tsx와 같은 조형을 캔버스로 (링 텍스트 + 아파트 글리프) */
-function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, alpha = 1) {
+/** SVG 문자열을 이미지로 래스터 (feTurbulence 등 SVG 필터가 그대로 적용된다) */
+function svgImage(svg: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("svg_load_failed"));
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  });
+}
+
+/** 관인: 도형부는 웹 Seal 컴포넌트와 동일한 SVG(feTurbulence 포함)를 래스터해
+ * 질감까지 똑같이 가져오고, 링 텍스트만 페이지 폰트로 캔버스에 그린다 */
+const SEAL_SHAPE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <filter id="sr" x="-8%" y="-8%" width="116%" height="116%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/>
+  </filter>
+  <g filter="url(#sr)">
+    <g fill="none" stroke="${STAMP}">
+      <circle cx="100" cy="100" r="92" stroke-width="5"/>
+      <circle cx="100" cy="100" r="84" stroke-width="1.6"/>
+      <circle cx="100" cy="100" r="52" stroke-width="1.6"/>
+    </g>
+    <g fill="${STAMP}">
+      <circle cx="28" cy="100" r="3"/>
+      <circle cx="172" cy="100" r="3"/>
+      <rect x="84" y="72" width="32" height="52" rx="2"/>
+      <rect x="92" y="65" width="16" height="7" rx="1.5"/>
+    </g>
+    <g fill="${SHEET}">
+      <rect x="89" y="79" width="8" height="7" rx="1"/>
+      <rect x="103" y="79" width="8" height="7" rx="1"/>
+      <rect x="89" y="91" width="8" height="7" rx="1"/>
+      <rect x="103" y="91" width="8" height="7" rx="1"/>
+      <rect x="89" y="103" width="8" height="7" rx="1"/>
+      <rect x="103" y="103" width="8" height="7" rx="1"/>
+      <rect x="96" y="114" width="8" height="10" rx="1"/>
+    </g>
+  </g>
+</svg>`;
+
+async function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, alpha = 1) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.globalAlpha = alpha;
-  ctx.strokeStyle = STAMP;
+  try {
+    const img = await svgImage(SEAL_SHAPE_SVG);
+    ctx.drawImage(img, -r, -r, r * 2, r * 2);
+  } catch {
+    // SVG 래스터 실패 시 민무늬 원으로 폴백
+    ctx.strokeStyle = STAMP;
+    ctx.lineWidth = r * 0.055;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.92, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // 링 텍스트: 밴드 중앙(0.68r)에 글자 중심 정렬 — 웹 Seal의 central 정렬과 동일
   ctx.fillStyle = STAMP;
-
-  ctx.lineWidth = r * 0.055;
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.92, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.lineWidth = r * 0.018;
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.84, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.52, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // 링 텍스트: 위 "아파트 감별사", 아래 "감별민원 접수처" (둘 다 정방향 판독)
   const ringText = (text: string, radius: number, size: number, top: boolean) => {
     ctx.font = font(700, size);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    const step = (size * 1.55) / radius; // 글자 간 각도
-    const total = step * (text.length - 1);
-    for (let i = 0; i < text.length; i++) {
-      // 위쪽은 상단 중심(0)에서 좌→우, 아래쪽은 하단 중심에서 좌→우(각도 역방향)
+    const chars = [...text.replace(/\s/g, "")];
+    const step = (21 * Math.PI) / 180; // 글자당 21° — 웹과 동일
+    const total = step * (chars.length - 1);
+    for (let i = 0; i < chars.length; i++) {
       const a = top ? -total / 2 + step * i : total / 2 - step * i;
       ctx.save();
       ctx.rotate(a);
-      // 하단 글자는 중심을 향해 바로 선다 — 추가 회전(플립) 금지
       ctx.translate(0, top ? -radius : radius);
-      ctx.fillText(text[i], 0, 0);
+      ctx.fillText(chars[i], 0, 0);
       ctx.restore();
     }
   };
-  ringText("아파트 감별사", r * 0.68, r * 0.155, true);
-  ringText("감별민원 접수처", r * 0.68, r * 0.135, false);
-
-  // 좌우 구분점
-  ctx.beginPath();
-  ctx.arc(-r * 0.68, 0, r * 0.03, 0, Math.PI * 2);
-  ctx.arc(r * 0.68, 0, r * 0.03, 0, Math.PI * 2);
-  ctx.fill();
-
-  // 중앙 아파트 글리프 (파비콘 조형)
-  const u = r / 100; // 글리프 좌표계
-  const rr = (x: number, y: number, w: number, h: number, rad: number, color: string) => {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.roundRect(x * u, y * u, w * u, h * u, rad * u);
-    ctx.fill();
-  };
-  rr(-16, -28, 32, 52, 2, STAMP);
-  rr(-8, -35, 16, 7, 1.5, STAMP);
-  rr(-11, -21, 8, 7, 1, SHEET);
-  rr(3, -21, 8, 7, 1, SHEET);
-  rr(-11, -9, 8, 7, 1, SHEET);
-  rr(3, -9, 8, 7, 1, SHEET);
-  rr(-11, 3, 8, 7, 1, SHEET);
-  rr(3, 3, 8, 7, 1, SHEET);
-  rr(-4, 14, 8, 10, 1, SHEET);
+  ringText("아파트 감별사", r * 0.68, r * 0.16, true);
+  ringText("감별민원 접수처", r * 0.68, r * 0.14, false);
   ctx.restore();
 }
 
@@ -138,47 +150,42 @@ function drawTile(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   ctx.restore();
 }
 
-/** 도장 테두리용 거친 사각 경로: 변을 잘게 쪼개고 지터를 준다
- * (웹의 feTurbulence 질감을 캔버스에서 재현 — 결과 화면 Stamp와 같은 인상) */
-function roughRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, jitter: number) {
-  const seg = 14; // 지터 점 간격(px)
-  ctx.beginPath();
-  const pts: [number, number][] = [];
-  for (let t = 0; t < w; t += seg) pts.push([x + t, y]);
-  for (let t = 0; t < h; t += seg) pts.push([x + w, y + t]);
-  for (let t = 0; t < w; t += seg) pts.push([x + w - t, y + h]);
-  for (let t = 0; t < h; t += seg) pts.push([x, y + h - t]);
-  pts.forEach(([px, py], i) => {
-    const jx = px + (Math.random() * 2 - 1) * jitter;
-    const jy = py + (Math.random() * 2 - 1) * jitter;
-    if (i === 0) ctx.moveTo(jx, jy);
-    else ctx.lineTo(jx, jy);
-  });
-  ctx.closePath();
+/** 등급 도장: 결과 페이지 Stamp 컴포넌트의 SVG 프레임을 그대로 래스터.
+ * viewBox 240×72를 목표 크기로 늘리는 것까지 웹(preserveAspectRatio:none)과 동일 */
+function stampFrameSvg(w: number, h: number): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 240 72" preserveAspectRatio="none">
+  <filter id="fr" x="-10%" y="-18%" width="120%" height="136%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.08 0.12" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <g filter="url(#fr)">
+    <rect x="4" y="4" width="232" height="64" fill="none" stroke="${STAMP}" stroke-width="4.5"/>
+    <rect x="11" y="11" width="218" height="50" fill="none" stroke="${STAMP}" stroke-width="1.4"/>
+  </g>
+</svg>`;
 }
 
-/** 등급 도장: Stamp 컴포넌트의 거친 이중 테두리 사각 */
-function drawGradeStamp(ctx: CanvasRenderingContext2D, cx: number, cy: number, text: string) {
+async function drawGradeStamp(ctx: CanvasRenderingContext2D, cx: number, cy: number, text: string) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate((-2.5 * Math.PI) / 180);
   ctx.font = font(700, 58);
   const tw = ctx.measureText(text).width;
-  const w = tw + 96;
-  const h = 118;
-  ctx.strokeStyle = STAMP;
-  ctx.lineJoin = "round";
-  ctx.lineWidth = 7;
-  roughRectPath(ctx, -w / 2, -h / 2, w, h, 2.6);
-  ctx.stroke();
-  // 안쪽 보조 테두리도 거칠게 — 인주가 이중으로 눌린 자국
-  ctx.lineWidth = 3;
-  roughRectPath(ctx, -w / 2 + 10, -h / 2 + 10, w - 20, h - 20, 2.2);
-  ctx.stroke();
+  const w = tw + 110;
+  const h = 128;
+  try {
+    const img = await svgImage(stampFrameSvg(w, h));
+    ctx.drawImage(img, -w / 2, -h / 2, w, h);
+  } catch {
+    // 폴백: 민무늬 이중 테두리
+    ctx.strokeStyle = STAMP;
+    ctx.lineWidth = 7;
+    ctx.strokeRect(-w / 2 + 4, -h / 2 + 4, w - 8, h - 8);
+  }
   ctx.fillStyle = STAMP;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(text, 0, 4);
+  ctx.fillText(text, 0, 3);
   ctx.restore();
 }
 
@@ -267,8 +274,8 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   ctx.fillStyle = INK_SOFT;
   ctx.font = font(700, 72);
   ctx.fillText("/ 10", W / 2 + 128, 500);
-  drawSeal(ctx, right - 100, 330, 128, 0.85);
-  drawGradeStamp(ctx, W / 2, 640, data.gradeName);
+  await drawSeal(ctx, right - 100, 330, 128, 0.85);
+  await drawGradeStamp(ctx, W / 2, 640, data.gradeName);
 
   // 판정 그리드 (한 줄 10칸)
   const ts = 66;
