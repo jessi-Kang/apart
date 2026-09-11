@@ -15,6 +15,13 @@ let deferred: BeforeInstallPromptEvent | null = null;
 const subs = new Set<() => void>();
 
 if (typeof window !== "undefined") {
+  // 헤드의 선점 스크립트가 번들 로드 전에 잡아둔 이벤트를 회수한다
+  const stashed = (window as { __aptgamBIP?: BeforeInstallPromptEvent }).__aptgamBIP;
+  if (stashed) deferred = stashed;
+  window.addEventListener("aptgam:bip", () => {
+    deferred = (window as { __aptgamBIP?: BeforeInstallPromptEvent }).__aptgamBIP ?? deferred;
+    subs.forEach((f) => f());
+  });
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferred = e as BeforeInstallPromptEvent;
