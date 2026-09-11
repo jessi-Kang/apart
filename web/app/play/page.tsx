@@ -6,6 +6,7 @@ import { LevelBar } from "@/components/LevelBar";
 import { DocTitle, MiniGrid, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { CloseX } from "@/components/CloseX";
 import { SoundToggle } from "@/components/SoundToggle";
+import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { gradeFor } from "@/lib/grades";
@@ -524,6 +525,9 @@ export default function PlayPage() {
 
         {phase === "eresult" && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={216} />
+            </div>
             <DocTitle eyebrow="감별결과통지" title="무한 감별 결과" />
             <StampHero name={eGradeName} />
             <p className="stamp-sub">
@@ -580,6 +584,9 @@ export default function PlayPage() {
 
         {phase === "result" && quiz && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={216} />
+            </div>
             <DocTitle eyebrow="감별결과통지" title={`제${ep}호 감별 결과`} />
             <StampHero name={grade.name} />
             <p className="stamp-sub">

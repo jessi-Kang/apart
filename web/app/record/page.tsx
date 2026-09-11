@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DocTitle, MiniGrid, VForm, VRow } from "@/components/VerdictForm";
 import { LevelBar } from "@/components/LevelBar";
+import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { comboState, currentStreak, endlessRecord, loadResult, type ComboState } from "@/lib/local";
 import { currentLevel, type LevelInfo } from "@/lib/level";
@@ -109,6 +110,9 @@ export default function RecordPage() {
         </header>
 
         <section className="screen result">
+          <div className="result-seal" aria-hidden="true">
+            <Seal size={216} />
+          </div>
           <DocTitle eyebrow="감별사기록부" title={`Lv.${level?.level ?? 1} ${level?.title ?? "견습 감별사"}`} />
           <p className="stamp-sub">
             {loaded ? `누적 ${level?.xp ?? 0}점 · 연속 출전 ${Math.max(streak.count, 0)}일` : "기록을 불러오는 중"}
