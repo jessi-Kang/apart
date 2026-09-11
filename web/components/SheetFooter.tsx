@@ -7,7 +7,7 @@ export function SheetFooter() {
     <footer className="sheet-footer">
       <span>단지 정보 출처: 공공데이터포털 K-apt</span>
       <span className="copyright">
-        © 2026 아파트 감별사 · made by <a href="mailto:jihyun.kang@me.com">Jessi</a> ·{" "}
+        © 2026 <a href="mailto:jihyun.kang@me.com">Jessi</a> ·{" "}
         <a href="https://vibelog-orcin.vercel.app/log" target="_blank" rel="noopener noreferrer">
           개발 일지
         </a>
