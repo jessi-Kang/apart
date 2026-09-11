@@ -86,6 +86,7 @@ export default function AssemblePage() {
   const [sBest, setSBest] = useState(0);
   const [sMarks, setSMarks] = useState<boolean[]>([]); // 판의 문제별 판정 (공유 카드 그리드)
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
+  const [pendingOfficial, setPendingOfficial] = useState(false); // 홈에서 공식전으로 바로 들어왔는가
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const runTimes = useRef<number[]>([]);
   const sessionTimes = useRef<number[]>([]);
@@ -96,6 +97,9 @@ export default function AssemblePage() {
   useEffect(() => {
     setERec(endlessRecord("assemble"));
     setFirstTime(firstVisit("assemble"));
+    // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
+    // quiz가 들어온 뒤에 열어야 해서 깃발만 세우고 아래 effect에서 처리한다
+    const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
     fetch("/api/assemble/today")
       .then((r) => r.json())
       .then((data: TodayResponse) => {
@@ -110,10 +114,20 @@ export default function AssemblePage() {
         } catch {
           /* 무시 */
         }
-        void startEndless();
+        if (wantOfficial) setPendingOfficial(true);
+        else void startEndless();
       })
       .catch(() => setPhase("error"));
   }, []);
+
+  // 공식전 직행: quiz가 도착한 뒤에 연다. 이미 치렀으면 성적표를 펼친다
+  useEffect(() => {
+    if (!pendingOfficial || !quiz) return;
+    setPendingOfficial(false);
+    if (officialDone) replayOfficial();
+    else startOfficial();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingOfficial, quiz, officialDone]);
 
   useEffect(() => {
     if (phase === "solve") qStart.current = Date.now();
@@ -500,7 +514,8 @@ export default function AssemblePage() {
                 )}
               </p>
             ) : (
-              <p className="qlabel mono">
+              <p className="qlabel mono qlabel-row">
+                <span className="mode-chip official">제{ep}호 공식전</span>
                 {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
               </p>
             )}

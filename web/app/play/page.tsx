@@ -74,15 +74,24 @@ export default function PlayPage() {
   useEffect(() => {
     setERec(endlessRecord("ox"));
     setFirstTime(firstVisit("ox"));
-    setArea(areaPref());
+    setArea(areaPref().replace(/특별자치시$|특별시$|광역시$/, ""));
+    // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다
+    const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
     fetch("/api/quiz/today")
       .then((r) => r.json())
       .then((data: TodayResponse) => {
         setQuiz(data);
         // 무한이 본편 — 창구에 들어오면 바로 시작한다. 공식전(오늘의 10문제)은 선택 참가
         const saved = loadResult(data.date);
-        setOfficialDone(Boolean(saved && saved.marks.length === data.items.length));
-        void startEndless();
+        const done = Boolean(saved && saved.marks.length === data.items.length);
+        setOfficialDone(done);
+        if (wantOfficial && done && saved) {
+          openSavedOfficial(data.date, saved);
+        } else if (wantOfficial) {
+          startOfficial();
+        } else {
+          void startEndless();
+        }
       })
       .catch(() => setPhase("error"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -182,11 +191,16 @@ export default function PlayPage() {
     const saved = loadResult(quiz.date);
     if (!saved) return;
     sfxTap();
+    openSavedOfficial(quiz.date, saved);
+  }
+
+  /** 저장된 공식전 성적표를 화면에 올린다. quiz 상태가 아직 없는 마운트 시점에도 쓴다 */
+  function openSavedOfficial(date: string, saved: SavedResult) {
     setEndless(false);
     setMarks(saved.marks);
     setReview(saved.review ?? []);
     setTopPct(saved.topPct ?? null);
-    setStreak(bumpStreak(quiz.date)); // 같은 날 재호출은 기존 값을 그대로 돌려준다
+    setStreak(bumpStreak(date)); // 같은 날 재호출은 기존 값을 그대로 돌려준다
     setXpRes(null); // 경험치는 이미 받았다 — 다시 주지 않는다
     setImgState("idle");
     setPhase("result");

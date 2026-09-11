@@ -140,12 +140,19 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .ledger-head span:first-child { border-right: 1px solid var(--line); }
 .ledger-head span:nth-child(2) { text-align: left; padding-inline: 14px; }
 .ledger-head span:last-child { border-left: 1px solid var(--line); }
+/* 한 행에 목적지가 둘이다: 창구 이름 = 무한, 오른쪽 도장 = 공식전.
+   그래서 행 전체를 링크로 감싸지 않고 두 링크로 나눈다 */
 .ledger .row {
-  display: grid; grid-template-columns: 44px 1fr 74px; align-items: stretch;
-  border-bottom: 1px solid var(--line); cursor: pointer; color: var(--ink); text-decoration: none;
+  display: grid; grid-template-columns: 1fr 74px; align-items: stretch;
+  border-bottom: 1px solid var(--line);
+}
+.ledger .rmain {
+  display: grid; grid-template-columns: 44px 1fr; align-items: stretch;
+  cursor: pointer; color: var(--ink); text-decoration: none;
 }
 .ledger .row:last-child { border-bottom: none; }
-.ledger .row:active { background: var(--paper); }
+.ledger .rmain:active, .ledger a.st:active { background: var(--paper); }
+.ledger a.st { text-decoration: none; cursor: pointer; }
 .ledger .no {
   display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 500;
   border-right: 1px solid var(--line);
@@ -171,7 +178,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .ledger .row.off .tt { font-weight: 500; }
 .ledger .row.off:active { background: none; }
 @media (hover: hover) {
-  .ledger .row:not(.off):hover { background: var(--paper); }
+  .ledger .rmain:hover, .ledger a.st:hover { background: var(--paper); }
 }
 
 /* ---- 감별사 신분증 (홈): 레벨 + 이름 + 직급이 딱 한 줄 ---- */
@@ -230,6 +237,9 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
    포커스 표시는 남기되 색은 잉크로 */
 .area-sel:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .area-note { grid-column: 2; font-size: 11.5px; color: var(--ink-soft); }
+/* 대장 아래 한 줄: 같은 행에 목적지가 둘이라는 것을 화면이 직접 말한다 */
+.ledger-note { margin-top: 10px; font-size: 12px; line-height: 1.6; color: var(--ink-soft); text-wrap: pretty; }
+.ledger-note b { color: var(--ink); font-weight: 700; }
 
 /* ---- 계정 줄 (기록 열람실) ---- */
 .acct-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -243,10 +253,13 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .acct-line button:focus-visible { color: var(--stamp); }
 
 /* ---- 버튼 ---- */
+/* 격자 칸에서 버튼은 가장 큰 형제만큼 늘어난다. display:block이면 글자가 위에
+   붙어 "창구로 돌아가기"만 위로 치우쳐 보였다. 안에서 가운데로 잡아 준다 */
 .btn {
   font-size: 15px; font-weight: 700; letter-spacing: -0.01em; padding: 15px 12px;
   border-radius: var(--radius); cursor: pointer; transition: transform 0.12s ease;
-  text-align: center; text-decoration: none; display: block;
+  text-align: center; text-decoration: none;
+  display: flex; align-items: center; justify-content: center;
 }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.4; cursor: default; }
@@ -336,6 +349,8 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .stamp-sub { text-wrap: balance; text-align: center; color: var(--ink-soft); font-size: 13.5px; line-height: 1.6; }
 .vform { margin-top: 22px; border: 1px solid var(--ink); border-radius: var(--radius); }
 .vrow { display: grid; grid-template-columns: 96px 1fr; border-bottom: 1px solid var(--line); }
+/* 좁은 화면에서는 라벨 칸을 줄여 값 칸(판정 10칸 등)에 자리를 준다 */
+@media (max-width: 430px) { .vrow { grid-template-columns: 78px 1fr; } }
 .vrow:last-child { border-bottom: none; }
 .vk {
   padding: 13px 12px; font-size: 12px; color: var(--ink-soft); background: var(--paper);
@@ -350,12 +365,16 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 /* 기록 열람실: 기록 옆에 붙는 순위 조각 (줄이 좁으면 다음 줄로 넘어간다) */
 .vr-rank { font-weight: 500; font-size: 12.5px; color: var(--ink-soft); }
 .vr-rank::before { content: "·"; margin-right: 8px; color: var(--line); }
-.mini-grid { display: flex; gap: 4px; flex-wrap: wrap; }
-.mini-grid svg { width: 21px; height: 21px; display: block; }
+/* 판정 칸은 한 줄로 끝난다. flex-wrap이면 10칸이 8+2로 꺾여서 둘째 줄 오른쪽이
+   통째로 비고, 몇 개를 맞혔는지 한눈에 세어지지도 않는다.
+   한 줄 격자로 두고 칸이 모자라면 타일이 줄어들게 한다 */
+.mini-grid {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 24px);
+  gap: 4px; justify-content: start;
+}
+.mini-grid svg { width: 100%; height: auto; display: block; }
 @media (max-width: 430px) {
-  /* 좁은 화면에서 10칸이 두 줄로 꺾이면 판정이 한눈에 안 읽힌다 */
-  .mini-grid { gap: 3px; }
-  .mini-grid svg { width: 18px; height: 18px; }
+  .mini-grid { gap: 3px; grid-auto-columns: minmax(0, 22px); }
 }
 /* 서식 칸 속 레벨바는 한 줄로 눕는다 */
 .vv .levelbar { margin-top: 0; max-width: none; flex: 1; min-width: 160px; }
@@ -645,4 +664,15 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .acct-line a:hover,
   .acct-line button:hover,
   .it-close:hover { color: var(--stamp); }
+}
+
+/* 터치 기기에서는 고른 뒤에도 남는 포커스 테두리를 그리지 않는다.
+   손가락으로 고른 사람에게 그 사각형은 "선택됨"이 아니라 "뭔가 걸렸다"로 읽힌다.
+   키보드 포커스 표시는 마우스·키보드 기기에 그대로 남는다 */
+@media (pointer: coarse) {
+  .area-sel:focus-visible,
+  .area-sel:focus { outline: none; }
+  /* 길게 눌렀을 때 버튼·도장·조각에 글자 선택 영역이 잡히지 않게 */
+  .btn, .tile, .slot, .chop, .mode-chip, .official-chip, .ledger .tt, .ledger .dd,
+  .ledger-head, .area-k, .idb-lv, .sound-btn, .foot-install { user-select: none; -webkit-user-select: none; }
 }

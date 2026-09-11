@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
-import { districts } from "@/lib/data";
+import { regions } from "@/lib/data";
 import { AreaPicker } from "@/components/AreaPicker";
 import { DailyChop, FindTail, RecTail } from "@/components/LedgerStatus";
 import { IdBadge } from "@/components/IdBadge";
@@ -57,7 +57,7 @@ export default function HomePage() {
           </h1>
           <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 감별{" "}게임</p>
           <IdBadge />
-          <AreaPicker districts={districts} />
+          <AreaPicker regions={regions} />
 
           <nav className="ledger" aria-label="게임 목록">
             <div className="ledger-head mono">
@@ -65,56 +65,74 @@ export default function HomePage() {
               <span>창구</span>
               <span>공식전</span>
             </div>
-            <Link className="row" href="/play">
-              <span className="no mono">1</span>
-              <span className="cell">
-                <span className="tt">감별 O/X</span>
-                <span className="dd">이름 하나를 보고 진짜/가짜</span>
-                <span className="dd-rec">
-                  <RecTail mode="ox" />
+            <div className="row">
+              <Link className="rmain" href="/play">
+                <span className="no mono">1</span>
+                <span className="cell">
+                  <span className="tt">감별 O/X</span>
+                  <span className="dd">이름 하나를 보고 진짜/가짜</span>
+                  <span className="dd-rec">
+                    <RecTail mode="ox" />
+                  </span>
                 </span>
-              </span>
-              <span className="st">
+              </Link>
+              {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
+                  아무도 공식전을 찾지 못했다 */}
+              <Link className="st" href="/play?official=1">
                 <DailyChop mode="ox" date={date} />
-              </span>
-            </Link>
-            <Link className="row" href="/assemble">
-              <span className="no mono">2</span>
-              <span className="cell">
-                <span className="tt">이름 조립</span>
-                <span className="dd">힌트로 단지명 조립</span>
-                <span className="dd-rec">
-                  <RecTail mode="assemble" />
+              </Link>
+            </div>
+            <div className="row">
+              <Link className="rmain" href="/assemble">
+                <span className="no mono">2</span>
+                <span className="cell">
+                  <span className="tt">이름 조립</span>
+                  <span className="dd">힌트로 단지명 조립</span>
+                  <span className="dd-rec">
+                    <RecTail mode="assemble" />
+                  </span>
                 </span>
-              </span>
-              <span className="st">
+              </Link>
+              {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
+                  아무도 공식전을 찾지 못했다 */}
+              <Link className="st" href="/assemble?official=1">
                 <DailyChop mode="assemble" date={date} />
-              </span>
-            </Link>
-            <Link className="row" href="/findreal">
-              <span className="no mono">3</span>
-              <span className="cell">
-                <span className="tt">진짜 찾기</span>
-                <span className="dd">넷 중 진짜는 하나</span>
-                <span className="dd-rec">
-                  <FindTail />
+              </Link>
+            </div>
+            <div className="row">
+              <Link className="rmain" href="/findreal">
+                <span className="no mono">3</span>
+                <span className="cell">
+                  <span className="tt">진짜 찾기</span>
+                  <span className="dd">넷 중 진짜는 하나</span>
+                  <span className="dd-rec">
+                    <FindTail />
+                  </span>
                 </span>
-              </span>
-              <span className="st">
+              </Link>
+              {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
+                  아무도 공식전을 찾지 못했다 */}
+              <Link className="st" href="/findreal?official=1">
                 <DailyChop mode="findreal" date={date} />
-              </span>
-            </Link>
+              </Link>
+            </div>
             <div className="row off">
-              <span className="no mono">4</span>
-              <span className="cell">
-                <span className="tt">작명소</span>
-                <span className="dd">2단계 개설 예정 창구</span>
+              <span className="rmain">
+                <span className="no mono">4</span>
+                <span className="cell">
+                  <span className="tt">작명소</span>
+                  <span className="dd">2단계 개설 예정 창구</span>
+                </span>
               </span>
               <span className="st">
                 <span className="chop off">미개설</span>
               </span>
             </div>
           </nav>
+          <p className="ledger-note">
+            창구 이름을 누르면 <b>무한</b>으로 바로 시작합니다. 오른쪽 <b>공식전</b> 도장을 누르면
+            그날 전국이 같은 10문제를 푸는 랭킹전에 출전합니다.
+          </p>
         </section>
 
         <SheetFooter />

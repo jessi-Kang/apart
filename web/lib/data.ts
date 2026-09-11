@@ -37,17 +37,47 @@ export const fakeNames: FakeName[] = (fakesJson.items as FakeName[]).filter(
   (f) => !ADMIN_NOISE.test(f.name),
 );
 
-/* ---------- 구역(자치구) 출제 ---------- */
+/* ---------- 구역 출제 ---------- */
 
-/** 구역 목록 — 단지가 20곳 이상인 자치구만. 표본이 얇으면 같은 문제가 반복된다 */
-export const districts: string[] = [
-  ...new Set(apartments.map((a) => a.sigungu)),
-]
-  .filter((g) => apartments.filter((a) => a.sigungu === g).length >= 20)
-  .sort((a, b) => a.localeCompare(b, "ko"));
+const MIN_POOL = 20; // 표본이 얇으면 같은 문제가 곧바로 되풀이된다
 
-const districtSet = new Set(districts);
-export const isDistrict = (x: unknown): x is string => typeof x === "string" && districtSet.has(x);
+/**
+ * 고를 수 있는 구역.
+ * 서울은 K-apt를 전수로 받아서 자치구까지 쪼갤 수 있지만, 다른 시·도는 아직
+ * 400건 안팎만 받아 둔 상태라 구 단위로 쪼개면 한 구에 열 곳도 안 남는다.
+ * 그래서 서울만 자치구를 열어 주고 나머지는 시·도 통째로 묶는다.
+ */
+export interface RegionGroup {
+  sido: string;
+  label: string;
+  districts: string[]; // 비어 있으면 시·도 단위로만 고른다
+}
+
+const bySido = new Map<string, Apartment[]>();
+for (const a of apartments) {
+  const list = bySido.get(a.sido);
+  if (list) list.push(a);
+  else bySido.set(a.sido, [a]);
+}
+
+const shortSido = (s: string) => s.replace(/특별자치시$|특별시$|광역시$/, "");
+
+export const regions: RegionGroup[] = [...bySido.entries()]
+  .filter(([, list]) => list.length >= MIN_POOL)
+  .sort((a, b) => b[1].length - a[1].length)
+  .map(([sido, list]) => {
+    const gus = [...new Set(list.map((a) => a.sigungu))]
+      .filter((g) => list.filter((a) => a.sigungu === g).length >= MIN_POOL)
+      .sort((a, b) => a.localeCompare(b, "ko"));
+    return { sido, label: shortSido(sido), districts: sido === "서울특별시" ? gus : [] };
+  });
+
+const sidoSet = new Set(regions.map((r) => r.sido));
+const districtSet = new Set(regions.flatMap((r) => r.districts));
+
+/** 고른 값이 쓸 수 있는 구역인가 (시·도 이름이거나 자치구 이름) */
+export const isArea = (x: unknown): x is string =>
+  typeof x === "string" && (sidoSet.has(x) || districtSet.has(x));
 
 /**
  * 가짜 이름이 어느 구역의 말투인지 — "송파현대"처럼 지역/동 이름을 단 가짜는
@@ -59,28 +89,32 @@ export const isDistrict = (x: unknown): x is string => typeof x === "string" && 
  * 남는 구멍이지만 틀린 답을 만들지는 않고(가짜는 그대로 가짜다), 메우려면
  * 법정동 전체 표가 필요해서 지금은 여기까지 한다.
  */
+/** 구 이름은 도시마다 겹친다(서울 중구·부산 중구). 시·도까지 붙여야 구분된다 */
+const guKey = (sido: string, sigungu: string) => `${sido}|${sigungu}`;
+
 const regionTokens = (() => {
   const m = new Map<string, Set<string>>();
-  const add = (token: string, gu: string) => {
+  const add = (token: string, key: string) => {
     if (token.length < 2) return;
     let set = m.get(token);
     if (!set) m.set(token, (set = new Set()));
-    set.add(gu);
+    set.add(key);
   };
   // 걸러내기 전 원본에서 뽑는다. 관리 단위 행만 있던 동네(삼양동 등)도
   // 지역 이름으로는 살아 있어야 가짜가 그 동네 이름을 달고 새어 나가지 않는다.
   for (const a of apartmentsJson.items as Apartment[]) {
+    const key = guKey(a.sido, a.sigungu);
     // 문래동3가 → 문래동 → 문래, 원효로1가 → 원효로. "N가"를 안 떼면
     // "문래" 같은 흔한 지역 이름이 토큰에서 통째로 빠진다
     const dong = a.dong.replace(/\d+가$/, "").replace(/\d/g, "");
     const bare = dong.replace(/[동로]$/, "");
-    add(dong, a.sigungu);
-    add(bare, a.sigungu);
+    add(dong, key);
+    add(bare, key);
     // 하월곡·상계처럼 방위 글자가 붙은 법정동은 사람들이 "월곡"으로 부른다.
     // 가짜 이름도 그 줄임말을 쓰기 때문에 줄임말까지 지역 이름으로 친다.
-    add(bare.replace(/^[상하신구동서남북중]/, ""), a.sigungu);
-    add(a.sigungu, a.sigungu);
-    add(a.sigungu.replace(/구$/, ""), a.sigungu);
+    add(bare.replace(/^[상하신구동서남북중]/, ""), key);
+    add(a.sigungu, key);
+    add(a.sigungu.replace(/구$/, ""), key);
   }
   return m;
 })();
@@ -103,14 +137,24 @@ for (const f of fakeNames) {
   fakeAreas.set(f.id, new Set(allowed));
 }
 
-/** 그 구역에서 낼 수 있는 진짜/가짜. area가 없으면 서울 전체 */
+/** 그 구역에서 낼 수 있는 진짜/가짜. area가 없거나 모르는 값이면 전국 */
 export function poolOf(area?: string | null): { reals: Apartment[]; fakes: FakeName[] } {
-  if (!area || !districtSet.has(area)) return { reals: apartments, fakes: fakeNames };
+  if (!area || !isArea(area)) return { reals: apartments, fakes: fakeNames };
+  const isSido = sidoSet.has(area);
+  const reals = apartments.filter((a) => (isSido ? a.sido === area : a.sigungu === area));
+  // 시·도를 고른 경우 그 안의 모든 구를 허용 구역으로 본다
+  const allow = new Set(reals.map((a) => guKey(a.sido, a.sigungu)));
   return {
-    reals: apartments.filter((a) => a.sigungu === area),
+    reals,
     fakes: fakeNames.filter((f) => {
       const gus = fakeAreas.get(f.id);
-      return gus === null || Boolean(gus?.has(area));
+      if (gus === null) return true; // 지역색 없는 이름은 어디서나
+      if (!gus) return false;
+      for (const g of gus) if (allow.has(g)) return true;
+      return false;
     }),
   };
 }
+
+/** 화면에 쓰는 구역 이름 (서울특별시 → 서울) */
+export const areaLabel = (area: string) => (sidoSet.has(area) ? shortSido(area) : area);
