@@ -22,7 +22,7 @@
 import { createRequire } from "node:module";
 
 const BASE = process.argv[2] ?? "http://localhost:3000";
-const WIDTHS = [390, 480];
+const WIDTHS = [390, 480, 768, 1024];
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -66,6 +66,12 @@ const findOrphans = () => {
     const el = n.parentElement;
     if (!el || seen.has(el)) continue;
     seen.add(el);
+    // 단지명은 데이터라 길이를 손댈 수 없고, 가운데 정렬 표시용이라 줄이 고른 게 맞다
+    if (el.closest(".qname, .stamp, .tile, .slot")) continue;
+    // <br>로 직접 끊은 문단은 줄 길이가 저자가 정한 값이다.
+    // 그 안에서 다시 꺾이는 경우까지는 못 잡지만, 손으로 끊은 줄을 결함으로 세면
+    // 검사가 계속 울어서 아무도 안 보게 된다.
+    if (el.querySelector("br")) continue;
     const range = document.createRange();
     range.selectNodeContents(el);
     const rects = [...range.getClientRects()].filter((r) => r.width > 1 && r.height > 1);
@@ -78,12 +84,48 @@ const findOrphans = () => {
     if (rows.length < 2) continue;
     const last = rows[rows.length - 1].w;
     const widest = Math.max(...rows.map((r) => r.w));
-    if (last / widest < 0.34) {
+    if (last / widest < 0.2) {
       out.push({
-        kind: "고아 줄",
+        kind: "심한 고아 줄",
         where: el.className || el.tagName,
         detail: `${rows.length}줄, 마지막 줄이 ${Math.round((last / widest) * 100)}%`,
         text: el.innerText.slice(0, 48).replace(/\n/g, " "),
+      });
+    }
+  }
+  return out;
+};
+
+const findUnderfilled = () => {
+  const out = [];
+  for (const el of document.querySelectorAll("p, li, .dd, .area-note, .install-tip, .rule-hint, .pick-tip")) {
+    const style = getComputedStyle(el);
+    if (style.textAlign === "center" || style.textAlign === "right") continue; // 가운데 정렬은 짧은 게 모양이다
+    if (style.display === "none" || el.offsetParent === null) continue;
+    const text = el.innerText.trim();
+    if (text.length < 12) continue;
+    const box = el.getBoundingClientRect();
+    const inner = box.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    if (inner < 80) continue;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const rows = [];
+    for (const r of [...range.getClientRects()].filter((x) => x.width > 1 && x.height > 1)) {
+      const row = rows.find((q) => Math.abs(q.top - r.top) < 3);
+      if (row) row.right = Math.max(row.right, r.right);
+      else rows.push({ top: r.top, left: r.left, right: r.right });
+    }
+    if (rows.length < 2) continue;
+    const widest = Math.max(...rows.map((r) => r.right - r.left));
+    // 좁은 칸일수록 어절 하나가 차지하는 비율이 커서 들쭉날쭉이 크게 보인다.
+    // 사이드바(300px)와 본문(500px 이상)에 같은 잣대를 대면 정상까지 걸린다
+    const floor = inner < 340 ? 0.74 : 0.8;
+    if (widest / inner < floor) {
+      out.push({
+        kind: "덜 찬 문단",
+        where: el.className || el.tagName,
+        detail: `${rows.length}줄, 가장 긴 줄이 칸의 ${Math.round((widest / inner) * 100)}% (기준 ${Math.round(floor * 100)}%)`,
+        text: text.slice(0, 48).replace(/\n/g, " "),
       });
     }
   }
@@ -125,7 +167,11 @@ for (const width of WIDTHS) {
       if (screen.ready) await page.waitForSelector(screen.ready, { timeout: 20_000 });
       if (screen.wait) await page.waitForTimeout(screen.wait);
       if (screen.after) await screen.after(page);
-      const found = [...(await page.evaluate(findOrphans)), ...(await page.evaluate(findMisaligned))];
+      const found = [
+        ...(await page.evaluate(findOrphans)),
+        ...(await page.evaluate(findUnderfilled)),
+        ...(await page.evaluate(findMisaligned)),
+      ];
       if (found.length) {
         failures += found.length;
         console.error(`\n[${width}px] ${screen.name}`);
@@ -144,7 +190,8 @@ await browser.close();
 
 if (failures) {
   console.error(`\n레이아웃 검사 실패 ${failures}건.`);
-  console.error("고아 줄은 그 문단에 text-wrap: balance를, 세로 치우침은 상자에 가운데 정렬을 준다.");
+  console.error("덜 찬 문단: text-wrap(balance·pretty)을 떼거나 칸 폭 제한을 푼다. <br>로 끊지 말 것 — 폭이 바뀌면 더 나빠진다.");
+  console.error("세로 치우침: 상자에 가운데 정렬을 준다.");
   process.exit(1);
 }
 console.error(`레이아웃 검사 통과 (${WIDTHS.join("px, ")}px × 화면 ${SCREENS.length}종)`);

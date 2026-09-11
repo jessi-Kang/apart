@@ -26,9 +26,7 @@ export default function HomePage() {
           제{ep}호 / {Number(mm)}월 {Number(dd)}일
         </p>
         <p className="note">
-          진짜는 실존하는 단지,
-          <br />
-          가짜는 AI가 지은 이름입니다.
+          진짜는 실존하는 단지, 가짜는 AI가 지은 이름입니다.
         </p>
       </aside>
 
@@ -55,7 +53,7 @@ export default function HomePage() {
             <br />
             감별 민원을 <em>선택</em>하세요
           </h1>
-          <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 감별{" "}게임</p>
+          <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 게임</p>
           <IdBadge />
           <AreaPicker regions={regions} />
 
