@@ -239,12 +239,21 @@ export default function PlayPage() {
       const result = await shareCardImage({
         episode: quiz.episode,
         date: quiz.date,
+        subtitle: "감별 결과 통지서",
         score,
+        total: 10,
         marks,
         gradeName: grade.name,
-        topPct,
-        streak,
-        bestCombo: comboState().best,
+        stats: [
+          {
+            value: topPct !== null ? `상위 ${topPct}%` : "집계 중",
+            label: "오늘 전국 순위",
+            accent: topPct !== null,
+          },
+          { value: `${Math.max(streak, 1)}일`, label: "연속 감별" },
+          { value: `${10 - score}번`, label: "AI에 속은 횟수" },
+          { value: `${comboState().best}`, label: "진짜 찾기 최고 콤보" },
+        ],
       });
       setImgState(result);
     } catch {

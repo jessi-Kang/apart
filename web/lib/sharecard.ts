@@ -7,15 +7,21 @@
  * 런타임 의존성 0: Canvas 2D로 직접 그린다.
  */
 
+export interface ShareStat {
+  value: string;
+  label: string;
+  accent?: boolean;
+}
+
 export interface ShareCardData {
   episode: number;
   date: string; // YYYY-MM-DD
+  subtitle: string; // "감별 결과 통지서" 등 모드별 서류명
   score: number;
+  total: number;
   marks: boolean[];
   gradeName: string;
-  topPct: number | null;
-  streak: number;
-  bestCombo: number;
+  stats: ShareStat[]; // 2장 또는 4장 (2장 단위 행)
 }
 
 const PAPER = "#f6f6f3";
@@ -257,7 +263,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   ctx.fillText("아파트 감별사", left, M + 92);
   ctx.fillStyle = INK_SOFT;
   ctx.font = font(400, 27);
-  ctx.fillText("감별 결과 통지서", left, M + 136);
+  ctx.fillText(data.subtitle, left, M + 136);
   ctx.textAlign = "right";
   ctx.font = font(400, 28, MONO);
   const [, mm, dd] = data.date.split("-");
@@ -273,32 +279,30 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   ctx.fillText(String(data.score), W / 2 - 60, 512);
   ctx.fillStyle = INK_SOFT;
   ctx.font = font(700, 72);
-  ctx.fillText("/ 10", W / 2 + 128, 500);
+  ctx.fillText(`/ ${data.total}`, W / 2 + 128, 500);
   await drawSeal(ctx, right - 100, 330, 128, 0.85);
   await drawGradeStamp(ctx, W / 2, 640, data.gradeName);
 
-  // 판정 그리드 (한 줄 10칸)
+  // 판정 그리드 (한 줄)
   const ts = 66;
   const gap = 14;
-  const gw = ts * 10 + gap * 9;
+  const gw = ts * data.marks.length + gap * (data.marks.length - 1);
   let gx = (W - gw) / 2;
   for (const m of data.marks) {
     drawTile(ctx, gx, 742, ts, m);
     gx += ts + gap;
   }
 
-  // 스탯 카드 2×2 (푸터 점선 1176px과 겹치지 않게 1140 안에서 끝낸다)
+  // 스탯 카드 (2장 단위 행 — 푸터 점선 1176px과 겹치지 않게 1140 안에서 끝낸다)
   const cw = (right - left - 24) / 2;
   const ch = 130;
-  const cy = 860;
-  drawStatCard(
-    ctx, left, cy, cw, ch,
-    data.topPct !== null ? `상위 ${data.topPct}%` : "집계 중",
-    "오늘 전국 순위", data.topPct !== null,
-  );
-  drawStatCard(ctx, left + cw + 24, cy, cw, ch, `${Math.max(data.streak, 1)}일`, "연속 감별");
-  drawStatCard(ctx, left, cy + ch + 20, cw, ch, `${10 - data.score}번`, "AI에 속은 횟수");
-  drawStatCard(ctx, left + cw + 24, cy + ch + 20, cw, ch, `${data.bestCombo}`, "진짜 찾기 최고 콤보");
+  const rows = Math.ceil(data.stats.length / 2);
+  const cy = rows === 1 ? 940 : 860;
+  data.stats.forEach((st, i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    drawStatCard(ctx, left + col * (cw + 24), cy + row * (ch + 20), cw, ch, st.value, st.label, st.accent ?? false);
+  });
 
   // 푸터
   ctx.strokeStyle = LINE;

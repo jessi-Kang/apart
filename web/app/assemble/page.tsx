@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
+import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
 import { TimerBar } from "@/components/TimerBar";
+import { assembleGradeFor } from "@/lib/grades";
 import { bumpEndlessRecord, endlessRecord, type EndlessRecord } from "@/lib/local";
+import { shareCardImage } from "@/lib/sharecard";
 import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
 interface Puzzle {
@@ -50,8 +53,8 @@ export default function AssemblePage() {
   const [reveal, setReveal] = useState<CheckResponse | null>(null);
   const [timedOut, setTimedOut] = useState(false);
   const [marks, setMarks] = useState<boolean[]>([]);
-  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
 
   // 무한 조립
   const [endless, setEndless] = useState(false);
@@ -237,13 +240,33 @@ export default function AssemblePage() {
 
   const success = marks.filter(Boolean).length;
   const total = quiz?.items.length ?? 10;
+  const dGrade = assembleGradeFor(success);
 
-  function share() {
-    if (!quiz) return;
+  async function shareImage() {
+    if (!quiz || imgState === "busy") return;
     sfxTap();
-    const grid = marks.map((m) => (m ? "🟩" : "⬛")).join("");
-    const text = `아파트 감별사 #${quiz.episode} 이름 조립 🧩\n${grid} ${success}/${total} 조립 성공\n${location.origin}`;
-    navigator.clipboard?.writeText(text).then(() => setCopied(true));
+    setImgState("busy");
+    try {
+      const result = await shareCardImage({
+        episode: quiz.episode,
+        date: quiz.date,
+        subtitle: "이름 조립 통지서",
+        score: success,
+        total,
+        marks,
+        gradeName: dGrade.name,
+        stats: [
+          { value: `${total - success}번`, label: "함정에 속은 횟수", accent: total - success > 0 },
+          {
+            value: `${eRec.best}`,
+            label: `무한 조립 최고 연속${fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}`,
+          },
+        ],
+      });
+      setImgState(result);
+    } catch {
+      setImgState("failed");
+    }
   }
 
   const ep = quiz?.episode ?? "";
@@ -445,6 +468,8 @@ export default function AssemblePage() {
             <p className="big">
               {success} / {total}
             </p>
+            <Stamp>{dGrade.name}</Stamp>
+            <p className="grade-desc">{dGrade.desc}</p>
             <div className="grid-line" role="img" aria-label={`${total}문제 중 ${success}문제 조립 성공`}>
               {marks.map((m, k) => (
                 <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
@@ -452,25 +477,24 @@ export default function AssemblePage() {
                 </span>
               ))}
             </div>
-            <p className="grade-desc">
-              {success === total
-                ? "설계도 없이도 조립하는 수준. 완벽합니다."
-                : success >= 7
-                  ? "감별사급 조립 실력입니다. 무한 조립에서 기록을 세우세요."
-                  : success >= 4
-                    ? "감은 잡혔습니다. 무한 조립으로 더 쌓아 보세요."
-                    : "함정 조각에 많이 속았습니다. 무한 조립으로 설욕을."}
-            </p>
             <p className="top-note">
               무한 조립 최고 연속 {eRec.best}
               {fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}
             </p>
             <div className="result-actions">
+              <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
+                {imgState === "busy"
+                  ? "통지서를 발급하는 중"
+                  : imgState === "shared"
+                    ? "공유 완료. 한 장 더 발급됩니다"
+                    : imgState === "downloaded"
+                      ? "저장 완료. 갤러리에서 확인하세요"
+                      : imgState === "failed"
+                        ? "발급 실패. 다시 시도해 주세요"
+                        : "결과 통지서 이미지로 자랑하기"}
+              </button>
               <button className="btn btn-next" onClick={startEndless} disabled={busy}>
                 무한 조립 시작 — 랜덤 새 퍼즐
-              </button>
-              <button className="btn btn-ghost" onClick={share}>
-                {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "결과 복사해서 자랑하기"}
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
