@@ -193,10 +193,12 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 
 /* ---- 감별사 신분증 (홈): 레벨 + 이름 + 직급이 딱 한 줄 ---- */
 .idbadge {
-  margin-top: 16px; display: flex; align-items: center; gap: 10px;
-  border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px;
-  background: var(--paper);
+  margin-top: 16px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper); padding: 8px 12px;
 }
+/* 윗줄 = 신분, 아랫줄 = 담당 구역. 둘 사이는 가는 괘선으로만 나눈다 */
+.idb-row { display: flex; align-items: center; gap: 10px; min-height: 30px; }
+.idb-row + .idb-row { border-top: 1px solid var(--line); margin-top: 7px; padding-top: 7px; }
 .idb-main {
   flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;
   color: var(--ink); text-decoration: none;
@@ -222,40 +224,33 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .idb-auth:focus-visible { color: var(--stamp); }
 
 /* ---- 담당 구역 고르기 (홈) ---- */
-.area-row {
-  margin-top: 10px; display: grid; grid-template-columns: auto 1fr; align-items: center;
-  column-gap: 10px; row-gap: 4px;
-  border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 12px;
-}
 .area-k {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px; letter-spacing: 0.06em; color: var(--ink-soft); white-space: nowrap;
 }
 .area-sel {
-  font: inherit; font-size: 13.5px; font-weight: 700; letter-spacing: -0.02em;
-  color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--line);
-  padding: 2px 22px 3px 2px; width: 100%; cursor: pointer; border-radius: 0;
+  font: inherit; font-size: 13px; font-weight: 700; letter-spacing: -0.02em;
+  color: var(--ink); background: none; border: 0;
+  padding: 2px 20px 2px 0; flex: 1; min-width: 0; cursor: pointer; border-radius: 0;
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
     linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
-  background-position: right 9px center, right 4px center;
+  background-position: right 7px center, right 2px center;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
 }
 /* 고르고 나서도 포커스가 남는 컨트롤이라 테두리를 아예 그리지 않는다.
-   인주색이든 잉크색이든, 고른 뒤에 계속 남는 사각형은 "골랐다"가 아니라
-   "뭔가 걸렸다"로 읽힌다. 고른 값은 칸 안의 글자가 이미 말해 준다 */
+   남아 있는 사각형은 "골랐다"가 아니라 "뭔가 걸렸다"로 읽힌다 */
 .area-sel:focus,
 .area-sel:focus-visible { outline: none; }
-/* 대신 키보드로 짚었을 때는 밑줄이 진해져 어디에 있는지는 알 수 있다 */
-.area-sel:focus-visible { border-bottom-color: var(--ink); }
-.area-note { grid-column: 2; font-size: 11.5px; color: var(--ink-soft); }
 /* 대장 아래 한 줄: 같은 행에 목적지가 둘이라는 것을 화면이 직접 말한다 */
 .ledger-note { margin-top: 10px; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
 .ledger-note b { color: var(--ink); font-weight: 700; }
 
 /* ---- 계정 줄 (기록 열람실) ---- */
-.acct-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.acct-line { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.acct-line svg { flex-shrink: 0; }
+.acct-line a { display: inline-flex; align-items: center; gap: 5px; }
 .acct-line a,
 .acct-line button {
   font: inherit; font-size: 12.5px; font-weight: 500; color: var(--ink-soft);
@@ -613,6 +608,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .ledger .dd-rec { font-size: 12.5px; }
   .chop { font-size: 11.5px; padding: 5px 9px; }
   .idbadge { padding: 10px 14px; }
+  .area-sel { font-size: 14px; }
   .idb-lv { font-size: 12.5px; }
   .idb-name { font-size: 14px; }
   .idb-title, .idb-go, .idb-auth { font-size: 12.5px; }
