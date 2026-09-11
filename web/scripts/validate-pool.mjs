@@ -6,7 +6,8 @@
  *
  * 검사 항목:
  *  1. 가짜 이름이 실단지명과 완전 일치하면 실패
- *  2. 가짜 이름이 실단지명과 편집거리 ≤ 2 또는 토큰 일치율 ≥ 80%면 실패
+ *  2. 가짜 이름이 실단지명과 너무 가까우면 실패 (편집거리 임계는 길이 비례,
+ *     토큰 일치율 ≥ 80%)
  *     ("사실상 실존"인 가짜는 정답 시비를 만든다)
  *  3. 블랙리스트 단어(지역 비하·비속어 계열) 포함 시 실패
  *  4. 형식: 길이 4~20자, 중복 id/이름 없음, 필수 필드 존재
@@ -71,7 +72,11 @@ for (const f of fake) {
     const nf = norm(f.name), nr = norm(r.name);
     if (nf === nr) { errors.push(`실존 일치: ${f.name}`); continue; }
     const dist = editDistance(nf, nr);
-    if (dist <= 2) errors.push(`실단지와 편집거리 ${dist}: "${f.name}" ↔ "${r.name}"`);
+    // 임계를 길이에 비례시킨다. 절대값 2로 재면 "송파현대 ↔ 면목현대"처럼
+    // 지역이 다른(= 명백히 다른 단지인) 짧은 이름까지 전부 반려돼,
+    // 실단지의 600건 넘는 4~5자 구간을 가짜가 아예 채울 수 없다.
+    const limit = Math.min(nf.length, nr.length) <= 5 ? 1 : Math.min(nf.length, nr.length) <= 11 ? 2 : 3;
+    if (dist <= limit) errors.push(`실단지와 편집거리 ${dist}(한계 ${limit}): "${f.name}" ↔ "${r.name}"`);
     else if (tokenOverlap(f.name, r.name) >= 0.8) errors.push(`토큰 일치율 80%+: "${f.name}" ↔ "${r.name}"`);
     else if (dist <= 4) warn.push(`유사 주의(거리 ${dist}): "${f.name}" ↔ "${r.name}"`);
   }
