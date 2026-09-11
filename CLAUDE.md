@@ -32,14 +32,14 @@
 
 ## 개발 (`web/`)
 
-- 스택: Next.js 15 (App Router) + TypeScript, 런타임 추가 의존성 0. 집계는 `web/lib/stats.ts`의 JSON 파일 스토어(단일 인스턴스 전제) — 트래픽이 붙으면 이 모듈만 Postgres/Turso 구현으로 교체한다.
-- 정답은 클라이언트에 절대 내려주지 않는다. 판정은 `/api/quiz/answer`에서만.
-- `web/data/apartments.json`은 K-apt 실데이터(서울 전역, 목록 V4 + 기본정보 V5로 수집·정제). 갱신은 `npm run collect-kapt`(인증키는 `web/.env.local`의 `KAPT_API_KEY`, 절대 커밋 금지) → `npm run validate-pool` → `apartments.collected.json` 검토 후 승격. `fake_names.json`은 LLM 배치 생성 + validate-pool 대조를 거친 120건 — 추가 생성 시에도 같은 절차(생성 → validate-pool → 통과분만 등록)를 지킨다.
+- 스택: Next.js 15 (App Router) + TypeScript. 런타임 의존성은 `@neondatabase/serverless` 하나뿐이고 그 외 기능(인증·캔버스 카드·사운드·PWA)은 전부 직접 구현한다 — 새 라이브러리를 추가하기 전에 한 번 더 생각한다.
+- 정답은 클라이언트에 절대 내려주지 않는다. 판정은 서버 라우트에서만 한다(`/api/quiz/answer`, `/api/assemble/check`, `/api/findreal/check`, `/api/endless/*`).
+- `web/data/apartments.json`은 K-apt 실데이터(서울 전역, 목록 V4 + 기본정보 V5로 수집·정제). 갱신은 `npm run collect-kapt`(인증키는 `web/.env.local`의 `KAPT_API_KEY`, 절대 커밋 금지) → `npm run validate-pool` → `apartments.collected.json` 검토 후 승격. `fake_names.json`은 LLM 배치 생성 + validate-pool 대조를 거친 200건 — 추가 생성 시에도 같은 절차(생성 → validate-pool → 통과분만 등록)를 지킨다.
 - 명령: `cd web && npm run dev` (개발), `npm run build && npm start` (프로드 확인), `npm run typecheck`, `npm run validate-pool` (출제 풀 검증).
-- 게임 구조: **무한 모드가 본편** — 창구 진입 즉시 무한 세션 시작, 경쟁은 누적 기록(레벨·최고 연속·콤보)과 판 단위(세션 종료 시 최근 7일 익명 백분위, `endless_runs`). 데일리 10문제는 "제N호 공식전"으로 강등 — 게임 안 칩으로 선택 참가하는 랭킹전(question_stats·score_dist 집계는 공식전만).
+- 게임 구조: **무한 모드가 본편** — 창구 진입 즉시 무한 세션 시작, 경쟁은 누적 기록(레벨·최고 연속·콤보)과 판 단위(세션 종료 시 최근 7일 익명 백분위, `endless_runs`). 데일리 10문제는 "제N호 공식전"으로 강등 — 게임 안 칩으로 선택 참가하는 랭킹전(question_stats·score_dist 집계는 공식전만)이고, 출전한 뒤에는 같은 칩이 "성적표"가 되어 저장된 결과를 다시 연다. 무한 판은 결과를 안 보고 떠나도(공식전 전환·로고 클릭) 집계와 경험치에 접수된다.
 - 집계 DB: Neon Postgres (프로젝트 frosty-term-36707081, DB `aptgam`, 테이블 question_stats·score_dist·endless_runs·app_user·user_state). 연결 문자열은 `web/.env.local`(로컬)과 Vercel 배포의 env로만 주입하고 절대 커밋하지 않는다.
-- 계정: 구글 OAuth 코드 플로우 직접 구현(의존성 0, `lib/auth.ts` HMAC 세션 쿠키). 필요 env: `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`·`AUTH_SECRET`(모두 `web/.env.local` + Vercel, 절대 커밋 금지) — 하나라도 없으면 로그인 UI가 자동으로 숨고 비회원 모드만 동작한다. 기록 동기화 규약·병합은 `lib/sync.ts`(서버·클라 공용), 클라이언트 훅은 `lib/cloud.ts`(로그인 시에만 push/pull). 구글 콘솔 리디렉션 URI: `https://apt-gam.vercel.app/api/auth/callback`(+ 로컬 `http://localhost:3000/api/auth/callback`).
-- 배포: Vercel 프로젝트 `apt-gam` → https://apt-gam-jessikang.vercel.app. Root Directory는 `web`, `DATABASE_URL`은 프로젝트 환경변수(Secret). 배포는 `.github/workflows/vercel-deploy.yml`이 푸시마다 Vercel Deploy Hook을 호출하는 한 경로로만 돈다 — 훅 URL은 Actions 시크릿 `VERCEL_DEPLOY_HOOK`, 깃 웹훅 경로는 `web/vercel.json`의 `{"git":{"deploymentEnabled":false}}`로 꺼 두었다(이중 배포 = 한도 2배 소모).
+- 계정: 구글 OAuth 코드 플로우 직접 구현(의존성 0, `lib/auth.ts` HMAC 세션 쿠키). 필요 env: `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`·`AUTH_SECRET`(모두 `web/.env.local` + Vercel, 절대 커밋 금지) — 하나라도 없으면 로그인 UI가 자동으로 숨고 비회원 모드만 동작한다. 기록 동기화 규약·병합은 `lib/sync.ts`(서버·클라 공용), 클라이언트 훅은 `lib/cloud.ts`(로그인 시에만 push/pull). 리디렉션 URI는 요청 origin에서 만들어지므로 구글 콘솔에 도메인마다 등록해야 한다: `https://apt-game.app/api/auth/callback`, `https://apt-gam.vercel.app/api/auth/callback`, 로컬 `http://localhost:3000/api/auth/callback`.
+- 배포: Vercel 프로젝트 `apt-gam` → **https://apt-game.app** (프로덕션 도메인, `apt-gam.vercel.app`은 307 리디렉션). Root Directory는 `web`, `DATABASE_URL`은 프로젝트 환경변수(Secret). 배포는 `.github/workflows/vercel-deploy.yml`이 푸시마다 Vercel Deploy Hook을 호출하는 한 경로로만 돈다 — 훅 URL은 Actions 시크릿 `VERCEL_DEPLOY_HOOK`, 깃 웹훅 경로는 `web/vercel.json`의 `{"git":{"deploymentEnabled":false}}`로 꺼 두었다(이중 배포 = 한도 2배 소모).
 - **배포 한도(중요)**: Hobby는 하루 100건이고 이 한도는 프로젝트가 아니라 **계정 전체 합산**이다. 넘으면 훅은 201을 돌려주지만 빌드가 아예 생성되지 않아 "푸시했는데 배포가 없다"로 보인다 — 세 번 겪었고 앞의 두 번은 웹훅 유실로 오진했다(대시보드 Create Deployment가 듣지 않고 `api-deployments-free-per-day` 에러가 뜨면 이것이다). 대책은 배포를 아끼는 것뿐이다: 작업 단계를 묶어 푸시하고, 검증은 로컬 `npm run build && npm start`로 끝낸 뒤 올린다. 한도는 24시간 롤링이라 오래된 배포가 빠지면서 풀린다.
 
 ## 커밋 규칙
