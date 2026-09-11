@@ -9,7 +9,7 @@ import { SoundToggle } from "@/components/SoundToggle";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { gradeFor } from "@/lib/grades";
-import { bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
+import { bumpStreak, bumpEndlessRecord, comboState, endlessRecord, firstVisit, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -63,6 +63,7 @@ export default function PlayPage() {
   const [sMarks, setSMarks] = useState<boolean[]>([]); // 판의 문제별 판정 (공유 카드 그리드)
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
+  const [firstTime, setFirstTime] = useState(false); // 이 창구 첫 방문인가
   const qStart = useRef(0);
   const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
   const sessionTimes = useRef<number[]>([]); // 이번 판 전체 풀이 시간(ms)
@@ -70,6 +71,7 @@ export default function PlayPage() {
 
   useEffect(() => {
     setERec(endlessRecord("ox"));
+    setFirstTime(firstVisit("ox"));
     fetch("/api/quiz/today")
       .then((r) => r.json())
       .then((data: TodayResponse) => {
@@ -453,7 +455,7 @@ export default function PlayPage() {
               </>
             )}
             {/* 첫 판 첫 문제에만 규칙 한 줄 — 기록이 쌓인 사람에게는 다시 보이지 않는다 */}
-            {endless && eCount === 0 && eRec.best === 0 && (
+            {endless && eCount === 0 && firstTime && (
               <p className="rule-hint">
                 이 이름, 실제로 있는 단지일까요? <b>틀리면 연속이 끊깁니다.</b>
               </p>
