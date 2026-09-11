@@ -2,15 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GridTile } from "@/components/GridTile";
-import { CountUp, GradeLadder, RecordGauge } from "@/components/ResultExtras";
 import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
-import { Stamp } from "@/components/Stamp";
+import { DocTitle, MiniGrid, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { CloseX } from "@/components/CloseX";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
-import { gradeFor, GRADES } from "@/lib/grades";
+import { gradeFor } from "@/lib/grades";
 import { bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
@@ -260,6 +258,9 @@ export default function PlayPage() {
 
   const score = marks.filter(Boolean).length;
   const grade = useMemo(() => gradeFor(score), [score]);
+  const eRate = eCount > 0 ? sHits / eCount : 0;
+  const eGradeName =
+    sBest > startBest.current ? "신기록 갱신" : eRate >= 0.8 ? "상급 감별" : eRate >= 0.5 ? "감별 수련" : "재수련 요망";
 
   async function shareImage() {
     if (!quiz || imgState === "busy") return;
@@ -300,7 +301,6 @@ export default function PlayPage() {
     sfxTap();
     setEImgState("busy");
     try {
-      const rate = eCount > 0 ? sHits / eCount : 0;
       const result = await shareCardImage({
         episode: quiz.episode,
         date: quiz.date,
@@ -310,7 +310,7 @@ export default function PlayPage() {
         total: eCount,
         totalText: "연속",
         marks: sMarks.slice(-10),
-        gradeName: sBest > startBest.current ? "신기록 갱신" : rate >= 0.8 ? "상급 감별" : rate >= 0.5 ? "감별 수련" : "재수련 요망",
+        gradeName: eGradeName,
         stats: [
           { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
           { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 풀이 시간" },
@@ -470,28 +470,40 @@ export default function PlayPage() {
         {phase === "eresult" && (
           <section className="screen result">
             <div className="result-seal" aria-hidden="true">
-              <Seal size={230} />
+              <Seal size={184} />
             </div>
-            <p className="score-label mono">무한 감별 세션 결과</p>
-            <p className="big">
-              <CountUp value={sHits} /> / {eCount}
+            <DocTitle eyebrow="감별결과통지" title="무한 감별 세션 결과" />
+            <StampHero name={eGradeName} />
+            <p className="stamp-sub">
+              {eCount}문제 중 {sHits}문제 적중 · 최고 연속 {sBest}
             </p>
-            <p className="grade-desc">
-              {sBest > startBest.current
-                ? `신기록! 최고 연속 ${sBest}. 어제의 나를 이겼습니다.`
-                : eCount > 0 && sHits / eCount >= 0.8
-                  ? "감별력이 물이 올랐습니다. 기록까지 조금 남았습니다."
-                  : eCount > 0 && sHits / eCount >= 0.5
-                    ? "반타작 이상. AI 작명도 만만치 않죠."
-                    : "AI가 오늘은 한 수 위였습니다. 설욕전을 권합니다."}
-            </p>
-            {eTop !== null && (
-              <p className="top-note">
-                이 판, 최근 7일 무한 감별 중 상위 <b>{eTop}%</b>
-              </p>
-            )}
-            <RecordGauge session={sBest} best={startBest.current} />
-            <LevelBar result={eXpRes} />
+            <VForm>
+              <VRow label="판정">
+                <MiniGrid marks={sMarks.slice(-10)} label={`${eCount}문제 중 ${sHits}문제 적중`} />
+              </VRow>
+              <VRow label="세션 기록">
+                연속 {sBest} <small>평균 {fmtSec(sessionAvgMs()) ?? "-"}</small>
+              </VRow>
+              <VRow label="역대 기록">
+                {Math.max(eRec.best, sBest)}
+                {sBest > startBest.current && <span className="accent">신기록</span>}
+              </VRow>
+              <VRow label="판 순위">
+                {eTop !== null ? (
+                  <>
+                    상위 <span className="accent">{eTop}%</span> <small>최근 7일</small>
+                  </>
+                ) : (
+                  <>
+                    집계 중 <small>표본 20판부터 공개</small>
+                  </>
+                )}
+              </VRow>
+              <VRow label="감별사 등급">
+                <LevelBar result={eXpRes} />
+              </VRow>
+            </VForm>
+            <div className="cut" />
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
                 {eImgState === "busy"
@@ -517,23 +529,34 @@ export default function PlayPage() {
         {phase === "result" && quiz && (
           <section className="screen result">
             <div className="result-seal" aria-hidden="true">
-              <Seal size={230} />
+              <Seal size={184} />
             </div>
-            <p className="score-label mono">감별 결과</p>
-            <p className="big">
-              <CountUp value={score} /> / 10
+            <DocTitle eyebrow="감별결과통지" title={`제${ep}호 감별 결과`} />
+            <StampHero name={grade.name} />
+            <p className="stamp-sub">
+              10문제 중 {score}문제 적중 · AI에 {10 - score}번 속았습니다
             </p>
-            <Stamp>{grade.name}</Stamp>
-            <p className="grade-desc">{grade.desc}</p>
-            <GradeLadder grades={GRADES} score={score} />
-            <LevelBar result={xpRes} />
-            <div className="grid-line" role="img" aria-label={`10문제 중 ${score}문제 정답`}>
-              {marks.map((m, k) => (
-                <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
-                  <GridTile ok={m} />
-                </span>
-              ))}
-            </div>
+            <VForm>
+              <VRow label="판정">
+                <MiniGrid marks={marks} label={`10문제 중 ${score}문제 정답`} />
+              </VRow>
+              <VRow label="전국 순위">
+                {topPct !== null ? (
+                  <>
+                    상위 <span className="accent">{topPct}%</span>
+                  </>
+                ) : (
+                  <>
+                    집계 중 <small>표본 100명부터 공개</small>
+                  </>
+                )}
+              </VRow>
+              <VRow label="연속 출전">{Math.max(streak, 1)}일째</VRow>
+              <VRow label="감별사 등급">
+                <LevelBar result={xpRes} />
+              </VRow>
+            </VForm>
+            <div className="cut" />
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
                 {imgState === "busy"

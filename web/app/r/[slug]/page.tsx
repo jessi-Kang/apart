@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GridTile } from "@/components/GridTile";
 import { SheetFooter } from "@/components/SheetFooter";
-import { Stamp } from "@/components/Stamp";
+import { DocTitle, MiniGrid, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { episodeNumber } from "@/lib/daily";
 import { gradeFor } from "@/lib/grades";
 import { parseSlug } from "@/lib/slug";
@@ -64,19 +63,20 @@ export default async function ResultPage({ params }: Props) {
         </header>
 
         <section className="screen result">
-          <p className="score-label mono">
-            제{ep}회 감별 결과
+          <DocTitle eyebrow="감별결과통지" title={`제${ep}호 감별 결과`} />
+          <StampHero name={grade.name} />
+          <p className="stamp-sub">
+            10문제 중 {r.score}문제 적중 · AI에 {10 - r.score}번 속았습니다
           </p>
-          <p className="big">{r.score} / 10</p>
-          <Stamp>{grade.name}</Stamp>
-          <p className="grade-desc">{grade.desc}</p>
-          <div className="grid-line" role="img" aria-label={`10문제 중 ${r.score}문제 정답`}>
-            {r.marks.map((m, k) => (
-              <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
-                <GridTile ok={m} />
-              </span>
-            ))}
-          </div>
+          <VForm>
+            <VRow label="판정">
+              <MiniGrid marks={r.marks} label={`10문제 중 ${r.score}문제 정답`} />
+            </VRow>
+            <VRow label="접수 일자">
+              {mm}월 {dd}일 <small>제{ep}호</small>
+            </VRow>
+          </VForm>
+          <div className="cut" />
           <div className="result-actions">
             <Link className="btn btn-next" href="/play">
               나도 오늘 문제 감별하기
