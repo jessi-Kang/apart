@@ -301,7 +301,10 @@ export default function AssemblePage() {
               {quiz && ` · 제${ep}호 ${mm}.${dd}`}
             </small>
           </Link>
-          <CloseX inProgress={!endless && (phase === "solve" || phase === "reveal")} />
+          <CloseX
+              inProgress={!endless && (phase === "solve" || phase === "reveal")}
+              onClose={endless && (phase === "solve" || phase === "reveal") && eCount > 0 ? finishEndless : undefined}
+            />
         </header>
 
         {phase === "loading" && (
