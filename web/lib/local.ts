@@ -5,6 +5,8 @@
  * 모든 접근은 try/catch (프라이빗 모드 등에서 storage가 던질 수 있음).
  */
 
+import { schedulePush } from "./cloud";
+
 export interface ReviewItem {
   no: number;
   name: string;
@@ -38,6 +40,7 @@ export function saveResult(result: SavedResult) {
   } catch {
     /* 저장 실패는 무시: 게임은 계속 진행 가능 */
   }
+  schedulePush();
 }
 
 interface StreakState {
@@ -61,6 +64,7 @@ export function bumpStreak(date: string): number {
       if (prev.lastDate === prevDateOf(date)) count = prev.count + 1;
     }
     localStorage.setItem(STREAK_KEY, JSON.stringify({ lastDate: date, count } satisfies StreakState));
+    schedulePush();
     return count;
   } catch {
     return 1;
@@ -114,6 +118,7 @@ export function applyComboPick(correct: boolean, dtMs?: number): ComboState {
   } catch {
     /* 저장 실패는 무시 */
   }
+  schedulePush();
   return next;
 }
 
@@ -142,6 +147,7 @@ export function bumpEndlessRecord(mode: "ox" | "assemble", streak: number, avgMs
   } catch {
     /* 무시 */
   }
+  schedulePush();
   return next;
 }
 

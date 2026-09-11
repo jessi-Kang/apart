@@ -8,6 +8,8 @@
  * - 저장은 localStorage(게스트 기준). 계정 도입(M2) 시 서버로 승격한다.
  */
 
+import { schedulePush } from "./cloud";
+
 const KEY = "aptgam:xp";
 
 export interface LevelInfo {
@@ -75,6 +77,7 @@ export function addXp(points: number): XpResult {
   } catch {
     /* 무시 */
   }
+  schedulePush();
   const after = levelFromXp(xp);
   return { gained: xp - before.xp, before, after, leveledUp: after.level > before.level };
 }

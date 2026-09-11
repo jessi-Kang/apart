@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { CloudSync } from "@/components/CloudSync";
 import { PwaRegister } from "@/components/PwaRegister";
 
 export const metadata: Metadata = {
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <PwaRegister />
+        <CloudSync />
       </body>
     </html>
   );

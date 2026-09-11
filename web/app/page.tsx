@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
+import { AccountBar } from "@/components/AccountBar";
 import { ComboStatus, HomeStatus } from "@/components/HomeStatus";
 import { InstallApp } from "@/components/InstallApp";
 import { LevelChip } from "@/components/LevelBar";
@@ -58,6 +59,8 @@ export default function HomePage() {
           <p className="home-level">
             <LevelChip />
           </p>
+
+          <AccountBar />
 
           <nav className="modes" aria-label="게임 목록">
             <Link className="mode" href="/play">
