@@ -240,6 +240,25 @@ export default function FindRealPage() {
     setPhase("solve");
   }
 
+  /** 오늘 이미 치른 공식전 성적표 다시 열기 */
+  function replayOfficial() {
+    if (!quiz) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(RESULT_KEY) ?? "null") as {
+        date: string;
+        marks: boolean[];
+      } | null;
+      if (!saved || saved.date !== quiz.date) return;
+      sfxTap();
+      setEndless(false);
+      setMarks(saved.marks);
+      setXpRes(null); // 경험치는 이미 받았다
+      setImgState("idle");
+      setPhase("done");
+    } catch {
+      /* 저장본을 못 읽으면 아무 일도 하지 않는다 */
+    }
+  }
 
   const dGrade = findGradeFor(hits);
   const eGradeName =
@@ -367,9 +386,14 @@ export default function FindRealPage() {
             {endless ? (
               <p className="qlabel mono qlabel-row">
                 무한 {eCount + (phase === "solve" ? 1 : 0)}라운드 · 연속 {combo.current} · 최고 {combo.best}
-                {!officialDone && quiz && (
-                  <button type="button" className="official-chip" onClick={startOfficial} disabled={busy}>
-                    제{ep}호 공식전
+                {quiz && (
+                  <button
+                    type="button"
+                    className="official-chip"
+                    onClick={officialDone ? replayOfficial : startOfficial}
+                    disabled={busy}
+                  >
+                    제{ep}호 {officialDone ? "성적표" : "공식전"}
                   </button>
                 )}
               </p>

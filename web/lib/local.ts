@@ -18,6 +18,8 @@ export interface SavedResult {
   date: string;
   marks: boolean[];
   review: ReviewItem[];
+  /** 집계에서 받은 전국 상위 % — 성적표를 다시 열 때 그대로 보여준다 */
+  topPct?: number | null;
 }
 
 const RESULT_KEY = "aptgam:result";

@@ -48,6 +48,12 @@ const TIME_LIMIT = 40; // 초 — 조각을 읽고 조립할 시간이 필요하
 const fmtSec = (ms: number | null | undefined) =>
   ms == null ? null : `${(ms / 1000).toFixed(1)}초`;
 
+/** 스크린리더용: "ㄹ○○" → "ㄹ 다음 두 글자 가림" 대신 읽을 수 있는 문장으로 */
+const maskLabel = (mask: string) => {
+  const open = [...mask].filter((c) => c !== "○");
+  return open.length ? `${open.join(" ")} 포함 ${mask.length}글자` : `${mask.length}글자`;
+};
+
 export default function AssemblePage() {
   const [quiz, setQuiz] = useState<TodayResponse | null>(null);
   const [phase, setPhase] = useState<Phase>("loading");
@@ -111,6 +117,8 @@ export default function AssemblePage() {
   }, [phase, idx, eCount]);
 
   const puzzle: Puzzle | EndlessPuzzle | undefined = endless ? (epz ?? undefined) : quiz?.items[idx];
+  // 힌트 마스크는 정답 토큰 순서 그대로 — 칸마다 제 몫의 초성이 들어간다
+  const hintTokens = hintMask ? hintMask.split(" ") : [];
 
   // 초성 힌트 자동 공개: 15초 → 1글자, 25초 → 2글자, 33초 → 3글자
   useEffect(() => {
@@ -211,6 +219,28 @@ export default function AssemblePage() {
     setPicked([]);
     setReveal(null);
     setPhase("solve");
+  }
+
+  /** 오늘 이미 치른 공식전 성적표 다시 열기 */
+  function replayOfficial() {
+    if (!quiz) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(RESULT_KEY) ?? "null") as {
+        date: string;
+        marks: boolean[];
+        points?: number;
+      } | null;
+      if (!saved || saved.date !== quiz.date) return;
+      sfxTap();
+      setEndless(false);
+      setMarks(saved.marks);
+      setPoints(saved.points ?? 0);
+      setXpRes(null); // 경험치는 이미 받았다
+      setImgState("idle");
+      setPhase("done");
+    } catch {
+      /* 저장본을 못 읽으면 아무 일도 하지 않는다 */
+    }
   }
 
 
@@ -433,9 +463,14 @@ export default function AssemblePage() {
             {endless ? (
               <p className="qlabel mono qlabel-row">
                 무한 {eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
-                {!officialDone && quiz && (
-                  <button type="button" className="official-chip" onClick={startOfficial} disabled={busy}>
-                    제{ep}호 공식전
+                {quiz && (
+                  <button
+                    type="button"
+                    className="official-chip"
+                    onClick={officialDone ? replayOfficial : startOfficial}
+                    disabled={busy}
+                  >
+                    제{ep}호 {officialDone ? "성적표" : "공식전"}
                   </button>
                 )}
               </p>
@@ -448,12 +483,6 @@ export default function AssemblePage() {
               이 단지를 조립하세요: <b>{puzzle.hint.location}</b>
               <br />
               {puzzle.hint.builtYear}년 준공 · {puzzle.hint.households.toLocaleString()}세대
-              {phase === "solve" && hintMask && (
-                <p className="choseong">
-                  <span className="mono">{hintMask}</span>
-                  {!endless && <small>힌트 공개마다 −4점</small>}
-                </p>
-              )}
             </div>
 
             <TimerBar
@@ -466,18 +495,34 @@ export default function AssemblePage() {
             <div className="slots">
               {Array.from({ length: puzzle.answerLen }, (_, k) => {
                 const p = picked[k];
+                const mask = phase === "solve" ? hintTokens[k] : undefined;
                 return (
                   <button
                     key={k}
                     className={`slot ${p !== undefined ? "filled" : ""}`}
                     onClick={() => unpick(k)}
-                    aria-label={`칸 ${k + 1}`}
+                    aria-label={mask ? `칸 ${k + 1}, 초성 힌트 ${maskLabel(mask)}` : `칸 ${k + 1}`}
                   >
-                    {p !== undefined ? puzzle.pieces[p] : ""}
+                    {p !== undefined ? (
+                      puzzle.pieces[p]
+                    ) : mask ? (
+                      <span className="sh" aria-hidden="true">
+                        {[...mask].map((ch, i) =>
+                          ch === "○" ? <i key={i} /> : <b key={i}>{ch}</b>,
+                        )}
+                      </span>
+                    ) : (
+                      ""
+                    )}
                   </button>
                 );
               })}
             </div>
+            {phase === "solve" && hintTier > 0 && !endless && (
+              <p className="hint-note">
+                초성 힌트 {hintTier}칸 공개 · 맞히면 <b>−{hintTier * 4}점</b>
+              </p>
+            )}
             <div className="pool">
               {puzzle.pieces.map((t, k) => (
                 <button key={k} className={`tile ${picked.includes(k) ? "used" : ""}`} onClick={() => pick(k)}>
