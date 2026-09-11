@@ -152,6 +152,22 @@ export default function PlayPage() {
     setPhase("question");
   }
 
+  /** 오늘 이미 치른 공식전 성적표 다시 열기 (접수한 서류는 다시 떼어볼 수 있어야 한다) */
+  function replayOfficial() {
+    if (!quiz) return;
+    const saved = loadResult(quiz.date);
+    if (!saved) return;
+    sfxTap();
+    setEndless(false);
+    setMarks(saved.marks);
+    setReview(saved.review ?? []);
+    setTopPct(saved.topPct ?? null);
+    setStreak(bumpStreak(quiz.date)); // 같은 날 재호출은 기존 값을 그대로 돌려준다
+    setXpRes(null); // 경험치는 이미 받았다 — 다시 주지 않는다
+    setImgState("idle");
+    setPhase("result");
+  }
+
 
   async function answer(choice: "real" | "fake" | "timeout") {
     if (busy || phase !== "question") return;
@@ -250,6 +266,8 @@ export default function PlayPage() {
       if (res.ok) {
         const data = (await res.json()) as { top: number | null };
         setTopPct(data.top);
+        // 순위까지 저장해 둬야 성적표를 다시 열었을 때 "집계 중"으로 퇴보하지 않는다
+        saveResult({ date: quiz.date, marks, review, topPct: data.top });
       }
     } catch {
       /* 집계 실패는 결과 표시에 영향 없음 */
@@ -387,9 +405,14 @@ export default function PlayPage() {
             {endless ? (
               <p className="qlabel mono qlabel-row">
                 무한 {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
-                {!officialDone && quiz && (
-                  <button type="button" className="official-chip" onClick={startOfficial} disabled={busy}>
-                    제{ep}호 공식전
+                {quiz && (
+                  <button
+                    type="button"
+                    className="official-chip"
+                    onClick={officialDone ? replayOfficial : startOfficial}
+                    disabled={busy}
+                  >
+                    제{ep}호 {officialDone ? "성적표" : "공식전"}
                   </button>
                 )}
               </p>

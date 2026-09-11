@@ -137,14 +137,6 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .ledger .row:not(.off):hover { background: var(--paper); }
 }
 
-/* ---- 조립 초성 힌트 (힌트 카드 안에 산다) ---- */
-.choseong {
-  margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line);
-  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-  font-size: 16px; font-weight: 500; letter-spacing: 0.08em; color: var(--ink);
-}
-.choseong small { font-size: 11.5px; font-weight: 500; letter-spacing: 0; color: var(--stamp); }
-
 /* ---- 계정 상태 한 줄 (홈) ---- */
 .account-line { margin-top: 6px; font-size: 12.5px; color: var(--ink-soft); }
 .account-line b { color: var(--ink); }
@@ -251,6 +243,11 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .vv .accent { color: var(--stamp); }
 .mini-grid { display: flex; gap: 4px; flex-wrap: wrap; }
 .mini-grid svg { width: 21px; height: 21px; display: block; }
+@media (max-width: 430px) {
+  /* 좁은 화면에서 10칸이 두 줄로 꺾이면 판정이 한눈에 안 읽힌다 */
+  .mini-grid { gap: 3px; }
+  .mini-grid svg { width: 18px; height: 18px; }
+}
 /* 서식 칸 속 레벨바는 한 줄로 눕는다 */
 .vv .levelbar { margin-top: 0; max-width: none; flex: 1; min-width: 160px; }
 .vv .lv-head { margin-bottom: 6px; font-size: 13px; }
@@ -279,6 +276,13 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   padding: 0 14px; cursor: pointer; background: none; color: var(--ink);
 }
 .slot.filled { border: 1px solid var(--ink); background: var(--ink); color: var(--sheet); }
+/* 빈 칸 안의 초성 힌트: 열린 자리는 글자, 가린 자리는 작은 점 하나.
+   ○를 그대로 늘어놓으면 글자처럼 읽혀 지저분하다 */
+.slot .sh { display: flex; align-items: center; gap: 5px; }
+.slot .sh b { font-size: 14px; font-weight: 500; color: var(--ink-soft); letter-spacing: 0; }
+.slot .sh i { width: 4px; height: 4px; border-radius: 50%; background: var(--line); }
+.hint-note { margin-top: 2px; text-align: center; font-size: 11.5px; color: var(--ink-soft); }
+.hint-note b { color: var(--stamp); font-weight: 700; }
 .pool { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin: 16px 0 20px; flex: 1; align-content: flex-start; }
 .tile {
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--sheet); color: var(--ink);

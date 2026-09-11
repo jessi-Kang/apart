@@ -83,7 +83,8 @@ function svgImage(svg: string): Promise<HTMLImageElement> {
   });
 }
 
-/** 관인: 웹 Seal 컴포넌트와 같은 SVG(feTurbulence 포함)를 래스터해 질감까지 맞춘다 */
+/** 관인: 도형부는 웹 Seal 컴포넌트와 같은 SVG(feTurbulence 포함)를 래스터해
+ * 질감까지 가져오고, 링 텍스트는 페이지 폰트로 캔버스에 그린다 */
 const SEAL_SHAPE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <filter id="sr" x="-8%" y="-8%" width="116%" height="116%">
     <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7" result="n"/>
@@ -101,7 +102,7 @@ const SEAL_SHAPE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200
       <rect x="84" y="72" width="32" height="52" rx="2"/>
       <rect x="92" y="65" width="16" height="7" rx="1.5"/>
     </g>
-    <g fill="${PAPER}">
+    <g fill="${SHEET}">
       <rect x="89" y="79" width="8" height="7" rx="1"/>
       <rect x="103" y="79" width="8" height="7" rx="1"/>
       <rect x="89" y="91" width="8" height="7" rx="1"/>
@@ -113,22 +114,46 @@ const SEAL_SHAPE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200
   </g>
 </svg>`;
 
-/** 종이에 남은 도장 흔적 — 영수증 뒤 배경 장식 */
-async function drawGhostSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+/**
+ * 접수 관인. 서류 위에 눌러 찍는 도장이라 내용 위에 올라가고,
+ * 잉크가 겹치듯 multiply로 합성해 아래 글자가 비쳐 보인다.
+ */
+async function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate((10 * Math.PI) / 180);
-  ctx.globalAlpha = 0.12;
+  ctx.rotate((-12 * Math.PI) / 180); // 손으로 찍은 도장은 반듯할 수 없다
+  ctx.globalCompositeOperation = "multiply";
+  ctx.globalAlpha = 0.62;
   try {
     const img = await svgImage(SEAL_SHAPE_SVG);
     ctx.drawImage(img, -r, -r, r * 2, r * 2);
   } catch {
     ctx.strokeStyle = STAMP;
-    ctx.lineWidth = r * 0.09;
+    ctx.lineWidth = r * 0.055;
     ctx.beginPath();
-    ctx.arc(0, 0, r * 0.9, 0, Math.PI * 2);
+    ctx.arc(0, 0, r * 0.92, 0, Math.PI * 2);
     ctx.stroke();
   }
+  // 링 텍스트: 밴드 중앙(0.68r)에 글자 중심 정렬 — 웹 Seal과 같은 규칙
+  ctx.fillStyle = STAMP;
+  const ringText = (text: string, size: number, top: boolean) => {
+    ctx.font = font(700, size);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const chars = [...text.replace(/\s/g, "")];
+    const step = (21 * Math.PI) / 180; // 글자당 21°
+    const total = step * (chars.length - 1);
+    chars.forEach((ch, i) => {
+      const a = top ? -total / 2 + step * i : total / 2 - step * i;
+      ctx.save();
+      ctx.rotate(a);
+      ctx.translate(0, top ? -r * 0.68 : r * 0.68);
+      ctx.fillText(ch, 0, 0);
+      ctx.restore();
+    });
+  };
+  ringText("아파트 감별사", r * 0.17, true);
+  ringText("감별민원 접수처", r * 0.15, false);
   ctx.restore();
 }
 
@@ -246,7 +271,6 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
 
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
-  await drawGhostSeal(ctx, W - 196, H - 212, 150);
 
   const [yyyy, mm, dd] = data.date.split("-");
   const modeName = data.subtitle.replace(/\s*(통지서|접수증|신청서)$/, "");
@@ -374,9 +398,14 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   space(12);
   rule();
   space(6);
+  // 바코드는 왼쪽으로 물리고 오른쪽은 비워 둔다 — 그 자리가 관인 찍는 칸이다
+  let barcodeY = 0;
   blocks.push({
     h: 62,
-    draw: (y) => drawBarcode(ctx, inX + 28, y, inW - 56, 62, `${data.date}#${data.score}#${data.total}`),
+    draw: (y) => {
+      barcodeY = y;
+      drawBarcode(ctx, inX, y, Math.round(inW * 0.56), 62, `${data.date}#${data.score}#${data.total}`);
+    },
   });
   space(18);
   blocks.push({
@@ -419,6 +448,9 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
     b.draw(cy);
     cy += b.h;
   }
+  // 관인은 마지막에 — 접수증을 다 찍고 나서 도장을 누르는 순서 그대로다.
+  // 바코드 오른쪽 빈 칸에, 종이 안쪽으로 완전히 들어오게 찍어 링 글자가 잘리지 않는다.
+  await drawSeal(ctx, inX + inW - 96, barcodeY + 31, 96);
   ctx.restore();
 
   return await new Promise<Blob>((resolve, reject) => {
