@@ -294,7 +294,10 @@ export default function PlayPage() {
               {quiz && ` · 제${ep}호 ${mm}.${dd}`}
             </small>
           </Link>
-          <CloseX inProgress={!endless && (phase === "question" || phase === "reveal") && marks.length < 10} />
+          <CloseX
+              inProgress={!endless && (phase === "question" || phase === "reveal") && marks.length < 10}
+              onClose={endless && (phase === "question" || phase === "reveal") && eCount > 0 ? finishEndless : undefined}
+            />
         </header>
 
         {phase === "loading" && (

@@ -2,11 +2,17 @@
 
 import { useRouter } from "next/navigation";
 
-/** 게임 화면 닫기 (창구로 복귀). 진행 중이면 접수 취소 확인을 한 번 묻는다. */
-export function CloseX({ inProgress }: { inProgress: boolean }) {
+/** 게임 화면 닫기 (창구로 복귀). 진행 중이면 접수 취소 확인을 한 번 묻는다.
+ * onClose가 있으면 나가는 대신 그걸 실행한다 — 무한 모드에서 X는
+ * 그냥 끝나지 않고 세션 결과로 이어진다. */
+export function CloseX({ inProgress, onClose }: { inProgress: boolean; onClose?: () => void }) {
   const router = useRouter();
 
   function close() {
+    if (onClose) {
+      onClose();
+      return;
+    }
     if (inProgress && !window.confirm("진행 중인 감별을 중단할까요?\n오늘 다시 시작할 수 있습니다.")) return;
     router.push("/");
   }
