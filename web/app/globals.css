@@ -99,6 +99,20 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .mode.lock .tt { color: var(--ink-soft); font-weight: 500; }
 .mode.lock:active { background: none; }
 
+/* ---- 앱 설치 안내 (홈) ---- */
+.install-line {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 18px; padding: 12px 14px; border: 1.5px dashed var(--line); border-radius: var(--radius);
+  font-size: 13px; color: var(--ink-soft); line-height: 1.55;
+}
+.install-line strong { color: var(--ink); }
+.install-btn {
+  font-size: 13px; font-weight: 700; color: var(--sheet); background: var(--ink);
+  border: 1px solid var(--ink); border-radius: var(--radius); padding: 8px 14px; cursor: pointer;
+  transition: transform 0.12s ease; flex-shrink: 0;
+}
+.install-btn:active { transform: translateY(1px); }
+
 /* ---- 버튼 ---- */
 .btn {
   font-size: 15px; font-weight: 700; letter-spacing: -0.01em; padding: 16px 12px;

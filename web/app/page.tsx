@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { ComboStatus, HomeStatus } from "@/components/HomeStatus";
+import { InstallApp } from "@/components/InstallApp";
 import { LevelChip } from "@/components/LevelBar";
 import { SheetFooter } from "@/components/SheetFooter";
 import { Seal } from "@/components/Seal";
@@ -97,6 +98,8 @@ export default function HomePage() {
               </span>
             </div>
           </nav>
+
+          <InstallApp />
         </section>
 
         <SheetFooter />
