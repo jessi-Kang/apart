@@ -193,16 +193,20 @@ function drawTile(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   ctx.restore();
 }
 
-/** 등급 도장 프레임: 결과 화면 Stamp 컴포넌트의 SVG를 그대로 래스터 */
+/**
+ * 등급 도장 프레임: 결과 화면 Stamp의 이중 테두리를 카드 픽셀로 래스터.
+ * viewBox를 고정해 놓고 늘이면 가로·세로 배율이 갈려 선 굵기가 갈리므로
+ * (등급 이름이 짧을수록 좌우 선만 얇아진다) 그릴 크기를 그대로 viewBox로 쓴다.
+ */
 function stampFrameSvg(w: number, h: number): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 240 72" preserveAspectRatio="none">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   <filter id="fr" x="-10%" y="-18%" width="120%" height="136%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.08 0.12" numOctaves="2" seed="7" result="n"/>
-    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.035 0.06" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="5"/>
   </filter>
   <g filter="url(#fr)">
-    <rect x="4" y="4" width="232" height="64" fill="none" stroke="${STAMP}" stroke-width="4.5"/>
-    <rect x="11" y="11" width="218" height="50" fill="none" stroke="${STAMP}" stroke-width="1.4"/>
+    <rect x="3" y="3" width="${w - 6}" height="${h - 6}" fill="none" stroke="${STAMP}" stroke-width="6"/>
+    <rect x="12" y="12" width="${w - 24}" height="${h - 24}" fill="none" stroke="${STAMP}" stroke-width="2"/>
   </g>
 </svg>`;
 }
