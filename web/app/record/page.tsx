@@ -8,6 +8,10 @@ import { SheetFooter } from "@/components/SheetFooter";
 import { comboState, currentStreak, endlessRecord, loadResult, type ComboState } from "@/lib/local";
 import { currentLevel, type LevelInfo } from "@/lib/level";
 
+interface Me {
+  configured: boolean;
+  user: { name: string } | null;
+}
 interface Rank {
   top: number | null;
   sample: number;
@@ -29,6 +33,7 @@ export default function RecordPage() {
   const [streak, setStreak] = useState({ count: 0, playedToday: false });
   const [today, setToday] = useState<{ date: string; marks: boolean[] } | null>(null);
   const [ranks, setRanks] = useState<RanksResponse | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -51,6 +56,11 @@ export default function RecordPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d: RanksResponse | null) => setRanks(d))
       .catch(() => undefined);
+
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((m: Me) => setMe(m))
+      .catch(() => setMe({ configured: false, user: null }));
   }, []);
 
   const rankCell = (r: Rank | null | undefined, mine: number) => {
@@ -150,6 +160,31 @@ export default function RecordPage() {
             <VRow label="직급">
               <LevelBar />
             </VRow>
+            {me?.configured && (
+              <VRow label="계정">
+                <span className="acct-line">
+                  {me.user ? (
+                    <>
+                      {me.user.name}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+                          location.reload();
+                        }}
+                      >
+                        로그아웃
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      이 기기에만 저장 중
+                      <a href="/api/auth/login">Google로 보관</a>
+                    </>
+                  )}
+                </span>
+              </VRow>
+            )}
           </VForm>
 
           <div className="result-actions">

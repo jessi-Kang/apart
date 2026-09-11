@@ -150,47 +150,48 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .ledger .row:not(.off):hover { background: var(--paper); }
 }
 
-/* ---- 감별사 신분증 (홈): 레벨 + 이름 + 계정 동작을 한 칸에 ---- */
+/* ---- 감별사 신분증 (홈): 레벨 + 이름 + 직급이 딱 한 줄 ---- */
 .idbadge {
-  margin-top: 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  border: 1px solid var(--line); border-radius: var(--radius); padding: 11px 13px;
+  margin-top: 16px; display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px;
   background: var(--paper);
 }
 .idb-main {
-  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px;
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;
   color: var(--ink); text-decoration: none;
 }
 .idb-lv {
-  font-size: 12px; font-weight: 700; color: var(--stamp);
-  border: 1.5px solid currentColor; border-radius: var(--radius); padding: 2px 6px; white-space: nowrap;
+  font-size: 11.5px; font-weight: 700; color: var(--stamp);
+  border: 1.5px solid currentColor; border-radius: var(--radius); padding: 1px 5px; white-space: nowrap;
 }
-.idb-name { font-size: 13.5px; font-weight: 700; letter-spacing: -0.02em; overflow-wrap: anywhere; }
-.idb-name small { display: block; font-weight: 400; font-size: 11.5px; color: var(--ink-soft); margin-top: 1px; }
-.idb-go { margin-left: auto; font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+.idb-name {
+  font-size: 13px; font-weight: 700; letter-spacing: -0.02em;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.idb-title {
+  font-size: 11.5px; color: var(--ink-soft); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.idb-go { margin-left: auto; font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; }
 .idb-main:hover .idb-go, .idb-main:focus-visible .idb-go { color: var(--stamp); }
 .idb-auth {
-  flex-basis: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
-  font-size: 12px; color: var(--ink-soft);
+  font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; text-decoration: none;
+  padding-left: 10px; border-left: 1px solid var(--line); transition: color 0.12s ease;
 }
-.idb-auth a, .idb-auth button {
-  font: inherit; color: var(--ink-soft); background: none; border: 0; padding: 0;
-  cursor: pointer; text-decoration: none; transition: color 0.12s ease;
-}
-.idb-auth a:hover, .idb-auth button:hover,
-.idb-auth a:focus-visible, .idb-auth button:focus-visible { color: var(--stamp); }
+.idb-auth:hover, .idb-auth:focus-visible { color: var(--stamp); }
 
-/* ---- 계정 상태 한 줄 (홈) ---- */
-.account-line { margin-top: 6px; font-size: 12.5px; color: var(--ink-soft); }
-.account-line b { color: var(--ink); }
-.account-line a,
-.account-line button {
-  font: inherit; font-weight: 500; color: var(--ink); background: none; border: 0; padding: 0;
-  cursor: pointer; text-decoration: none; transition: color 0.12s ease;
+/* ---- 계정 줄 (기록 열람실) ---- */
+.acct-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.acct-line a,
+.acct-line button {
+  font: inherit; font-size: 12.5px; font-weight: 500; color: var(--ink-soft);
+  background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline;
+  text-underline-offset: 3px; transition: color 0.12s ease;
 }
-.account-line a:hover,
-.account-line a:focus-visible,
-.account-line button:hover,
-.account-line button:focus-visible { color: var(--stamp); }
+.acct-line a:hover,
+.acct-line a:focus-visible,
+.acct-line button:hover,
+.acct-line button:focus-visible { color: var(--stamp); }
 
 /* ---- 버튼 ---- */
 .btn {
@@ -527,11 +528,10 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .ledger .dd { font-size: 13.5px; }
   .ledger .dd-rec { font-size: 12.5px; }
   .chop { font-size: 11.5px; padding: 5px 9px; }
-  .idbadge { padding: 13px 15px; }
-  .idb-lv { font-size: 13px; }
-  .idb-name { font-size: 15px; }
-  .idb-name small { font-size: 12.5px; }
-  .idb-go, .idb-auth { font-size: 13px; }
+  .idbadge { padding: 10px 14px; }
+  .idb-lv { font-size: 12.5px; }
+  .idb-name { font-size: 14px; }
+  .idb-title, .idb-go, .idb-auth { font-size: 12.5px; }
   .btn { font-size: 16px; padding: 16px 12px; }
   .btn-ghost { font-size: 15px; padding: 14px 12px; }
   .vk { font-size: 13px; }
