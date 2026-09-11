@@ -1,0 +1,38 @@
+# Vercel 배포 폴백 트리거
+#
+# 왜 있나: Vercel GitHub 연동(웹훅)이 두 번이나 조용히 죽어 푸시가 배포로
+# 이어지지 않았다. GitHub Actions는 푸시마다 반드시 실행되므로, 여기서
+# Vercel Deploy Hook을 직접 호출하면 웹훅이 죽어 있어도 배포가 생성된다.
+# 실행 로그가 남아 "트리거는 됐는데 배포가 없다/있다"를 눈으로 확인할 수 있다.
+#
+# 설정: Vercel 대시보드 → apt-gam → Settings → Git → Deploy Hooks에서
+# 이 브랜치용 훅을 만들고, 그 URL을 리포 Secrets(Actions)의
+# VERCEL_DEPLOY_HOOK에 넣는다. 시크릿이 없으면 이 워크플로는 안내만 남기고
+# 통과한다(이중 배포 방지를 위해 훅 등록 후 Vercel 자동 배포를 끈다).
+name: vercel-deploy
+
+on:
+  push:
+    branches:
+      - claude/apartment-quiz-game-planning-i6rqe9
+      - main
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel deploy hook
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::notice::VERCEL_DEPLOY_HOOK 시크릿이 없어 훅 호출을 건너뜁니다. Vercel 자동 배포에 의존 중."
+            exit 0
+          fi
+          code=$(curl -s -o /tmp/hook.out -w '%{http_code}' -X POST "$HOOK")
+          echo "deploy hook response: $code"
+          cat /tmp/hook.out
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Deploy Hook 호출 실패 ($code)"
+            exit 1
+          fi
