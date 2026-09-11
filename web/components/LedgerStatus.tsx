@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SYNC_EVENT } from "@/lib/cloud";
-import { comboState, currentStreak } from "@/lib/local";
+import { comboState, endlessRecord } from "@/lib/local";
 
 /**
  * 접수 대장(홈)의 살아있는 칸들.
@@ -31,28 +31,28 @@ export function DailyChop({ mode, date }: { mode: keyof typeof KEY_BY_MODE; date
     window.addEventListener(SYNC_EVENT, refresh);
     return () => window.removeEventListener(SYNC_EVENT, refresh);
   }, [mode, date]);
-  // 본편 완주는 "끝"이 아니라 무한 코스 개장 — 게임은 언제나 계속된다
-  return <span className={done ? "chop done" : "chop"}>{done ? "무한 개장" : "접수중"}</span>;
+  // 무한이 본편 — 도장은 오늘의 공식전(랭킹전) 출전 여부만 알린다
+  return <span className={done ? "chop done" : "chop"}>{done ? "출전 완료" : "공식전"}</span>;
 }
 
-/** 본편 설명 꼬리: 연속 접수 일수 */
-export function OxTail({ date }: { date: string }) {
-  const [tail, setTail] = useState("");
+/** 무한 기록 꼬리: 최고 연속 (없으면 도전 문구) */
+export function RecTail({ mode }: { mode: "ox" | "assemble" }) {
+  const [tail, setTail] = useState("연속 기록 도전");
   useEffect(() => {
     const refresh = () => {
-      const { count } = currentStreak(date);
-      setTail(count > 0 ? ` · ${count}일 연속` : "");
+      const { best } = endlessRecord(mode);
+      if (best > 0) setTail(`최고 연속 ${best}`);
     };
     refresh();
     window.addEventListener(SYNC_EVENT, refresh);
     return () => window.removeEventListener(SYNC_EVENT, refresh);
-  }, [date]);
+  }, [mode]);
   return <>{tail}</>;
 }
 
 /** 진짜 찾기 설명 꼬리: 최고 콤보 */
 export function FindTail() {
-  const [tail, setTail] = useState(" · 매일 10라운드");
+  const [tail, setTail] = useState(" · 콤보 기록 도전");
   useEffect(() => {
     const refresh = () => {
       const { best } = comboState();

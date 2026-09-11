@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { AccountBar } from "@/components/AccountBar";
-import { DailyChop, FindTail, OxTail } from "@/components/LedgerStatus";
+import { DailyChop, FindTail, RecTail } from "@/components/LedgerStatus";
 import { LevelChip } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
@@ -54,7 +54,7 @@ export default function HomePage() {
             <br />
             감별 민원을 <em>선택</em>하세요
           </h1>
-          <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 데일리{" "}게임</p>
+          <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 감별{" "}게임</p>
           <p className="home-level">
             <LevelChip />
           </p>
@@ -72,8 +72,7 @@ export default function HomePage() {
               <span className="cell">
                 <span className="tt">감별 O/X</span>
                 <span className="dd">
-                  오늘의 본편 · 하루 10문제
-                  <OxTail date={date} />
+                  무한 감별 · <RecTail mode="ox" />
                 </span>
               </span>
               <span className="st">
@@ -84,7 +83,9 @@ export default function HomePage() {
               <span className="no mono">2</span>
               <span className="cell">
                 <span className="tt">이름 조립</span>
-                <span className="dd">힌트로 실존 단지명 조립 · 매일 10문제</span>
+                <span className="dd">
+                  힌트로 실존 단지명 조립 · <RecTail mode="assemble" />
+                </span>
               </span>
               <span className="st">
                 <DailyChop mode="assemble" date={date} />
