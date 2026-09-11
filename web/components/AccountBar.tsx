@@ -9,24 +9,19 @@ interface Me {
 }
 
 /**
- * 홈의 접수인 등록 상태 줄.
- * - 비회원: 기록이 이 기기에만 남는다는 안내 + 구글 로그인 버튼
- * - 로그인: 이름 + 동기화 상태 + 로그아웃
- * - 로그인 기능이 꺼진 배포(env 미설정)에서는 아무것도 그리지 않는다
+ * 홈의 계정 상태 한 줄. 박스·버튼 없이 조용하게:
+ * 비회원은 기록 범위와 로그인 링크, 로그인 후엔 이름과 로그아웃만.
+ * 로그인 기능이 꺼진 배포(env 미설정)에서는 아무것도 그리지 않는다.
  */
 export function AccountBar() {
   const [me, setMe] = useState<Me | null>(null);
-  const [synced, setSynced] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then(async (m: Me) => {
+      .then((m: Me) => {
         setMe(m);
-        if (m.user) {
-          await ensureSynced();
-          setSynced(true);
-        }
+        if (m.user) void ensureSynced();
       })
       .catch(() => setMe({ configured: false, user: null }));
   }, []);
@@ -35,25 +30,17 @@ export function AccountBar() {
 
   if (!me.user) {
     return (
-      <div className="account-line">
-        <span>
-          <strong>비회원 접수 중</strong> — 기록은 이 기기에만 남습니다
-        </span>
-        <a className="account-btn" href="/api/auth/login">
-          Google로 기록 보관
-        </a>
-      </div>
+      <p className="account-line">
+        기록은 이 기기에만 저장 중 · <a href="/api/auth/login">Google로 보관</a>
+      </p>
     );
   }
 
   return (
-    <div className="account-line">
-      <span>
-        <strong>{me.user.name}</strong> 감별사 · {synced ? "기록 동기화 완료" : "기록 동기화 중…"}
-      </span>
+    <p className="account-line">
+      <b>{me.user.name}</b> · 기록 보관 중 ·{" "}
       <button
         type="button"
-        className="account-btn account-btn-ghost"
         onClick={async () => {
           await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
           location.reload();
@@ -61,6 +48,6 @@ export function AccountBar() {
       >
         로그아웃
       </button>
-    </div>
+    </p>
   );
 }

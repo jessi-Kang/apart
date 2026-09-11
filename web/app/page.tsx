@@ -2,7 +2,6 @@ import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { AccountBar } from "@/components/AccountBar";
 import { ComboStatus, HomeStatus } from "@/components/HomeStatus";
-import { InstallApp } from "@/components/InstallApp";
 import { LevelChip } from "@/components/LevelBar";
 import { SheetFooter } from "@/components/SheetFooter";
 import { Seal } from "@/components/Seal";
@@ -29,8 +28,6 @@ export default function HomePage() {
           실존 단지명은 공공데이터(K-apt) 기준.
           <br />
           가짜 이름은 AI가 지었습니다.
-          <br />
-          본편 문제는 매일 자정에 바뀝니다.
         </p>
       </aside>
 
@@ -55,7 +52,7 @@ export default function HomePage() {
             <br />
             감별 민원을 <em>선택</em>하세요
           </h1>
-          <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 데일리 게임. 본편은 하루 한 번입니다.</p>
+          <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 데일리 게임</p>
           <p className="home-level">
             <LevelChip />
           </p>
@@ -101,8 +98,6 @@ export default function HomePage() {
               </span>
             </div>
           </nav>
-
-          <InstallApp />
         </section>
 
         <SheetFooter />
