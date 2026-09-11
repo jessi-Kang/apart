@@ -104,34 +104,14 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .mode.lock .tt { color: var(--ink-soft); font-weight: 500; }
 .mode.lock:active { background: none; }
 
-/* ---- 접수인 등록 (계정) ---- */
-.account-line {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-  margin-top: 16px; padding: 11px 14px; border: 1px solid var(--line); border-radius: var(--radius);
-  background: var(--sheet); font-size: 13px; color: var(--ink-soft); line-height: 1.55;
+/* ---- 계정 상태 한 줄 (홈) ---- */
+.account-line { margin-top: 6px; font-size: 12.5px; color: var(--ink-soft); }
+.account-line b { color: var(--ink); }
+.account-line a,
+.account-line button {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
 }
-.account-line strong { color: var(--ink); }
-.account-btn {
-  font-size: 13px; font-weight: 700; color: var(--sheet); background: var(--ink);
-  border: 1px solid var(--ink); border-radius: var(--radius); padding: 8px 14px; cursor: pointer;
-  text-decoration: none; transition: transform 0.12s ease; flex-shrink: 0;
-}
-.account-btn:active { transform: translateY(1px); }
-.account-btn-ghost { background: var(--sheet); color: var(--ink-soft); border-color: var(--line); font-weight: 500; }
-
-/* ---- 앱 설치 안내 (홈) ---- */
-.install-line {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-  margin-top: 18px; padding: 12px 14px; border: 1.5px dashed var(--line); border-radius: var(--radius);
-  font-size: 13px; color: var(--ink-soft); line-height: 1.55;
-}
-.install-line strong { color: var(--ink); }
-.install-btn {
-  font-size: 13px; font-weight: 700; color: var(--sheet); background: var(--ink);
-  border: 1px solid var(--ink); border-radius: var(--radius); padding: 8px 14px; cursor: pointer;
-  transition: transform 0.12s ease; flex-shrink: 0;
-}
-.install-btn:active { transform: translateY(1px); }
 
 /* ---- 버튼 ---- */
 .btn {

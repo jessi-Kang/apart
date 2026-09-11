@@ -295,11 +295,7 @@ export default function AssemblePage() {
             제{ep}호 / {Number(mm)}월 {Number(dd)}일
           </p>
         )}
-        <p className="note">
-          조각에는 함정이 섞여 있습니다.
-          <br />
-          매일 자정에 새 10문제가 나옵니다.
-        </p>
+        <p className="note">조각에는 함정이 섞여 있습니다.</p>
       </aside>
 
       <main className="sheet">
