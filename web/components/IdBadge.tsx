@@ -12,8 +12,9 @@ interface Me {
 
 /**
  * 홈의 감별사 신분증 한 줄.
- * 레벨 칩과 계정 줄이 따로 놀던 것을 하나로 묶었다 — 둘 다 "나는 누구인가"를
- * 말하는 정보라 서류에서도 같은 칸에 들어간다. 누르면 기록 열람실로 간다.
+ * 레벨·이름·직급이 한 줄에 들어가고, 누르면 기록 열람실로 간다.
+ * 로그아웃처럼 자주 쓰지 않는 계정 동작은 여기 두지 않는다 — 홈은
+ * 게임을 고르는 자리고, 계정은 기록 열람실에 모여 있다.
  */
 export function IdBadge() {
   const [info, setInfo] = useState<LevelInfo | null>(null);
@@ -33,31 +34,21 @@ export function IdBadge() {
     return () => window.removeEventListener(SYNC_EVENT, refresh);
   }, []);
 
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
-    location.reload();
-  };
+  const title = info?.title ?? "견습 감별사";
+  const guest = me?.configured && !me.user;
 
   return (
     <div className="idbadge">
       <Link className="idb-main" href="/record">
         <span className="idb-lv mono">Lv.{info?.level ?? 1}</span>
-        <span className="idb-name">
-          {me?.user ? me.user.name : (info?.title ?? "견습 감별사")}
-          {me?.user && info && <small>{info.title}</small>}
-        </span>
+        <b className="idb-name">{me?.user ? me.user.name : title}</b>
+        {me?.user && <span className="idb-title">{title}</span>}
         <span className="idb-go">기록 열람</span>
       </Link>
-      {me?.configured && (
-        <span className="idb-auth">
-          {me.user ? (
-            <button type="button" onClick={() => void logout()}>
-              로그아웃
-            </button>
-          ) : (
-            <a href="/api/auth/login">Google로 기록 보관</a>
-          )}
-        </span>
+      {guest && (
+        <a className="idb-auth" href="/api/auth/login">
+          기록 보관
+        </a>
       )}
     </div>
   );
