@@ -29,9 +29,6 @@ export function LevelBar({ result }: { result?: XpResult | null }) {
       <div className="gauge">
         <i style={{ transform: `scaleX(${Math.min(1, info.into / info.need)})` }} />
       </div>
-      <span className="ladder-note">
-        다음 레벨까지 <b>{info.need - info.into}점</b>
-      </span>
     </div>
   );
 }

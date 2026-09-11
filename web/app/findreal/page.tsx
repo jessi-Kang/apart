@@ -80,8 +80,8 @@ export default function FindRealPage() {
           } | null;
           // 문제 수가 바뀐 날의 옛 저장본은 버리고 새로 풀게 한다
           if (saved && saved.date === data.date && saved.marks.length === data.items.length) {
-            setMarks(saved.marks);
-            setPhase("done");
+            // 오늘 완주분은 결과 재방영 대신 곧장 무한 라운드로
+            void startEndless();
             return;
           }
         } catch {
@@ -454,17 +454,17 @@ export default function FindRealPage() {
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
                 {eImgState === "busy"
-                  ? "통지서를 발급하는 중"
+                  ? "발급 중"
                   : eImgState === "shared"
-                    ? "공유 완료. 한 장 더 발급됩니다"
+                    ? "공유 완료"
                     : eImgState === "downloaded"
-                      ? "저장 완료. 갤러리에서 확인하세요"
+                      ? "저장 완료"
                       : eImgState === "failed"
-                        ? "발급 실패. 다시 시도해 주세요"
-                        : "세션 결과 이미지로 자랑하기"}
+                        ? "다시 시도"
+                        : "세션 통지서 공유"}
               </button>
-              <button className="btn btn-next" onClick={startEndless} disabled={busy}>
-                다시 무한 찾기 — 콤보 이어가기
+              <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
+                다시 도전
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
@@ -493,25 +493,20 @@ export default function FindRealPage() {
             <p className="grade-desc">{dGrade.desc}</p>
             <GradeLadder grades={FIND_GRADES} score={hits} unit="라운드" />
             <LevelBar result={xpRes} />
-            <p className="top-note">
-              {combo.current > 0
-                ? `연속 ${combo.current}개 적중 중 · 역대 최고 ${combo.best}`
-                : `역대 최고 콤보 ${combo.best}${fmtSec(combo.bestAvgMs) ? ` (평균 ${fmtSec(combo.bestAvgMs)})` : ""}`}
-            </p>
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
                 {imgState === "busy"
-                  ? "통지서를 발급하는 중"
+                  ? "발급 중"
                   : imgState === "shared"
-                    ? "공유 완료. 한 장 더 발급됩니다"
+                    ? "공유 완료"
                     : imgState === "downloaded"
-                      ? "저장 완료. 갤러리에서 확인하세요"
+                      ? "저장 완료"
                       : imgState === "failed"
-                        ? "발급 실패. 다시 시도해 주세요"
-                        : "결과 통지서 이미지로 자랑하기"}
+                        ? "다시 시도"
+                        : "통지서 이미지 공유"}
               </button>
-              <button className="btn btn-next" onClick={startEndless} disabled={busy}>
-                무한으로 계속 찾기 — 콤보 이어가기
+              <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
+                무한 찾기 계속
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
