@@ -16,6 +16,8 @@ on:
     branches:
       - claude/apartment-quiz-game-planning-i6rqe9
       - main
+  # 빈 커밋 없이 배포만 다시 쏠 수 있는 수동 버튼 (Actions 탭 → Run workflow)
+  workflow_dispatch:
 
 # 연달아 푸시하면 앞선 실행을 취소하고 마지막 것만 훅을 쏜다.
 # 배포 횟수는 계정 단위 하루 한도(Hobby 100건)가 있어 낭비하면 하루가 막힌다.
