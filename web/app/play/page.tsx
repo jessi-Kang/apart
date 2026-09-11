@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
+import { CountUp, GradeLadder, RecordGauge } from "@/components/ResultExtras";
+import { Seal } from "@/components/Seal";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
 import { TimerBar } from "@/components/TimerBar";
-import { gradeFor } from "@/lib/grades";
+import { gradeFor, GRADES } from "@/lib/grades";
 import { bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -403,9 +405,12 @@ export default function PlayPage() {
 
         {phase === "eresult" && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={230} />
+            </div>
             <p className="score-label mono">무한 감별 세션 결과</p>
             <p className="big">
-              {sHits} / {eCount}
+              <CountUp value={sHits} /> / {eCount}
             </p>
             <p className="grade-desc">
               {sBest > startBest.current
@@ -416,6 +421,7 @@ export default function PlayPage() {
                     ? "반타작 이상. AI 작명도 만만치 않죠."
                     : "AI가 오늘은 한 수 위였습니다. 설욕전을 권합니다."}
             </p>
+            <RecordGauge session={sBest} best={startBest.current} />
             <ul className="review">
               <li>
                 <span className="nm">이번 세션 최고 연속</span>
@@ -446,10 +452,16 @@ export default function PlayPage() {
 
         {phase === "result" && quiz && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={230} />
+            </div>
             <p className="score-label mono">감별 결과</p>
-            <p className="big">{score} / 10</p>
+            <p className="big">
+              <CountUp value={score} /> / 10
+            </p>
             <Stamp>{grade.name}</Stamp>
             <p className="grade-desc">{grade.desc}</p>
+            <GradeLadder grades={GRADES} score={score} />
             <div className="grid-line" role="img" aria-label={`10문제 중 ${score}문제 정답`}>
               {marks.map((m, k) => (
                 <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>

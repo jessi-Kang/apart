@@ -94,6 +94,13 @@ export function sfxStampWrong() {
   });
 }
 
+/** 점수 카운트업 틱: 아주 작은 클릭 */
+export function sfxTick() {
+  withAudio((ac, t) => {
+    tone(ac, t, 1300, 950, 0.03, 0.035, "square");
+  });
+}
+
 /** 콤보 상승: 가벼운 2음 딩 */
 export function sfxCombo() {
   withAudio((ac, t) => {
