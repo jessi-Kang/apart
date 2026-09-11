@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
+import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
 import { TimerBar } from "@/components/TimerBar";
+import { findGradeFor } from "@/lib/grades";
 import { applyComboPick, comboState, type ComboState } from "@/lib/local";
+import { shareCardImage } from "@/lib/sharecard";
 import { sfxCombo, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
 interface Round {
@@ -42,8 +45,8 @@ export default function FindRealPage() {
   const [timedOut, setTimedOut] = useState(false);
   const [marks, setMarks] = useState<boolean[]>([]);
   const [combo, setCombo] = useState<ComboState>({ current: 0, best: 0 });
-  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
 
   // 무한 라운드 (콤보는 데일리·무한 공통으로 이어진다)
   const [endless, setEndless] = useState(false);
@@ -206,13 +209,32 @@ export default function FindRealPage() {
   }
 
 
-  function share() {
-    if (!quiz) return;
+  const dGrade = findGradeFor(hits);
+
+  async function shareImage() {
+    if (!quiz || imgState === "busy") return;
     sfxTap();
-    const grid = marks.map((m) => (m ? "🟩" : "⬛")).join("");
-    const comboLine = combo.current > 0 ? ` · 연속 ${combo.current}개 적중 중` : "";
-    const text = `아파트 감별사 #${quiz.episode} 진짜 찾기 🎯\n${grid} ${hits}/${total} 적중${comboLine} (최고 ${combo.best})\n${location.origin}`;
-    navigator.clipboard?.writeText(text).then(() => setCopied(true));
+    setImgState("busy");
+    try {
+      const result = await shareCardImage({
+        episode: quiz.episode,
+        date: quiz.date,
+        subtitle: "진짜 찾기 감정 통지서",
+        score: hits,
+        total,
+        marks,
+        gradeName: dGrade.name,
+        stats: [
+          { value: `${combo.current}`, label: "유지 중인 콤보", accent: combo.current > 0 },
+          { value: `${combo.best}`, label: "역대 최고 콤보" },
+          { value: `${total - hits}번`, label: "AI에 속은 횟수" },
+          { value: fmtSec(combo.bestAvgMs) ?? "-", label: "최고 기록 평균 판단" },
+        ],
+      });
+      setImgState(result);
+    } catch {
+      setImgState("failed");
+    }
   }
 
   const ep = quiz?.episode ?? "";
@@ -395,6 +417,7 @@ export default function FindRealPage() {
             <p className="big">
               {hits} / {total}
             </p>
+            <Stamp>{dGrade.name}</Stamp>
             <div className="grid-line" role="img" aria-label={`${total}라운드 중 ${hits}라운드 적중`}>
               {marks.map((m, k) => (
                 <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
@@ -402,19 +425,26 @@ export default function FindRealPage() {
                 </span>
               ))}
             </div>
-            <p className="grade-desc">
+            <p className="grade-desc">{dGrade.desc}</p>
+            <p className="top-note">
               {combo.current > 0
-                ? `연속 ${combo.current}개 적중 중 · 최고 기록 ${combo.best}. 무한 라운드에서 이어가세요.`
-                : combo.best > 0
-                  ? `최고 기록 ${combo.best}${fmtSec(combo.bestAvgMs) ? ` (평균 ${fmtSec(combo.bestAvgMs)})` : ""}. 무한 라운드에서 다시 쌓으세요.`
-                  : "무한 라운드에서 첫 콤보를 시작하세요."}
+                ? `연속 ${combo.current}개 적중 중 · 역대 최고 ${combo.best}`
+                : `역대 최고 콤보 ${combo.best}${fmtSec(combo.bestAvgMs) ? ` (평균 ${fmtSec(combo.bestAvgMs)})` : ""}`}
             </p>
             <div className="result-actions">
+              <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
+                {imgState === "busy"
+                  ? "통지서를 발급하는 중"
+                  : imgState === "shared"
+                    ? "공유 완료. 한 장 더 발급됩니다"
+                    : imgState === "downloaded"
+                      ? "저장 완료. 갤러리에서 확인하세요"
+                      : imgState === "failed"
+                        ? "발급 실패. 다시 시도해 주세요"
+                        : "결과 통지서 이미지로 자랑하기"}
+              </button>
               <button className="btn btn-next" onClick={startEndless} disabled={busy}>
                 무한으로 계속 찾기 — 콤보 이어가기
-              </button>
-              <button className="btn btn-ghost" onClick={share}>
-                {copied ? "복사 완료. 붙여넣기만 하면 됩니다" : "결과 복사해서 자랑하기"}
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
