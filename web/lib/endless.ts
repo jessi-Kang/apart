@@ -1,4 +1,5 @@
 import { apartments, fakeNames, type Apartment } from "./data";
+import { choseongMask } from "./hangul";
 
 /**
  * 무한 모드 출제 (데일리와 별개, 매 요청 랜덤)
@@ -112,6 +113,14 @@ export function randomAssemble(): {
 }
 
 const realById = new Map(apartments.map((a) => [a.id, a]));
+
+/** 무한 조립의 초성 힌트 (데일리와 같은 규칙) */
+export function assembleHintById(id: unknown, tier: number): { mask: string } | null {
+  if (typeof id !== "string" || !Number.isInteger(tier) || tier < 1) return null;
+  const apt = realById.get(id);
+  if (!apt) return null;
+  return { mask: choseongMask(apt.name, Math.min(tier, 3)) };
+}
 
 export function judgeAssemble(
   id: unknown,
