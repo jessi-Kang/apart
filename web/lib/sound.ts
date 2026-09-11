@@ -4,10 +4,8 @@
  * 효과음 (Web Audio 합성, 오디오 파일·의존성 0)
  * 접수처 세계관의 물성음: 도장 쾅, 종이 탁, 콤보 딩.
  * - AudioContext는 첫 사용자 제스처(클릭 핸들러 안 호출)에서 lazy 생성
- * - 음소거는 localStorage에 저장, 기본은 켬
+ * - 항상 켜져 있다 (토글은 쓰임이 없다는 피드백으로 제거)
  */
-
-const MUTE_KEY = "aptgam:muted";
 
 let ctx: AudioContext | null = null;
 
@@ -19,22 +17,6 @@ function audio(): AudioContext | null {
     return ctx;
   } catch {
     return null;
-  }
-}
-
-export function isMuted(): boolean {
-  try {
-    return localStorage.getItem(MUTE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function setMuted(muted: boolean) {
-  try {
-    localStorage.setItem(MUTE_KEY, muted ? "1" : "0");
-  } catch {
-    /* 무시 */
   }
 }
 
@@ -77,7 +59,6 @@ function tone(
 }
 
 function withAudio(fn: (ac: AudioContext, t0: number) => void) {
-  if (isMuted()) return;
   const ac = audio();
   if (!ac) return;
   try {

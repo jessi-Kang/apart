@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { CloseX } from "@/components/CloseX";
-import { SoundToggle } from "@/components/SoundToggle";
 import { TimerBar } from "@/components/TimerBar";
 import { applyComboPick, comboState, type ComboState } from "@/lib/local";
 import { sfxCombo, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -425,7 +424,6 @@ export default function FindRealPage() {
         )}
 
         <footer className="sheet-footer">
-          <SoundToggle />
           <span>{endless ? "오판하면 콤보가 끊깁니다. 신중하게." : "진짜 하나를 골라 누르세요"}</span>
           <span className="mono">{endless ? "무한 감정 중" : "내일 00:00 새 라운드"}</span>
         </footer>
