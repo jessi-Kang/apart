@@ -1,27 +1,15 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
-import { answerRates } from "@/lib/stats";
 import { ComboStatus, HomeStatus } from "@/components/HomeStatus";
 import { Seal } from "@/components/Seal";
 
 export const dynamic = "force-dynamic";
 
-function prevDateOf(date: string): string {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d) - 86400000).toISOString().slice(0, 10);
-}
-
 /** 홈 = 접수 창구 목록 (docs/07 §1-1, 확정 시안 A) */
-export default async function HomePage() {
+export default function HomePage() {
   const date = kstDateString();
   const ep = episodeNumber(date);
   const [, mm, dd] = date.split("-");
-
-  // 어제 전국이 가장 많이 속은 문제 (docs/02 리텐션 장치). 표본 미달이면 기본 문구.
-  const rates = await answerRates(prevDateOf(date));
-  const worst = rates
-    .filter((r) => r.rate !== null)
-    .sort((a, b) => a.rate! - b.rate!)[0];
 
   return (
     <div className="frame">
@@ -96,20 +84,8 @@ export default async function HomePage() {
               </span>
               <span className="go-ic">→</span>
             </Link>
-            <Link className="mode" href="/yesterday">
-              <span className="no mono">4</span>
-              <span>
-                <span className="tt">어제의 정답 대장</span>
-                <span className="dd">
-                  {worst
-                    ? `어제 ${worst.no}번 문제, 전국 ${worst.rate}%만 맞혔습니다`
-                    : "어제 10문제 정답 열람 · 전국이 얼마나 속았나"}
-                </span>
-              </span>
-              <span className="go-ic">→</span>
-            </Link>
             <div className="mode lock">
-              <span className="no mono">5</span>
+              <span className="no mono">4</span>
               <span>
                 <span className="tt">작명소 · 우리 동네</span>
                 <span className="dd">2단계 개설 예정 창구</span>
