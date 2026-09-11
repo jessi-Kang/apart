@@ -31,7 +31,7 @@ export function SoundToggle() {
       title={label}
       onClick={() => setBgmEnabled(!on)}
     >
-      <svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true">
+      <svg width="21" height="21" viewBox="0 0 15 15" aria-hidden="true">
         <path d="M3 5.6h2.2L8 3.2v8.6L5.2 9.4H3z" fill="currentColor" />
         {on ? (
           <>
