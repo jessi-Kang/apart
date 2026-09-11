@@ -76,7 +76,9 @@ export default function PlayPage() {
         setQuiz(data);
         const saved = loadResult(data.date);
         if (saved && saved.marks.length === data.items.length) {
-          restore(saved, data.date);
+          // 오늘 본편을 이미 완주했으면 결과 재방영 대신 곧장 무한 감별로 — 창구는 닫히지 않는다
+          bumpStreak(data.date);
+          void startEndless();
         } else {
           setPhase("question");
         }
@@ -88,13 +90,6 @@ export default function PlayPage() {
   useEffect(() => {
     if (phase === "question") qStart.current = Date.now();
   }, [phase, idx, eCount]);
-
-  function restore(saved: SavedResult, date: string) {
-    setMarks(saved.marks);
-    setReview(saved.review);
-    setStreak(bumpStreak(date));
-    setPhase("result");
-  }
 
   async function fetchEndless() {
     const res = await fetch("/api/endless/ox");
@@ -465,37 +460,20 @@ export default function PlayPage() {
             </p>
             <RecordGauge session={sBest} best={startBest.current} />
             <LevelBar result={eXpRes} />
-            <ul className="review">
-              <li>
-                <span className="nm">이번 세션 최고 연속</span>
-                <span className="tag">{sBest}{sBest > startBest.current ? " · 신기록" : ""}</span>
-              </li>
-              <li>
-                <span className="nm">평균 풀이 시간</span>
-                <span className="tag">{fmtSec(sessionAvgMs()) ?? "-"}</span>
-              </li>
-              <li>
-                <span className="nm">역대 최고 연속</span>
-                <span className="tag">
-                  {eRec.best}
-                  {fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}
-                </span>
-              </li>
-            </ul>
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
                 {eImgState === "busy"
-                  ? "통지서를 발급하는 중"
+                  ? "발급 중"
                   : eImgState === "shared"
-                    ? "공유 완료. 한 장 더 발급됩니다"
+                    ? "공유 완료"
                     : eImgState === "downloaded"
-                      ? "저장 완료. 갤러리에서 확인하세요"
+                      ? "저장 완료"
                       : eImgState === "failed"
-                        ? "발급 실패. 다시 시도해 주세요"
-                        : "세션 결과 이미지로 자랑하기"}
+                        ? "다시 시도"
+                        : "세션 통지서 공유"}
               </button>
-              <button className="btn btn-next" onClick={startEndless} disabled={busy}>
-                다시 무한 감별 — 기록 깨러 가기
+              <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
+                다시 도전
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
@@ -524,30 +502,20 @@ export default function PlayPage() {
                 </span>
               ))}
             </div>
-            <p className="top-note">
-              {topPct !== null && (
-                <>
-                  오늘 전국 상위 <b>{topPct}%</b> ·{" "}
-                </>
-              )}
-              {streak > 0 && <>{streak}일 연속 감별 중 · </>}
-              무한 감별 최고 연속 {eRec.best}
-              {fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}
-            </p>
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
                 {imgState === "busy"
-                  ? "통지서를 발급하는 중"
+                  ? "발급 중"
                   : imgState === "shared"
-                    ? "공유 완료. 한 장 더 발급됩니다"
+                    ? "공유 완료"
                     : imgState === "downloaded"
-                      ? "저장 완료. 갤러리에서 확인하세요"
+                      ? "저장 완료"
                       : imgState === "failed"
-                        ? "발급 실패. 다시 시도해 주세요"
-                        : "결과 통지서 이미지로 자랑하기"}
+                        ? "다시 시도"
+                        : "통지서 이미지 공유"}
               </button>
-              <button className="btn btn-next" onClick={startEndless} disabled={busy}>
-                무한 감별 시작 — 랜덤 새 문제
+              <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
+                무한 감별 계속
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기

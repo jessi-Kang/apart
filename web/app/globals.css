@@ -125,9 +125,10 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   font-size: 11px; font-weight: 700; color: var(--stamp); border: 1.6px solid currentColor;
   border-radius: var(--radius); padding: 4px 8px; transform: rotate(-4deg); letter-spacing: 0.02em;
 }
-.chop.done { color: var(--ink); }
+/* 무한 개장: 접수 도장과 다른 종류 — 잉크를 채워 누른 승인 도장 */
+.chop.done { background: var(--ink); border-color: var(--ink); color: var(--sheet); transform: rotate(3deg); }
 .chop.off { color: var(--ink-soft); border-style: dashed; transform: none; font-weight: 500; }
-.ledger .row.off { cursor: default; }
+.ledger .row.off { cursor: default; opacity: 0.5; }
 .ledger .row.off .no,
 .ledger .row.off .tt { color: var(--ink-soft); }
 .ledger .row.off .tt { font-weight: 500; }
