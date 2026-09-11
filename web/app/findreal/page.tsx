@@ -52,7 +52,6 @@ export default function FindRealPage() {
   const [eCount, setECount] = useState(0);
   const [sHits, setSHits] = useState(0);
   const [sMaxCombo, setSMaxCombo] = useState(0); // 세션 중 도달한 최고 콤보
-  const [eCopied, setECopied] = useState(false);
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
   const qStart = useRef(0);
@@ -104,7 +103,6 @@ export default function FindRealPage() {
       setECount(0);
       setSHits(0);
       setSMaxCombo(0);
-      setECopied(false);
       sessionTimes.current = [];
       startBest.current = comboState().best;
       setPicked(null);
@@ -208,12 +206,6 @@ export default function FindRealPage() {
     setPhase("eresult");
   }
 
-  function shareEndless() {
-    sfxTap();
-    const avg = fmtSec(sessionAvgMs());
-    const text = `아파트 감별사 무한 진짜 찾기 🎯\n${eCount}라운드 ${sHits}적중 · 최고 콤보 ${sMaxCombo}${avg ? ` · 평균 ${avg}` : ""}\n${location.origin}`;
-    navigator.clipboard?.writeText(text).then(() => setECopied(true));
-  }
 
   function share() {
     if (!quiz) return;
@@ -390,9 +382,6 @@ export default function FindRealPage() {
             <div className="result-actions">
               <button className="btn btn-next" onClick={startEndless} disabled={busy}>
                 다시 무한 찾기 — 콤보 이어가기
-              </button>
-              <button className="btn btn-ghost" onClick={shareEndless}>
-                {eCopied ? "복사 완료. 붙여넣기만 하면 됩니다" : "세션 결과 복사해서 자랑하기"}
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기

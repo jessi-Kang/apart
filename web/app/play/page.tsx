@@ -55,7 +55,6 @@ export default function PlayPage() {
   const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
   const [sHits, setSHits] = useState(0); // 이번 세션 적중 수
   const [sBest, setSBest] = useState(0); // 이번 세션 최고 연속
-  const [eCopied, setECopied] = useState(false);
   const qStart = useRef(0);
   const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
   const sessionTimes = useRef<number[]>([]); // 이번 세션 전체 풀이 시간(ms)
@@ -105,7 +104,6 @@ export default function PlayPage() {
       setECount(0);
       setSHits(0);
       setSBest(0);
-      setECopied(false);
       runTimes.current = [];
       sessionTimes.current = [];
       startBest.current = endlessRecord("ox").best;
@@ -130,12 +128,6 @@ export default function PlayPage() {
     setPhase("eresult");
   }
 
-  function shareEndless() {
-    sfxTap();
-    const avg = fmtSec(sessionAvgMs());
-    const text = `아파트 감별사 무한 감별 🔥\n${eCount}문제 ${sHits}적중 · 최고 연속 ${sBest}${avg ? ` · 평균 ${avg}` : ""}\n${location.origin}`;
-    navigator.clipboard?.writeText(text).then(() => setECopied(true));
-  }
 
   async function answer(choice: "real" | "fake" | "timeout") {
     if (busy || phase !== "question") return;
@@ -433,9 +425,6 @@ export default function PlayPage() {
             <div className="result-actions">
               <button className="btn btn-next" onClick={startEndless} disabled={busy}>
                 다시 무한 감별 — 기록 깨러 가기
-              </button>
-              <button className="btn btn-ghost" onClick={shareEndless}>
-                {eCopied ? "복사 완료. 붙여넣기만 하면 됩니다" : "세션 결과 복사해서 자랑하기"}
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기

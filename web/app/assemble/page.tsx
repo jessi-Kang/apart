@@ -62,7 +62,6 @@ export default function AssemblePage() {
   const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
   const [sHits, setSHits] = useState(0);
   const [sBest, setSBest] = useState(0);
-  const [eCopied, setECopied] = useState(false);
   const runTimes = useRef<number[]>([]);
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
@@ -114,7 +113,6 @@ export default function AssemblePage() {
       setECount(0);
       setSHits(0);
       setSBest(0);
-      setECopied(false);
       runTimes.current = [];
       sessionTimes.current = [];
       startBest.current = endlessRecord("assemble").best;
@@ -151,12 +149,6 @@ export default function AssemblePage() {
     setPhase("eresult");
   }
 
-  function shareEndless() {
-    sfxTap();
-    const avg = fmtSec(sessionAvgMs());
-    const text = `아파트 감별사 무한 조립 🧩\n${eCount}퍼즐 ${sHits}성공 · 최고 연속 ${sBest}${avg ? ` · 평균 ${avg}` : ""}\n${location.origin}`;
-    navigator.clipboard?.writeText(text).then(() => setECopied(true));
-  }
 
   /** fromTimeout=true면 미완성 조립이라도 그대로 제출한다 (시간 초과) */
   async function check(fromTimeout = false) {
@@ -440,9 +432,6 @@ export default function AssemblePage() {
             <div className="result-actions">
               <button className="btn btn-next" onClick={startEndless} disabled={busy}>
                 다시 무한 조립 — 기록 깨러 가기
-              </button>
-              <button className="btn btn-ghost" onClick={shareEndless}>
-                {eCopied ? "복사 완료. 붙여넣기만 하면 됩니다" : "세션 결과 복사해서 자랑하기"}
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
