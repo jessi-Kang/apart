@@ -17,8 +17,10 @@ export interface ShareCardData {
   episode: number;
   date: string; // YYYY-MM-DD
   subtitle: string; // "감별 결과 통지서" 등 모드별 서류명
+  headerRight?: string; // 지정 시 "#회차 · 날짜" 대신 이 문구 (무한 모드용)
   score: number;
   total: number;
+  totalText?: string; // 지정 시 "/ total" 대신 이 단위 표기 (예: "연속")
   marks: boolean[];
   gradeName: string;
   stats: ShareStat[]; // 2장 또는 4장 (2장 단위 행)
@@ -269,7 +271,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   ctx.textAlign = "right";
   ctx.font = font(400, 28, MONO);
   const [, mm, dd] = data.date.split("-");
-  ctx.fillText(`#${data.episode} · ${mm}.${dd}`, right, M + 100);
+  ctx.fillText(data.headerRight ?? `#${data.episode} · ${mm}.${dd}`, right, M + 100);
   ctx.fillStyle = INK;
   ctx.fillRect(M, M + 172, W - M * 2, 5);
   ctx.fillRect(M, M + 183, W - M * 2, 2);
@@ -281,7 +283,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   ctx.fillText(String(data.score), W / 2 - 60, 512);
   ctx.fillStyle = INK_SOFT;
   ctx.font = font(700, 72);
-  ctx.fillText(`/ ${data.total}`, W / 2 + 128, 500);
+  ctx.fillText(data.totalText ?? `/ ${data.total}`, W / 2 + 128, 500);
   await drawSeal(ctx, right - 100, 330, 128, 0.4); // 관인은 배경 장식 — 등급 도장이 주인공
   await drawGradeStamp(ctx, W / 2, 640, data.gradeName);
 
