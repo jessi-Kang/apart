@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { CountUp, GradeLadder, RecordGauge } from "@/components/ResultExtras";
+import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
 import { TimerBar } from "@/components/TimerBar";
 import { gradeFor, GRADES } from "@/lib/grades";
 import { bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
+import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
@@ -47,6 +49,8 @@ export default function PlayPage() {
   const [streak, setStreak] = useState(0);
   const [busy, setBusy] = useState(false);
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
+  const [xpRes, setXpRes] = useState<XpResult | null>(null); // 이번 완주 획득 점수
+  const [eXpRes, setEXpRes] = useState<XpResult | null>(null); // 무한 세션 획득 점수
 
   // 무한 감별 (데일리 완주 후 랜덤 새 문제 연속 — 집계 미반영)
   const [endless, setEndless] = useState(false);
@@ -126,6 +130,8 @@ export default function PlayPage() {
 
   function finishEndless() {
     sfxResult();
+    // 무한 정답 5점 + 신기록 보너스 30점
+    setEXpRes(addXp(sHits * 5 + (sBest > startBest.current ? 30 : 0)));
     setPhase("eresult");
   }
 
@@ -214,6 +220,7 @@ export default function PlayPage() {
     const score = marks.filter(Boolean).length;
     saveResult({ date: quiz.date, marks, review });
     setStreak(bumpStreak(quiz.date));
+    setXpRes(addXp(score * 10 + 20)); // 정답 10점 + 완주 20점
     setPhase("result");
     try {
       const res = await fetch("/api/quiz/finish", {
@@ -422,6 +429,7 @@ export default function PlayPage() {
                     : "AI가 오늘은 한 수 위였습니다. 설욕전을 권합니다."}
             </p>
             <RecordGauge session={sBest} best={startBest.current} />
+            <LevelBar result={eXpRes} />
             <ul className="review">
               <li>
                 <span className="nm">이번 세션 최고 연속</span>
@@ -462,6 +470,7 @@ export default function PlayPage() {
             <Stamp>{grade.name}</Stamp>
             <p className="grade-desc">{grade.desc}</p>
             <GradeLadder grades={GRADES} score={score} />
+            <LevelBar result={xpRes} />
             <div className="grid-line" role="img" aria-label={`10문제 중 ${score}문제 정답`}>
               {marks.map((m, k) => (
                 <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>

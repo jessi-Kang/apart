@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { CountUp, GradeLadder, RecordGauge } from "@/components/ResultExtras";
+import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
 import { TimerBar } from "@/components/TimerBar";
 import { assembleGradeFor, ASSEMBLE_GRADES } from "@/lib/grades";
 import { bumpEndlessRecord, endlessRecord, type EndlessRecord } from "@/lib/local";
+import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
@@ -57,6 +59,8 @@ export default function AssemblePage() {
   const [marks, setMarks] = useState<boolean[]>([]);
   const [busy, setBusy] = useState(false);
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
+  const [xpRes, setXpRes] = useState<XpResult | null>(null);
+  const [eXpRes, setEXpRes] = useState<XpResult | null>(null);
 
   // 무한 조립
   const [endless, setEndless] = useState(false);
@@ -151,6 +155,7 @@ export default function AssemblePage() {
 
   function finishEndless() {
     sfxResult();
+    setEXpRes(addXp(sHits * 8 + (sBest > startBest.current ? 30 : 0)));
     setPhase("eresult");
   }
 
@@ -238,6 +243,7 @@ export default function AssemblePage() {
     } catch {
       /* 무시 */
     }
+    setXpRes(addXp(marks.filter(Boolean).length * 15 + 20)); // 조립은 어려워서 15점 + 완주 20점
     setPhase("done");
   }
 
@@ -444,6 +450,7 @@ export default function AssemblePage() {
                   : "함정 조각의 승리. 다음 세션에서 설욕을."}
             </p>
             <RecordGauge session={sBest} best={startBest.current} />
+            <LevelBar result={eXpRes} />
             <ul className="review">
               <li>
                 <span className="nm">이번 세션 최고 연속</span>
@@ -484,6 +491,7 @@ export default function AssemblePage() {
             <Stamp>{dGrade.name}</Stamp>
             <p className="grade-desc">{dGrade.desc}</p>
             <GradeLadder grades={ASSEMBLE_GRADES} score={success} />
+            <LevelBar result={xpRes} />
             <div className="grid-line" role="img" aria-label={`${total}문제 중 ${success}문제 조립 성공`}>
               {marks.map((m, k) => (
                 <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
