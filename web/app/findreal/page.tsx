@@ -6,6 +6,7 @@ import { LevelBar } from "@/components/LevelBar";
 import { DocTitle, MiniGrid, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { CloseX } from "@/components/CloseX";
 import { SoundToggle } from "@/components/SoundToggle";
+import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { findGradeFor } from "@/lib/grades";
@@ -491,6 +492,9 @@ export default function FindRealPage() {
 
         {phase === "eresult" && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={216} />
+            </div>
             <DocTitle eyebrow="감정결과통지" title="무한 찾기 결과" />
             <StampHero name={eGradeName} />
             <p className="stamp-sub">
@@ -547,6 +551,9 @@ export default function FindRealPage() {
 
         {phase === "done" && quiz && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={216} />
+            </div>
             <DocTitle eyebrow="감정결과통지" title={`제${ep}호 감정 결과`} />
             <StampHero name={dGrade.name} />
             <p className="stamp-sub">

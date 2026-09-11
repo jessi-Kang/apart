@@ -6,6 +6,7 @@ import { LevelBar } from "@/components/LevelBar";
 import { DocTitle, MiniGrid, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { CloseX } from "@/components/CloseX";
 import { SoundToggle } from "@/components/SoundToggle";
+import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { assembleGradeFor } from "@/lib/grades";
@@ -510,9 +511,13 @@ export default function AssemblePage() {
               </p>
             )}
             <div className="hintcard paper-in" key={endless ? `e${eCount}` : (puzzle as Puzzle).no}>
-              이 단지를 조립하세요: <b>{puzzle.hint.location}</b>
-              <br />
-              {puzzle.hint.builtYear}년 준공 · {puzzle.hint.households.toLocaleString()}세대
+              {/* 주소는 제 줄을 준다. 앞 문구에 이어 붙이면 "서울특별시 / 구로구 개봉동"처럼
+                  주소 한가운데서 줄이 꺾인다 */}
+              <span className="hk">이 단지를 조립하세요</span>
+              <b>{puzzle.hint.location}</b>
+              <span className="hm">
+                {puzzle.hint.builtYear}년 준공 · {puzzle.hint.households.toLocaleString()}세대
+              </span>
             </div>
 
             <TimerBar
@@ -613,6 +618,9 @@ export default function AssemblePage() {
 
         {phase === "eresult" && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={216} />
+            </div>
             <DocTitle eyebrow="조립결과통지" title="무한 조립 결과" />
             <StampHero name={eGradeName} />
             <p className="stamp-sub">
@@ -669,6 +677,9 @@ export default function AssemblePage() {
 
         {phase === "done" && quiz && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={216} />
+            </div>
             <DocTitle eyebrow="조립결과통지" title={`제${ep}호 조립 결과`} />
             <StampHero name={dGrade.name} />
             <p className="stamp-sub">

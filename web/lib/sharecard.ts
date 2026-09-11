@@ -461,7 +461,10 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
 /** 모바일이면 시스템 공유 시트, 아니면 파일 다운로드 */
 export async function shareCardImage(data: ShareCardData): Promise<"shared" | "downloaded"> {
   const blob = await renderShareCard(data);
-  const file = new File([blob], `아파트감별사-${data.date}.png`, { type: "image/png" });
+  // 파일 이름은 ASCII로 둔다. 한글 이름을 <a download>에 넣으면 크롬이 속성값을 버리고
+  // 확장자 없는 "download"로 저장해서, 안드로이드 갤러리가 이미지로 알아보지 못한다.
+  // (영문 이름과 한글 이름을 같은 조건으로 대조해 확인했다)
+  const file = new File([blob], `apt-game-${data.date}.png`, { type: "image/png" });
   if (navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file] });
@@ -474,8 +477,16 @@ export async function shareCardImage(data: ShareCardData): Promise<"shared" | "d
   const a = document.createElement("a");
   a.href = url;
   a.download = file.name;
+  a.rel = "noopener";
+  // 사파리는 문서에 붙어 있지 않은 앵커의 click()을 무시한다. 크롬은 붙이지 않아도
+  // 동작하지만, 붙여서 손해 볼 것은 없다.
+  a.style.display = "none";
+  document.body.appendChild(a);
   a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  setTimeout(() => {
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, 10_000);
   return "downloaded";
 }
 

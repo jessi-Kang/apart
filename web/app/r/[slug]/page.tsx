@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { DocTitle, MiniGrid, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { episodeNumber } from "@/lib/daily";
@@ -63,6 +64,9 @@ export default async function ResultPage({ params }: Props) {
         </header>
 
         <section className="screen result">
+          <div className="result-seal" aria-hidden="true">
+            <Seal size={216} />
+          </div>
           <DocTitle eyebrow="감별결과통지" title={`제${ep}호 감별 결과`} />
           <StampHero name={grade.name} />
           <p className="stamp-sub">
