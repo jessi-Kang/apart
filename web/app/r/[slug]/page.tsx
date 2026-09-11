@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `아파트 감별사 #${episodeNumber(r.date)} · ${r.score}/10 ${grade.name}`;
   return {
     title,
-    description: "이거 진짜 있는 아파트야, AI가 지어낸 거야? 하루 10문제 데일리 퀴즈",
+    description: "이거 진짜 있는 아파트야, AI가 지어낸 거야? 하루 10문제 공식전",
     openGraph: { title },
   };
 }
