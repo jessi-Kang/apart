@@ -22,7 +22,11 @@
 | `design/home2-a-ledger.html` | **홈 확정 방향.** 접수 대장: 순번·창구·현황 3열 서식 + 현황 도장 (web/ 홈에 적용됨) |
 | `design/home2-b-tiles.html` / `design/home2-c-poster.html` | 홈 대안 보관 (창구 타일 벤토 / 공고 포스터) |
 | `design/submodes-a.html` / `design/submodes-c.html` | 서브 모드(작명소·우리 동네) 시안. A 스타일이 기준, C는 보관 |
-| `design/sharecard-a.html` / `design/sharecard-c.html` | 이미지 공유 카드 시안. **보류** (품질 미달 판정, 재작업 전까지 디벨롭 금지) |
+| `design/result3-r1-verdict.html` | **결과 화면 확정 방향.** 판정 통지서: 등급 도장이 주인공 + 순번 괘선 서식표 (web/ 결과 3종·공유 랜딩에 적용됨) |
+| `design/result3-r2-board.html` / `design/result3-r3-duel.html` | 결과 대안 보관 (기록 보드 / 대결 카드) |
+| `design/share3-s2-receipt.html` | **공유 카드 확정 방향.** 접수증 영수증: 절취 지그재그 + 항목 열거 + 등급 도장 + 바코드 (`lib/sharecard.ts`에 캔버스로 구현) |
+| `design/share3-s1-stamp.html` / `design/share3-s3-news.html` | 공유 대안 보관 (도장 클로즈업 / 호외 신문) |
+| `design/sharecard-a.html` / `design/sharecard-c.html` | 구 공유 카드 시안 (폐기, share3-s2로 대체) |
 
 시안 A~C는 동일한 코어 루프(인트로 → 10문제 → 정답 공개 → 등급/공유)를 담은 인터랙티브 목업이며, 모바일 퍼스트 반응형(모바일/타블렛 768px/데스크탑 1024px)이다.
 
