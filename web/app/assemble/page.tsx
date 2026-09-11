@@ -82,7 +82,8 @@ export default function AssemblePage() {
             date: string;
             marks: boolean[];
           } | null;
-          if (saved && saved.date === data.date) {
+          // 문제 수가 바뀐 날의 옛 저장본(3문제 시절 등)은 버리고 새로 풀게 한다
+          if (saved && saved.date === data.date && saved.marks.length === data.items.length) {
             setMarks(saved.marks);
             setPhase("done");
             return;
