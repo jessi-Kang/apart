@@ -238,7 +238,15 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 /* 첫 판에만 나오는 규칙 한 줄 — 들어오자마자 뭘 하는 게임인지 알려준다 */
 .rule-hint { margin-top: 12px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
 .rule-hint b { color: var(--ink); font-weight: 700; }
-.qlabel-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.qlabel-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* 지금 어느 판을 치고 있는지 한눈에 — 무한은 잉크, 공식전은 인주 */
+.mode-chip {
+  font-family: "IBM Plex Sans KR", system-ui, sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: -0.01em;
+  border: 1.5px solid var(--ink); border-radius: var(--radius);
+  padding: 3px 8px; color: var(--ink); white-space: nowrap;
+}
+.mode-chip.official { color: var(--stamp); border-color: var(--stamp); }
 /* 공식전 초대장: 무한 플레이 중 오늘의 랭킹전으로 건너가는 칩 */
 .official-chip {
   margin-left: auto; font-size: 11px; font-weight: 700; color: var(--stamp);

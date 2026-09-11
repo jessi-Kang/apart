@@ -447,8 +447,8 @@ export default function AssemblePage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? "무한 조립 신청서" : "이름 조립 신청서"}
-              {quiz && ` · 제${ep}호 ${mm}.${dd}`}
+              {endless ? "무한 조립" : `제${ep}호 공식전`}
+              {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
             </small>
           </Link>
           <span className="head-tools">
@@ -485,7 +485,8 @@ export default function AssemblePage() {
           <section className="screen">
             {endless ? (
               <p className="qlabel mono qlabel-row">
-                무한 {eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
+                <span className="mode-chip">무한</span>
+                {eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
                 {quiz && (
                   <button
                     type="button"

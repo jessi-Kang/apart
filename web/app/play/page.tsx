@@ -392,8 +392,8 @@ export default function PlayPage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? "무한 감별 신청서" : "감별 신청서"}
-              {quiz && ` · 제${ep}호 ${mm}.${dd}`}
+              {endless ? "무한 감별" : `제${ep}호 공식전`}
+              {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
             </small>
           </Link>
           <span className="head-tools">
@@ -430,7 +430,8 @@ export default function PlayPage() {
           <section className="screen">
             {endless ? (
               <p className="qlabel mono qlabel-row">
-                무한 {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
+                <span className="mode-chip">무한</span>
+                {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
                 {quiz && (
                   <button
                     type="button"
@@ -449,7 +450,8 @@ export default function PlayPage() {
                     <i key={k} className={k < idx ? "done" : k === idx ? "now" : ""} />
                   ))}
                 </div>
-                <p className="qlabel mono">
+                <p className="qlabel mono qlabel-row">
+                  <span className="mode-chip official">제{ep}호 공식전</span>
                   {String(idx + 1).padStart(2, "0")} / 10
                 </p>
               </>
