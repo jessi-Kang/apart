@@ -15,27 +15,13 @@
     </filter>
   </defs>
   <g filter="url(#inkpress)" mask="url(#inkwear)">
-    <!-- 인주 몸체 -->
     <rect x="3" y="3" width="58" height="58" rx="13" fill="#c73a2f"/>
-    <!-- 새김 테두리 -->
     <rect x="8.5" y="8.5" width="47" height="47" rx="8.5" fill="none" stroke="#f6f6f3" stroke-width="2"/>
-    <!-- 옥상 안테나 + 깃발 -->
-    <line x1="32" y1="19.5" x2="32" y2="14" stroke="#f6f6f3" stroke-width="2" stroke-linecap="round"/>
-    <circle cx="32" cy="13" r="1.8" fill="#f6f6f3"/>
-    <!-- 아파트 외곽선 (통통한 한 동) -->
-    <rect x="19.5" y="19.5" width="25" height="28.5" rx="2.5" fill="none" stroke="#f6f6f3" stroke-width="2.2"/>
-    <!-- 불 켜진 창 (음각 = 종이색) -->
-    <g fill="#f6f6f3">
-      <rect x="23.6" y="23.6" width="5.2" height="5.2" rx="1.4"/>
-      <rect x="35.2" y="23.6" width="5.2" height="5.2" rx="1.4"/>
-      <rect x="23.6" y="31.4" width="5.2" height="5.2" rx="1.4"/>
-      <rect x="35.2" y="31.4" width="5.2" height="5.2" rx="1.4"/>
-      <rect x="23.6" y="39.2" width="5.2" height="5.2" rx="1.4"/>
-      <rect x="35.2" y="39.2" width="5.2" height="5.2" rx="1.4"/>
-      <!-- 현관: 위가 둥근 문 -->
-      <path d="M29.7 48 v-5.2 a2.3 2.3 0 0 1 4.6 0 V48 Z"/>
+    <g stroke="#f6f6f3" stroke-width="3.4" fill="none" stroke-linecap="square">
+      <path d="M15.5 17.5 H28.5 V33.5"/>
+      <path d="M39.5 13.5 V35"/>
+      <path d="M39.5 24 H48"/>
+      <rect x="19" y="38.5" width="26" height="12.5"/>
     </g>
-    <!-- 지면 -->
-    <line x1="15" y1="50.5" x2="49" y2="50.5" stroke="#f6f6f3" stroke-width="2" stroke-linecap="round"/>
   </g>
 </svg>
