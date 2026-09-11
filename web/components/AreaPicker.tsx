@@ -48,7 +48,11 @@ export function AreaPicker({ regions }: { regions: RegionGroup[] }) {
           </option>
         ))}
       </select>
-      <p className="area-note">{area ? `${label} 단지만 나옵니다` : "전국에서 무작위로 나옵니다"}</p>
+      <p className="area-note">
+        {area ? `${label} 단지만 나옵니다` : "전국에서 무작위로 나옵니다"}
+        {/* 공식전은 구역을 따르지 않는다. 전원이 같은 문제를 풀어야 순위가 성립한다 */}
+        <span className="an-sub">공식전 10문제는 전국 공통입니다</span>
+      </p>
     </div>
   );
 }
