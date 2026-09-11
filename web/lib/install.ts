@@ -39,6 +39,38 @@ export function installReady(): boolean {
   return deferred !== null;
 }
 
+/**
+ * 프롬프트가 올 때까지 잠깐 기다린다.
+ * 크롬은 설치 조건이 다 맞아도 "이 사람이 이 사이트를 쓸 사람인가"를 자기 기준으로
+ * 판단한 뒤에야 beforeinstallprompt를 준다. 설치 버튼을 누르는 행동 자체가 그 신호라
+ * 누른 직후에 이벤트가 도착하는 경우가 있다. 바로 포기하지 않고 잠깐 기다린다.
+ */
+export function waitForInstall(ms = 2500): Promise<boolean> {
+  if (deferred) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const off = onInstallReady(() => {
+      if (!deferred) return;
+      clearTimeout(timer);
+      off();
+      resolve(true);
+    });
+    const timer = setTimeout(() => {
+      off();
+      resolve(deferred !== null);
+    }, ms);
+  });
+}
+
+export type Platform = "ios" | "android" | "desktop";
+
+/** 설치 경로가 기기마다 달라서, 안내는 이 값으로 갈라 쓴다 */
+export function platform(): Platform {
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return "ios";
+  if (/android/i.test(ua)) return "android";
+  return "desktop";
+}
+
 /** 브라우저 설치 다이얼로그를 띄운다. 수락하면 true */
 export async function promptInstall(): Promise<boolean> {
   if (!deferred) return false;
