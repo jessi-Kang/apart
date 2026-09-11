@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
+import { installReady, isIos, isStandalone, onInstallReady, promptInstall } from "@/lib/install";
 
 /**
  * 홈 화면 설치 안내. 브라우저 배너는 재량이라 안 뜨는 경우가 많아서,
@@ -13,39 +9,21 @@ interface BeforeInstallPromptEvent extends Event {
  * iOS Safari는 이 이벤트가 없으므로 수동 설치 경로를 안내한다.
  */
 export function InstallApp() {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
+  const [ready, setReady] = useState(false);
   const [ios, setIos] = useState(false);
 
   useEffect(() => {
-    // 이미 앱으로 실행 중이면 아무것도 보여주지 않는다
-    if (window.matchMedia("(display-mode: standalone)").matches) return;
-    if ("standalone" in navigator && (navigator as { standalone?: boolean }).standalone) return;
-
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    if (isIos) setIos(true);
-
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+    if (isStandalone()) return;
+    setReady(installReady());
+    setIos(isIos());
+    return onInstallReady(() => setReady(installReady()));
   }, []);
 
-  if (deferred) {
+  if (ready) {
     return (
       <div className="install-line">
         <span>홈 화면에 앱으로 설치할 수 있습니다</span>
-        <button
-          type="button"
-          className="install-btn"
-          onClick={async () => {
-            await deferred.prompt();
-            const { outcome } = await deferred.userChoice;
-            if (outcome === "accepted") setDeferred(null);
-          }}
-        >
+        <button type="button" className="install-btn" onClick={() => void promptInstall()}>
           앱 설치
         </button>
       </div>
