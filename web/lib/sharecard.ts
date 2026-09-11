@@ -216,11 +216,11 @@ function drawStatCard(
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = accent ? STAMP : INK;
-  ctx.font = font(700, 48);
-  ctx.fillText(value, x + 34, y + h / 2 + 2);
+  ctx.font = font(700, 46);
+  ctx.fillText(value, x + 34, y + h / 2 + 0);
   ctx.fillStyle = INK_SOFT;
-  ctx.font = font(500, 24);
-  ctx.fillText(label, x + 34, y + h / 2 + 44);
+  ctx.font = font(500, 23);
+  ctx.fillText(label, x + 34, y + h / 2 + 42);
   ctx.restore();
 }
 
@@ -283,21 +283,31 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   await drawSeal(ctx, right - 100, 330, 128, 0.85);
   await drawGradeStamp(ctx, W / 2, 640, data.gradeName);
 
+  // 판정부/기록부 절취선 (웹 결과 화면과 동일한 구분)
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 8]);
+  ctx.beginPath();
+  ctx.moveTo(left, 756);
+  ctx.lineTo(right, 756);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
   // 판정 그리드 (한 줄)
   const ts = 66;
   const gap = 14;
   const gw = ts * data.marks.length + gap * (data.marks.length - 1);
   let gx = (W - gw) / 2;
   for (const m of data.marks) {
-    drawTile(ctx, gx, 742, ts, m);
+    drawTile(ctx, gx, 794, ts, m);
     gx += ts + gap;
   }
 
-  // 스탯 카드 (2장 단위 행 — 푸터 점선 1176px과 겹치지 않게 1140 안에서 끝낸다)
+  // 스탯 카드 (2장 단위 행 — 푸터 점선과 겹치지 않게 배치)
   const cw = (right - left - 24) / 2;
-  const ch = 130;
+  const ch = 124;
   const rows = Math.ceil(data.stats.length / 2);
-  const cy = rows === 1 ? 940 : 860;
+  const cy = rows === 1 ? 972 : 902;
   data.stats.forEach((st, i) => {
     const col = i % 2;
     const row = Math.floor(i / 2);
@@ -309,8 +319,8 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   ctx.lineWidth = 2;
   ctx.setLineDash([8, 8]);
   ctx.beginPath();
-  ctx.moveTo(left, H - M - 118);
-  ctx.lineTo(right, H - M - 118);
+  ctx.moveTo(left, H - M - 108);
+  ctx.lineTo(right, H - M - 108);
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.textAlign = "left";
