@@ -46,3 +46,27 @@ export async function recordEndlessRun(
     return { top: null, sample: 0 };
   }
 }
+
+/** 저장 없이 순위만 본다 (기록 열람실). 표본 미달이면 top=null */
+export async function rankAmongRuns(
+  mode: RunMode,
+  best: number,
+  minSample = 20,
+): Promise<{ top: number | null; sample: number }> {
+  if (!sql) return { top: null, sample: 0 };
+  try {
+    const rows = (await sql`
+      SELECT COUNT(*)::int AS total,
+             COUNT(*) FILTER (WHERE best > ${best})::int AS better
+      FROM endless_runs
+      WHERE mode = ${mode} AND created_at > now() - interval '7 days'`) as {
+      total: number;
+      better: number;
+    }[];
+    const { total, better } = rows[0] ?? { total: 0, better: 0 };
+    if (total < minSample) return { top: null, sample: total };
+    return { top: Math.max(1, Math.round(((better + 1) / total) * 100)), sample: total };
+  } catch {
+    return { top: null, sample: 0 };
+  }
+}
