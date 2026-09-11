@@ -166,3 +166,19 @@ export function currentStreak(date: string): { count: number; playedToday: boole
     return { count: 0, playedToday: false };
   }
 }
+
+/**
+ * 이 창구에 처음 왔는가 (첫 문제의 규칙 한 줄 노출용).
+ * 최고 연속으로 판단하면 계속 틀리는 사람에게 규칙이 영원히 따라다닌다.
+ * 한 번 물으면 표시가 남아 다음부터는 false다.
+ */
+export function firstVisit(mode: "ox" | "assemble" | "findreal"): boolean {
+  try {
+    const key = `aptgam:seen:${mode}`;
+    if (localStorage.getItem(key)) return false;
+    localStorage.setItem(key, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -9,7 +9,7 @@ import { SoundToggle } from "@/components/SoundToggle";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { assembleGradeFor } from "@/lib/grades";
-import { bumpEndlessRecord, endlessRecord, type EndlessRecord } from "@/lib/local";
+import { bumpEndlessRecord, endlessRecord, firstVisit, type EndlessRecord } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxHint, sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -89,10 +89,12 @@ export default function AssemblePage() {
   const runTimes = useRef<number[]>([]);
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
+  const [firstTime, setFirstTime] = useState(false); // 이 창구 첫 방문인가
   const qStart = useRef(0);
 
   useEffect(() => {
     setERec(endlessRecord("assemble"));
+    setFirstTime(firstVisit("assemble"));
     fetch("/api/assemble/today")
       .then((r) => r.json())
       .then((data: TodayResponse) => {
@@ -501,7 +503,7 @@ export default function AssemblePage() {
               </p>
             )}
             {/* 첫 판 첫 문제에만 규칙 한 줄 */}
-            {endless && eCount === 0 && eRec.best === 0 && (
+            {endless && eCount === 0 && firstTime && (
               <p className="rule-hint">
                 조각을 눌러 단지명을 완성하세요. <b>함정 조각이 섞여 있습니다.</b>
               </p>
