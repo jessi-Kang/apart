@@ -169,6 +169,32 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .btn-next { width: 100%; background: var(--ink); color: var(--sheet); border: 1px solid var(--ink); }
 .btn-ghost { background: var(--sheet); color: var(--ink); border: 1px solid var(--line); font-size: 14px; padding: 14px 12px; }
 
+/* ---- 설치 안내 토스트 (창구에 붙은 안내 쪽지) ---- */
+.install-toast {
+  position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 20;
+  max-width: 420px; margin: 0 auto;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--sheet); border: 1.5px solid var(--ink); border-radius: var(--radius);
+  padding: 14px 16px; box-shadow: 0 6px 24px rgba(27, 27, 30, 0.16);
+}
+.it-body { flex: 1; min-width: 160px; }
+.it-body b { display: block; font-size: 14.5px; letter-spacing: -0.02em; }
+.it-body span { display: block; font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; line-height: 1.5; }
+.it-actions { display: flex; align-items: center; gap: 12px; }
+.it-go { width: auto; padding: 10px 18px; font-size: 14px; }
+.it-close {
+  font: inherit; font-size: 12.5px; font-weight: 500; color: var(--ink-soft);
+  background: none; border: 0; padding: 4px; cursor: pointer;
+}
+.it-close:hover, .it-close:focus-visible { color: var(--stamp); }
+@media (prefers-reduced-motion: no-preference) {
+  .install-toast { animation: toast-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+  @keyframes toast-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
 /* ---- 문제 ---- */
 .progress { display: flex; gap: 5px; }
 .progress i { height: 3px; flex: 1; background: var(--line); border-radius: 99px; }
@@ -203,9 +229,34 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .btn-real { background: var(--ink); color: var(--sheet); border: 1px solid var(--ink); font-size: 17px; padding: 18px 12px; }
 .btn-fake { background: var(--sheet); color: var(--stamp); border: 1.5px solid var(--stamp); font-size: 17px; padding: 18px 12px; }
 
+/* ---- 결과: 판정 통지서 서식 (확정 시안 result3-r1) ---- */
+/* 한글은 자간을 크게 벌리면 낱자로 흩어져 읽힌다 — 서식 머리글은 0.18em까지만 */
+.doc-title { text-align: center; font-size: 12.5px; letter-spacing: 0.18em; color: var(--ink-soft); text-indent: 0.18em; }
+.doc-title b { display: block; letter-spacing: -0.03em; text-indent: 0; color: var(--ink); font-size: 22px; margin-top: 6px; }
+.stamp-hero { display: grid; place-items: center; padding: 28px 0 20px; }
+.stamp-hero .stamp { margin-top: 0; align-self: auto; transform: rotate(-4deg); font-size: clamp(22px, 6.4vw, 30px); }
+.stamp-sub { text-align: center; color: var(--ink-soft); font-size: 13.5px; line-height: 1.6; }
+.vform { margin-top: 22px; border: 1px solid var(--ink); border-radius: var(--radius); }
+.vrow { display: grid; grid-template-columns: 96px 1fr; border-bottom: 1px solid var(--line); }
+.vrow:last-child { border-bottom: none; }
+.vk {
+  padding: 12px; font-size: 12px; color: var(--ink-soft); background: var(--paper);
+  border-right: 1px solid var(--line); display: flex; align-items: center;
+}
+.vv {
+  padding: 12px 14px; font-size: 14.5px; font-weight: 600;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0;
+}
+.vv small { font-weight: 400; color: var(--ink-soft); font-size: 12px; }
+.vv .accent { color: var(--stamp); }
+.mini-grid { display: flex; gap: 4px; flex-wrap: wrap; }
+.mini-grid svg { width: 21px; height: 21px; display: block; }
+/* 서식 칸 속 레벨바는 한 줄로 눕는다 */
+.vv .levelbar { margin-top: 0; max-width: none; flex: 1; min-width: 160px; }
+.vv .lv-head { margin-bottom: 6px; font-size: 13px; }
+.result .cut { margin: 24px 0 4px; border-top: 2px dashed var(--line); }
+
 /* ---- 결과 ---- */
-.result .score-label { font-size: 13px; color: var(--ink-soft); }
-.result .big { font-size: clamp(46px, 13vw, 72px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.05; margin-top: 6px; }
 .stamp {
   position: relative; display: inline-block; margin-top: 26px;
   color: var(--stamp); transform: rotate(-3.5deg); align-self: flex-start;
@@ -216,30 +267,6 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   position: relative; display: block; padding: 14px 22px;
   font-weight: 700; font-size: clamp(18px, 5vw, 24px); letter-spacing: -0.02em;
 }
-.grade-desc { margin-top: 20px; color: var(--ink-soft); font-size: 14px; line-height: 1.65; max-width: 32ch; }
-/* 판정부(점수·등급 도장)와 기록부(그리드·복기)를 절취선으로 구분 */
-.grid-line {
-  margin-top: 30px; padding-top: 24px; border-top: 1px dashed var(--line);
-  width: 100%; display: flex; gap: 6px;
-}
-.grid-line svg { display: block; }
-@media (max-width: 419px) {
-  /* 26px 고정 10칸은 360px대에서 줄이 꺾인다 — 한 줄 유지가 공유 그리드의 정체성 */
-  .grid-line { gap: 4px; }
-  .grid-line > * { flex: 1; min-width: 0; }
-  .grid-line svg { width: 100%; max-width: 26px; height: auto; margin: 0 auto; }
-}
-.top-note { margin-top: 16px; font-size: 13px; color: var(--ink-soft); }
-.top-note b { color: var(--stamp); }
-.review { margin-top: 26px; border-top: 1px solid var(--line); }
-.review li {
-  list-style: none; display: flex; justify-content: space-between; gap: 12px;
-  padding: 11px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px;
-}
-.review .nm { font-weight: 500; overflow-wrap: anywhere; }
-.review .nm.x { color: var(--ink-soft); }
-.review .tag { color: var(--ink-soft); font-size: 12px; white-space: nowrap; }
-.review .tag.f { color: var(--stamp); }
 .result-actions { margin-top: auto; padding-top: 24px; display: grid; gap: 10px; }
 
 /* ---- 이름 조립 ---- */
@@ -372,34 +399,23 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .timerbar span { font-size: 12px; color: var(--ink-soft); min-width: 2ch; text-align: right; }
 .timerbar.low span { color: var(--stamp); font-weight: 700; }
 
-/* ---- 결과 연출: 등급 사다리 · 기록 게이지 · 관인 워터마크 ---- */
-.ladder { margin-top: 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.ladder .steps { display: flex; gap: 7px; }
-.ladder .steps i {
-  width: 12px; height: 12px; border-radius: 50%;
-  border: 1.5px solid var(--line); background: var(--sheet);
-}
-.ladder .steps i.on { background: var(--stamp); border-color: var(--stamp); }
-.ladder-note { font-size: 12.5px; color: var(--ink-soft); }
-.ladder-note b { color: var(--stamp); }
-
-.gauge-wrap { margin-top: 20px; width: 100%; max-width: 340px; }
+/* ---- 결과 연출: 경험치 게이지 · 관인 워터마크 ---- */
 .gauge { height: 8px; background: var(--paper); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
 .gauge i {
   display: block; height: 100%; width: 100%; background: var(--ink);
   transform-origin: left; border-radius: 99px;
 }
-.gauge i.new { background: var(--stamp); }
-.gauge-wrap .ladder-note { display: block; margin-top: 8px; }
 
 /* isolation: 워터마크(z-index:-1)가 시트 배경 뒤로 빠져나가지 않게
    결과 화면 안에서 스태킹을 격리한다 — 안 그러면 흰 시트 밖 종이
    배경에서만 보이는 사고가 난다 (실기기 제보) */
-.result { position: relative; isolation: isolate; }
+.result { position: relative; isolation: isolate; overflow: hidden; }
+/* 홈과 같은 문법: 머리 쪽 모서리에 크게, 종이 밖으로 물려 잘리게 찍는다.
+   서식표 한가운데 겹치면 통지서가 얼룩진 복사본처럼 읽힌다 */
 .result-seal {
-  /* 회전(-14deg) AABB 여백 ~24px까지 감안해 시트 안쪽에 완전히 들어오게 */
-  position: absolute; right: 42px; top: 150px; z-index: -1;
-  opacity: 0.07; transform: rotate(-14deg); pointer-events: none;
+  position: absolute; top: -34px; right: -52px; z-index: -1;
+  opacity: 0.1; transform: rotate(-14deg); pointer-events: none;
+  mix-blend-mode: multiply;
 }
 
 /* ---- 감별사 레벨 ---- */
@@ -413,7 +429,6 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   border: 1.5px solid currentColor; border-radius: var(--radius); padding: 2px 7px;
   transform: rotate(-2deg);
 }
-.levelbar .ladder-note { display: block; margin-top: 8px; }
 
 /* ---- 게임 닫기 / 헤더 우측 묶음 ---- */
 .head-right { display: flex; align-items: center; gap: 12px; }

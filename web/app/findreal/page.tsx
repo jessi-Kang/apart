@@ -2,15 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { GridTile } from "@/components/GridTile";
-import { CountUp, GradeLadder, RecordGauge } from "@/components/ResultExtras";
 import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
-import { Stamp } from "@/components/Stamp";
+import { DocTitle, MiniGrid, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { CloseX } from "@/components/CloseX";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
-import { findGradeFor, FIND_GRADES } from "@/lib/grades";
+import { findGradeFor } from "@/lib/grades";
 import { applyComboPick, comboState, type ComboState } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
@@ -244,6 +242,8 @@ export default function FindRealPage() {
 
 
   const dGrade = findGradeFor(hits);
+  const eGradeName =
+    sMaxCombo > startBest.current ? "신기록 갱신" : sMaxCombo >= 5 ? "매의 눈" : "감정 수련";
 
   async function shareImage() {
     if (!quiz || imgState === "busy") return;
@@ -288,7 +288,7 @@ export default function FindRealPage() {
         total: eCount,
         totalText: "콤보",
         marks: sMarks.slice(-10),
-        gradeName: sMaxCombo > startBest.current ? "신기록 갱신" : sMaxCombo >= 5 ? "매의 눈" : "감정 수련",
+        gradeName: eGradeName,
         stats: [
           { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
           { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 판단 시간" },
@@ -449,43 +449,40 @@ export default function FindRealPage() {
         {phase === "eresult" && (
           <section className="screen result">
             <div className="result-seal" aria-hidden="true">
-              <Seal size={230} />
+              <Seal size={184} />
             </div>
-            <p className="score-label mono">무한 진짜 찾기 세션 결과</p>
-            <p className="big">
-              <CountUp value={sHits} /> / {eCount}
+            <DocTitle eyebrow="감정결과통지" title="무한 감정 세션 결과" />
+            <StampHero name={eGradeName} />
+            <p className="stamp-sub">
+              {eCount}라운드 중 {sHits}라운드 적중 · 최고 콤보 {sMaxCombo}
             </p>
-            <p className="grade-desc">
-              {sMaxCombo > startBest.current
-                ? `신기록! 최고 콤보 ${sMaxCombo}. 어제의 나를 이겼습니다.`
-                : combo.current > 0
-                  ? `콤보 ${combo.current} 유지 중 — 다음 세션에서 이어집니다.`
-                  : "콤보가 끊긴 채 마감. 다음 세션에서 다시 쌓으세요."}
-            </p>
-            {eTop !== null && (
-              <p className="top-note">
-                이 판, 최근 7일 무한 찾기 중 상위 <b>{eTop}%</b>
-              </p>
-            )}
-            <RecordGauge session={sMaxCombo} best={startBest.current} unit="콤보" />
-            <LevelBar result={eXpRes} />
-            <ul className="review">
-              <li>
-                <span className="nm">세션 중 최고 콤보</span>
-                <span className="tag">{sMaxCombo}{sMaxCombo > startBest.current ? " · 신기록" : ""}</span>
-              </li>
-              <li>
-                <span className="nm">평균 판단 시간</span>
-                <span className="tag">{fmtSec(sessionAvgMs()) ?? "-"}</span>
-              </li>
-              <li>
-                <span className="nm">역대 최고 콤보</span>
-                <span className="tag">
-                  {combo.best}
-                  {fmtSec(combo.bestAvgMs) ? ` (평균 ${fmtSec(combo.bestAvgMs)})` : ""}
-                </span>
-              </li>
-            </ul>
+            <VForm>
+              <VRow label="판정">
+                <MiniGrid marks={sMarks.slice(-10)} label={`${eCount}라운드 중 ${sHits}라운드 적중`} />
+              </VRow>
+              <VRow label="세션 기록">
+                콤보 {sMaxCombo} <small>평균 {fmtSec(sessionAvgMs()) ?? "-"}</small>
+              </VRow>
+              <VRow label="역대 콤보">
+                {Math.max(combo.best, sMaxCombo)}
+                {sMaxCombo > startBest.current && <span className="accent">신기록</span>}
+              </VRow>
+              <VRow label="판 순위">
+                {eTop !== null ? (
+                  <>
+                    상위 <span className="accent">{eTop}%</span> <small>최근 7일</small>
+                  </>
+                ) : (
+                  <>
+                    집계 중 <small>표본 20판부터 공개</small>
+                  </>
+                )}
+              </VRow>
+              <VRow label="감별사 등급">
+                <LevelBar result={eXpRes} />
+              </VRow>
+            </VForm>
+            <div className="cut" />
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
                 {eImgState === "busy"
@@ -511,23 +508,30 @@ export default function FindRealPage() {
         {phase === "done" && quiz && (
           <section className="screen result">
             <div className="result-seal" aria-hidden="true">
-              <Seal size={230} />
+              <Seal size={184} />
             </div>
-            <p className="score-label mono">진짜 찾기 감정 결과</p>
-            <p className="big">
-              <CountUp value={hits} /> / {total}
+            <DocTitle eyebrow="감정결과통지" title={`제${ep}호 감정 결과`} />
+            <StampHero name={dGrade.name} />
+            <p className="stamp-sub">
+              {total}라운드 중 {hits}라운드 적중 · AI에 {total - hits}번 속았습니다
             </p>
-            <Stamp>{dGrade.name}</Stamp>
-            <div className="grid-line" role="img" aria-label={`${total}라운드 중 ${hits}라운드 적중`}>
-              {marks.map((m, k) => (
-                <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
-                  <GridTile ok={m} />
-                </span>
-              ))}
-            </div>
-            <p className="grade-desc">{dGrade.desc}</p>
-            <GradeLadder grades={FIND_GRADES} score={hits} unit="라운드" />
-            <LevelBar result={xpRes} />
+            <VForm>
+              <VRow label="판정">
+                <MiniGrid marks={marks} label={`${total}라운드 중 ${hits}라운드 적중`} />
+              </VRow>
+              <VRow label="유지 콤보">
+                {combo.current}
+                {runAvg && <small>평균 {runAvg}</small>}
+              </VRow>
+              <VRow label="역대 콤보">
+                {combo.best}
+                {fmtSec(combo.bestAvgMs) && <small>평균 {fmtSec(combo.bestAvgMs)}</small>}
+              </VRow>
+              <VRow label="감별사 등급">
+                <LevelBar result={xpRes} />
+              </VRow>
+            </VForm>
+            <div className="cut" />
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
                 {imgState === "busy"
