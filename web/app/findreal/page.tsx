@@ -214,24 +214,40 @@ export default function FindRealPage() {
       ? Math.round(sessionTimes.current.reduce((a, b) => a + b, 0) / sessionTimes.current.length)
       : null;
 
-  function finishEndless() {
-    sfxResult();
-    setEXpRes(addXp(sHits * 5 + (sMaxCombo > startBest.current ? 30 : 0)));
-    setPhase("eresult");
-    setETop(null);
-    fetch("/api/endless/finish", {
+  /** 이번 판을 집계에 접수한다 (화면 전환 없음). keepalive는 이탈 중에도 요청을 살린다 */
+  function submitEndlessRun(keepalive = false): Promise<number | null> {
+    return fetch("/api/endless/finish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "findreal", best: sMaxCombo, hits: sHits, count: eCount, avgMs: sessionAvgMs() }),
+      keepalive,
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { top: number | null } | null) => setETop(d?.top ?? null))
-      .catch(() => undefined);
+      .then((d: { top: number | null } | null) => d?.top ?? null)
+      .catch(() => null);
+  }
+
+  const runXp = () => sHits * 5 + (sMaxCombo > startBest.current ? 30 : 0);
+
+  function finishEndless() {
+    sfxResult();
+    setEXpRes(addXp(runXp()));
+    setPhase("eresult");
+    setETop(null);
+    void submitEndlessRun().then(setETop);
+  }
+
+  /** 결과를 안 보고 떠나도 쌓은 것은 남긴다 */
+  function abandonEndless(keepalive = false) {
+    if (!endless || eCount === 0) return;
+    addXp(runXp());
+    void submitEndlessRun(keepalive);
   }
 
   /** 공식전(오늘의 10라운드) 참가 */
   function startOfficial() {
     sfxTap();
+    abandonEndless(); // 공식전으로 갈아타도 여태 쌓은 판은 접수하고 간다
     setEndless(false);
     setIdx(0);
     setMarks([]);
@@ -347,7 +363,7 @@ export default function FindRealPage() {
 
       <main className="sheet">
         <header className="sheet-header">
-          <Link className="brand" href="/">
+          <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
               {endless ? "무한 찾기 감정서" : "진짜 찾기 감정서"}

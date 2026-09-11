@@ -65,7 +65,7 @@ export default function HomePage() {
             <div className="ledger-head mono">
               <span>순번</span>
               <span>창구</span>
-              <span>현황</span>
+              <span>공식전</span>
             </div>
             <Link className="row" href="/play">
               <span className="no mono">1</span>

@@ -77,9 +77,14 @@ export default async function ResultPage({ params }: Props) {
             </VRow>
           </VForm>
           <div className="cut" />
+          <p className="rule-hint">
+            창구에 들어가면 <b>무한 감별</b>이 바로 시작됩니다.
+            <br />
+            같은 문제로 겨루는 제{ep}호 공식전은 게임 안에서 신청할 수 있습니다.
+          </p>
           <div className="result-actions">
             <Link className="btn btn-next" href="/play">
-              나도 오늘 문제 감별하기
+              나도 감별하러 가기
             </Link>
           </div>
         </section>
