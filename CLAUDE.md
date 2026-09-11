@@ -35,6 +35,7 @@
 - 스택: Next.js 15 (App Router) + TypeScript. 런타임 의존성은 `@neondatabase/serverless` 하나뿐이고 그 외 기능(인증·캔버스 카드·사운드·PWA)은 전부 직접 구현한다 — 새 라이브러리를 추가하기 전에 한 번 더 생각한다.
 - 정답은 클라이언트에 절대 내려주지 않는다. 판정은 서버 라우트에서만 한다(`/api/quiz/answer`, `/api/assemble/check`, `/api/findreal/check`, `/api/endless/*`).
 - `web/data/apartments.json`은 K-apt 실데이터(서울 전역, 목록 V4 + 기본정보 V5로 수집·정제). 갱신은 `npm run collect-kapt`(인증키는 `web/.env.local`의 `KAPT_API_KEY`, 절대 커밋 금지) → `npm run validate-pool` → `apartments.collected.json` 검토 후 승격. `fake_names.json`은 LLM 배치 생성 + validate-pool 대조를 거친 200건 — 추가 생성 시에도 같은 절차(생성 → validate-pool → 통과분만 등록)를 지킨다.
+- 사운드: 효과음은 `lib/sound.ts`에서 Web Audio로 합성(파일 없음). 배경음만 유일한 오디오 파일(`public/bgm/office-loop.mp3`, ElevenLabs 생성 → ffmpeg로 2초 크로스페이드 심리스 루프 + 라우드니스 정규화 + 모노 96k). 재생·페이드·토글은 `lib/bgm.ts`, 첫 제스처 전에는 파일을 받지 않는다.
 - 명령: `cd web && npm run dev` (개발), `npm run build && npm start` (프로드 확인), `npm run typecheck`, `npm run validate-pool` (출제 풀 검증).
 - 게임 구조: **무한 모드가 본편** — 창구 진입 즉시 무한 세션 시작, 경쟁은 누적 기록(레벨·최고 연속·콤보)과 판 단위(세션 종료 시 최근 7일 익명 백분위, `endless_runs`). 데일리 10문제는 "제N호 공식전"으로 강등 — 게임 안 칩으로 선택 참가하는 랭킹전(question_stats·score_dist 집계는 공식전만)이고, 출전한 뒤에는 같은 칩이 "성적표"가 되어 저장된 결과를 다시 연다. 무한 판은 결과를 안 보고 떠나도(공식전 전환·로고 클릭) 집계와 경험치에 접수된다.
 - 집계 DB: Neon Postgres (프로젝트 frosty-term-36707081, DB `aptgam`, 테이블 question_stats·score_dist·endless_runs·app_user·user_state). 연결 문자열은 `web/.env.local`(로컬)과 Vercel 배포의 env로만 주입하고 절대 커밋하지 않는다.
