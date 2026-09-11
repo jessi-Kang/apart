@@ -63,6 +63,8 @@ export default function FindRealPage() {
   const [sHits, setSHits] = useState(0);
   const [sMaxCombo, setSMaxCombo] = useState(0); // 세션 중 도달한 최고 콤보
   const [sMarks, setSMarks] = useState<boolean[]>([]); // 세션 라운드별 판정 (공유 카드 그리드)
+  const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
+  const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
   const qStart = useRef(0);
@@ -73,21 +75,17 @@ export default function FindRealPage() {
       .then((r) => r.json())
       .then((data: TodayResponse) => {
         setQuiz(data);
+        // 무한이 본편 — 공식전(오늘의 10라운드)은 선택 참가
         try {
           const saved = JSON.parse(localStorage.getItem(RESULT_KEY) ?? "null") as {
             date: string;
             marks: boolean[];
           } | null;
-          // 문제 수가 바뀐 날의 옛 저장본은 버리고 새로 풀게 한다
-          if (saved && saved.date === data.date && saved.marks.length === data.items.length) {
-            // 오늘 완주분은 결과 재방영 대신 곧장 무한 라운드로
-            void startEndless();
-            return;
-          }
+          setOfficialDone(Boolean(saved && saved.date === data.date && saved.marks.length === data.items.length));
         } catch {
           /* 무시 */
         }
-        setPhase("solve");
+        void startEndless();
       })
       .catch(() => setPhase("error"));
   }, []);
@@ -201,6 +199,7 @@ export default function FindRealPage() {
       return;
     }
     sfxResult();
+    setOfficialDone(true);
     try {
       localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
     } catch {
@@ -221,6 +220,26 @@ export default function FindRealPage() {
     sfxResult();
     setEXpRes(addXp(sHits * 5 + (sMaxCombo > startBest.current ? 30 : 0)));
     setPhase("eresult");
+    setETop(null);
+    fetch("/api/endless/finish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "findreal", best: sMaxCombo, hits: sHits, count: eCount, avgMs: sessionAvgMs() }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { top: number | null } | null) => setETop(d?.top ?? null))
+      .catch(() => undefined);
+  }
+
+  /** 공식전(오늘의 10라운드) 참가 */
+  function startOfficial() {
+    sfxTap();
+    setEndless(false);
+    setIdx(0);
+    setMarks([]);
+    setPicked(null);
+    setReveal(null);
+    setPhase("solve");
   }
 
 
@@ -274,7 +293,9 @@ export default function FindRealPage() {
           { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
           { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 판단 시간" },
           { value: `${Math.max(combo.best, sMaxCombo)}`, label: "역대 최고 콤보", accent: sMaxCombo > startBest.current },
-          { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
+          eTop !== null
+            ? { value: `상위 ${eTop}%`, label: "최근 7일 판 순위", accent: true }
+            : { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
         ],
       });
       setEImgState(result);
@@ -343,11 +364,20 @@ export default function FindRealPage() {
 
         {(phase === "solve" || phase === "reveal") && options && (
           <section className="screen">
-            <p className="qlabel mono">
-              {endless
-                ? `무한 ${eCount + (phase === "solve" ? 1 : 0)}라운드 · 연속 ${combo.current} · 최고 ${combo.best}`
-                : `${String(idx + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`}
-            </p>
+            {endless ? (
+              <p className="qlabel mono qlabel-row">
+                무한 {eCount + (phase === "solve" ? 1 : 0)}라운드 · 연속 {combo.current} · 최고 {combo.best}
+                {!officialDone && quiz && (
+                  <button type="button" className="official-chip" onClick={startOfficial} disabled={busy}>
+                    제{ep}호 공식전
+                  </button>
+                )}
+              </p>
+            ) : (
+              <p className="qlabel mono">
+                {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+              </p>
+            )}
             <p className="pick-tip">
               이 중 <b>진짜는 하나</b>. 나머지 셋은 AI가 지은 이름입니다.
             </p>
@@ -432,6 +462,11 @@ export default function FindRealPage() {
                   ? `콤보 ${combo.current} 유지 중 — 다음 세션에서 이어집니다.`
                   : "콤보가 끊긴 채 마감. 다음 세션에서 다시 쌓으세요."}
             </p>
+            {eTop !== null && (
+              <p className="top-note">
+                이 판, 최근 7일 무한 찾기 중 상위 <b>{eTop}%</b>
+              </p>
+            )}
             <RecordGauge session={sMaxCombo} best={startBest.current} unit="콤보" />
             <LevelBar result={eXpRes} />
             <ul className="review">

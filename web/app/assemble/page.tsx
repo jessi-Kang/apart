@@ -80,6 +80,8 @@ export default function AssemblePage() {
   const [sHits, setSHits] = useState(0);
   const [sBest, setSBest] = useState(0);
   const [sMarks, setSMarks] = useState<boolean[]>([]); // 세션 라운드별 판정 (공유 카드 그리드)
+  const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
+  const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const runTimes = useRef<number[]>([]);
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
@@ -91,22 +93,17 @@ export default function AssemblePage() {
       .then((r) => r.json())
       .then((data: TodayResponse) => {
         setQuiz(data);
+        // 무한이 본편 — 공식전(오늘의 10문제)은 선택 참가
         try {
           const saved = JSON.parse(localStorage.getItem(RESULT_KEY) ?? "null") as {
             date: string;
             marks: boolean[];
-            points?: number;
           } | null;
-          // 문제 수가 바뀐 날의 옛 저장본(3문제 시절 등)은 버리고 새로 풀게 한다
-          if (saved && saved.date === data.date && saved.marks.length === data.items.length) {
-            // 오늘 완주분은 결과 재방영 대신 곧장 무한 조립으로
-            void startEndless();
-            return;
-          }
+          setOfficialDone(Boolean(saved && saved.date === data.date && saved.marks.length === data.items.length));
         } catch {
           /* 무시 */
         }
-        setPhase("solve");
+        void startEndless();
       })
       .catch(() => setPhase("error"));
   }, []);
@@ -195,6 +192,27 @@ export default function AssemblePage() {
     sfxResult();
     setEXpRes(addXp(sHits * 8 + (sBest > startBest.current ? 30 : 0)));
     setPhase("eresult");
+    setETop(null);
+    fetch("/api/endless/finish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "assemble", best: sBest, hits: sHits, count: eCount, avgMs: sessionAvgMs() }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { top: number | null } | null) => setETop(d?.top ?? null))
+      .catch(() => undefined);
+  }
+
+  /** 공식전(오늘의 10문제) 참가 */
+  function startOfficial() {
+    sfxTap();
+    setEndless(false);
+    setIdx(0);
+    setMarks([]);
+    setPoints(0);
+    setPicked([]);
+    setReveal(null);
+    setPhase("solve");
   }
 
 
@@ -282,6 +300,7 @@ export default function AssemblePage() {
       return;
     }
     sfxResult();
+    setOfficialDone(true);
     try {
       localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks, points }));
     } catch {
@@ -347,7 +366,9 @@ export default function AssemblePage() {
           { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
           { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 조립 시간" },
           { value: `${Math.max(eRec.best, sBest)}`, label: "역대 최고 연속", accent: sBest > startBest.current },
-          { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
+          eTop !== null
+            ? { value: `상위 ${eTop}%`, label: "최근 7일 판 순위", accent: true }
+            : { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
         ],
       });
       setEImgState(result);
@@ -410,11 +431,20 @@ export default function AssemblePage() {
 
         {(phase === "solve" || phase === "reveal") && puzzle && (
           <section className="screen">
-            <p className="qlabel mono">
-              {endless
-                ? `무한 ${eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 ${run} · 최고 ${eRec.best}`
-                : `${String(idx + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`}
-            </p>
+            {endless ? (
+              <p className="qlabel mono qlabel-row">
+                무한 {eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
+                {!officialDone && quiz && (
+                  <button type="button" className="official-chip" onClick={startOfficial} disabled={busy}>
+                    제{ep}호 공식전
+                  </button>
+                )}
+              </p>
+            ) : (
+              <p className="qlabel mono">
+                {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+              </p>
+            )}
             <div className="hintcard paper-in" key={endless ? `e${eCount}` : (puzzle as Puzzle).no}>
               이 단지를 조립하세요: <b>{puzzle.hint.location}</b>
               <br />
@@ -528,6 +558,11 @@ export default function AssemblePage() {
                   ? "함정 조각이 안 통하는 수준입니다."
                   : "함정 조각의 승리. 다음 세션에서 설욕을."}
             </p>
+            {eTop !== null && (
+              <p className="top-note">
+                이 판, 최근 7일 무한 조립 중 상위 <b>{eTop}%</b>
+              </p>
+            )}
             <RecordGauge session={sBest} best={startBest.current} />
             <LevelBar result={eXpRes} />
             <div className="result-actions">

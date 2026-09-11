@@ -63,6 +63,8 @@ export default function PlayPage() {
   const [sHits, setSHits] = useState(0); // 이번 세션 적중 수
   const [sBest, setSBest] = useState(0); // 이번 세션 최고 연속
   const [sMarks, setSMarks] = useState<boolean[]>([]); // 세션 라운드별 판정 (공유 카드 그리드)
+  const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
+  const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const qStart = useRef(0);
   const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
   const sessionTimes = useRef<number[]>([]); // 이번 세션 전체 풀이 시간(ms)
@@ -74,14 +76,10 @@ export default function PlayPage() {
       .then((r) => r.json())
       .then((data: TodayResponse) => {
         setQuiz(data);
+        // 무한이 본편 — 창구에 들어오면 바로 시작한다. 공식전(오늘의 10문제)은 선택 참가
         const saved = loadResult(data.date);
-        if (saved && saved.marks.length === data.items.length) {
-          // 오늘 본편을 이미 완주했으면 결과 재방영 대신 곧장 무한 감별로 — 창구는 닫히지 않는다
-          bumpStreak(data.date);
-          void startEndless();
-        } else {
-          setPhase("question");
-        }
+        setOfficialDone(Boolean(saved && saved.marks.length === data.items.length));
+        void startEndless();
       })
       .catch(() => setPhase("error"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -133,6 +131,27 @@ export default function PlayPage() {
     // 무한 정답 5점 + 신기록 보너스 30점
     setEXpRes(addXp(sHits * 5 + (sBest > startBest.current ? 30 : 0)));
     setPhase("eresult");
+    // 판 기록 접수: 최근 7일 다른 판들과 비교한 상위 % (익명 집계)
+    setETop(null);
+    fetch("/api/endless/finish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "ox", best: sBest, hits: sHits, count: eCount, avgMs: sessionAvgMs() }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { top: number | null } | null) => setETop(d?.top ?? null))
+      .catch(() => undefined);
+  }
+
+  /** 공식전(오늘의 10문제) 참가 — 전국 동일 문제, 정답률·상위% 집계 */
+  function startOfficial() {
+    sfxTap();
+    setEndless(false);
+    setIdx(0);
+    setMarks([]);
+    setReview([]);
+    setReveal(null);
+    setPhase("question");
   }
 
 
@@ -220,6 +239,7 @@ export default function PlayPage() {
     sfxResult();
     const score = marks.filter(Boolean).length;
     saveResult({ date: quiz.date, marks, review });
+    setOfficialDone(true);
     setStreak(bumpStreak(quiz.date));
     setXpRes(addXp(score * 10 + 20)); // 정답 10점 + 완주 20점
     setPhase("result");
@@ -295,7 +315,9 @@ export default function PlayPage() {
           { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
           { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 풀이 시간" },
           { value: `${Math.max(eRec.best, sBest)}`, label: "역대 최고 연속", accent: sBest > startBest.current },
-          { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
+          eTop !== null
+            ? { value: `상위 ${eTop}%`, label: "최근 7일 판 순위", accent: true }
+            : { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
         ],
       });
       setEImgState(result);
@@ -363,8 +385,13 @@ export default function PlayPage() {
         {(phase === "question" || phase === "reveal") && currentName && (
           <section className="screen">
             {endless ? (
-              <p className="qlabel mono">
+              <p className="qlabel mono qlabel-row">
                 무한 {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
+                {!officialDone && quiz && (
+                  <button type="button" className="official-chip" onClick={startOfficial} disabled={busy}>
+                    제{ep}호 공식전
+                  </button>
+                )}
               </p>
             ) : (
               <>
@@ -458,6 +485,11 @@ export default function PlayPage() {
                     ? "반타작 이상. AI 작명도 만만치 않죠."
                     : "AI가 오늘은 한 수 위였습니다. 설욕전을 권합니다."}
             </p>
+            {eTop !== null && (
+              <p className="top-note">
+                이 판, 최근 7일 무한 감별 중 상위 <b>{eTop}%</b>
+              </p>
+            )}
             <RecordGauge session={sBest} best={startBest.current} />
             <LevelBar result={eXpRes} />
             <div className="result-actions">
