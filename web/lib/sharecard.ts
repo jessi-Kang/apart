@@ -415,7 +415,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
       ctx.font = font(700, 22, MONO);
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
-      fillTracked(ctx, "apt-gam.vercel.app", TAPE_X + TAPE_W / 2, y + 22, 1.8, "center");
+      fillTracked(ctx, "apt-game.app", TAPE_X + TAPE_W / 2, y + 22, 1.8, "center");
     },
   });
   space(44);
