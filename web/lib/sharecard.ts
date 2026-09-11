@@ -356,7 +356,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
     },
   });
   rule();
-  row(modeName, data.totalText ? `${data.total}판` : `${data.total}문`);
+  row(modeName, `${data.total}문제`);
 
   // 판정 타일 한 줄
   const ts = Math.min(46, Math.floor((inW - 9 * 8) / Math.max(1, data.marks.length)));
