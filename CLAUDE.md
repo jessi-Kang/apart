@@ -19,6 +19,8 @@
 | `design/sian-a-document.html` | **확정 방향.** 접수 서류 콘셉트: 접수 창구 홈 + 본편 O/X + 이름 조립 + 진짜 찾기 + db 접수 대장 |
 | `design/sian-b-nightboard.html` | 야간 전광판 콘셉트. **디벨롭 중단** (확정 방향 아님, 수정 금지) |
 | `design/sian-c-gameshow.html` | 대안 보관 (구 확정안, 게임쇼 팝). 디벨롭은 A 기준으로 진행 |
+| `design/home2-a-ledger.html` | **홈 확정 방향.** 접수 대장: 순번·창구·현황 3열 서식 + 현황 도장 (web/ 홈에 적용됨) |
+| `design/home2-b-tiles.html` / `design/home2-c-poster.html` | 홈 대안 보관 (창구 타일 벤토 / 공고 포스터) |
 | `design/submodes-a.html` / `design/submodes-c.html` | 서브 모드(작명소·우리 동네) 시안. A 스타일이 기준, C는 보관 |
 | `design/sharecard-a.html` / `design/sharecard-c.html` | 이미지 공유 카드 시안. **보류** (품질 미달 판정, 재작업 전까지 디벨롭 금지) |
 

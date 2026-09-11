@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { AccountBar } from "@/components/AccountBar";
-import { ComboStatus, HomeStatus } from "@/components/HomeStatus";
+import { DailyChop, FindTail, OxTail } from "@/components/LedgerStatus";
 import { LevelChip } from "@/components/LevelBar";
 import { SheetFooter } from "@/components/SheetFooter";
-import { Seal } from "@/components/Seal";
 
 export const dynamic = "force-dynamic";
 
-/** 홈 = 접수 창구 목록 (docs/07 §1-1, 확정 시안 A) */
+/** 홈 = 접수 대장 (확정 시안 home2-a: 순번·창구·현황 3열 서식 + 현황 도장) */
 export default function HomePage() {
   const date = kstDateString();
   const ep = episodeNumber(date);
@@ -32,21 +31,20 @@ export default function HomePage() {
       </aside>
 
       <main className="sheet">
-        <header className="sheet-header">
-          <div className="brand">
-            아파트 감별사<small>감별 민원 접수 창구</small>
+        <header className="form-head">
+          <div className="form-title">
+            <b>아파트 감별사</b>
+            <small>감별 민원 접수 창구</small>
           </div>
-          <div className="issue mono">
-            #{ep}
-            <br />
-            {mm}.{dd}
+          <div className="form-no mono">
+            <span>제{ep}호</span>
+            <span>
+              {mm}.{dd}
+            </span>
           </div>
         </header>
 
         <section className="screen home">
-          <div className="home-seal" aria-hidden="true">
-            <Seal size={104} />
-          </div>
           <h1>
             오늘 처리할
             <br />
@@ -59,42 +57,56 @@ export default function HomePage() {
 
           <AccountBar />
 
-          <nav className="modes" aria-label="게임 목록">
-            <Link className="mode" href="/play">
+          <nav className="ledger" aria-label="게임 목록">
+            <div className="ledger-head mono">
+              <span>순번</span>
+              <span>창구</span>
+              <span>현황</span>
+            </div>
+            <Link className="row" href="/play">
               <span className="no mono">1</span>
-              <span>
-                <span className="tt">
-                  감별 O/X<span className="daily-badge">오늘의 본편</span>
-                </span>
+              <span className="cell">
+                <span className="tt">감별 O/X</span>
                 <span className="dd">
-                  하루 10문제 · <HomeStatus date={date} />
+                  오늘의 본편 · 하루 10문제
+                  <OxTail date={date} />
                 </span>
               </span>
-              <span className="go-ic">→</span>
+              <span className="st">
+                <DailyChop mode="ox" date={date} />
+              </span>
             </Link>
-            <Link className="mode" href="/assemble">
+            <Link className="row" href="/assemble">
               <span className="no mono">2</span>
-              <span>
+              <span className="cell">
                 <span className="tt">이름 조립</span>
                 <span className="dd">힌트로 실존 단지명 조립 · 매일 10문제</span>
               </span>
-              <span className="go-ic">→</span>
+              <span className="st">
+                <DailyChop mode="assemble" date={date} />
+              </span>
             </Link>
-            <Link className="mode" href="/findreal">
+            <Link className="row" href="/findreal">
               <span className="no mono">3</span>
-              <span>
+              <span className="cell">
                 <span className="tt">진짜 찾기</span>
                 <span className="dd">
-                  넷 중 진짜는 하나 · <ComboStatus />
+                  넷 중 진짜는 하나
+                  <FindTail />
                 </span>
               </span>
-              <span className="go-ic">→</span>
+              <span className="st">
+                <DailyChop mode="findreal" date={date} />
+              </span>
             </Link>
-            <div className="mode lock">
+            <div className="row off">
               <span className="no mono">4</span>
-              <span>
+              <span className="cell">
                 <span className="tt">작명소 · 우리 동네</span>
                 <span className="dd">2단계 개설 예정 창구</span>
+              </span>
+              <span className="st">
+                <span className="chop off">미개설</span>
               </span>
             </div>
           </nav>

@@ -70,13 +70,16 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .sheet-footer span:last-child { white-space: normal; }
 }
 
-/* ---- 홈 ---- */
+/* ---- 홈 (확정 시안 home2-a: 접수 대장) ---- */
 .home { position: relative; }
-/* 관인: 제목 우상단에 비스듬히 날인. 겹치는 도장의 물성상 반투명 */
-.home-seal {
-  position: absolute; top: 16px; right: 14px; transform: rotate(-12deg);
-  opacity: 0.85; pointer-events: none; mix-blend-mode: multiply;
-}
+/* 서식 머리: 문서번호 칸이 있는 표두 */
+.form-head { display: grid; grid-template-columns: 1fr auto; border-bottom: 2px solid var(--ink); }
+.form-title { padding: 18px 20px; }
+.form-title b { font-size: 17px; letter-spacing: -0.02em; }
+.form-title small { display: block; color: var(--ink-soft); font-size: 12px; margin-top: 2px; font-weight: 400; }
+.form-no { border-left: 1px solid var(--line); display: grid; grid-template-rows: 1fr 1fr; min-width: 96px; text-align: center; }
+.form-no > span { padding: 6px 14px; font-size: 12px; color: var(--ink); font-weight: 500; display: flex; align-items: center; justify-content: center; }
+.form-no > span + span { border-top: 1px solid var(--line); }
 .home h1 { font-size: clamp(26px, 6.5vw, 36px); line-height: 1.25; letter-spacing: -0.03em; font-weight: 700; position: relative; max-width: 11ch; }
 .home h1 em { font-style: normal; color: var(--stamp); position: relative; }
 /* 결재하듯 손으로 그은 붉은 밑줄 */
@@ -85,38 +88,42 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M2 7 Q 28 3.5, 54 6 T 98 4.5' fill='none' stroke='%23c73a2f' stroke-width='4.5' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
 }
 .home .sub { margin-top: 12px; color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; max-width: 34ch; }
-.modes { margin-top: 24px; border-top: 1px solid var(--line); }
-.mode {
-  width: 100%; text-align: left; background: none; border: none; cursor: pointer;
-  display: flex; gap: 14px; align-items: baseline; padding: 17px 2px;
-  border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none;
+/* 접수 대장 표: 순번 / 창구 / 현황 */
+.ledger { margin-top: 22px; border: 1px solid var(--ink); border-radius: var(--radius); overflow: hidden; }
+.ledger-head {
+  display: grid; grid-template-columns: 52px 1fr 88px; background: var(--paper);
+  border-bottom: 1px solid var(--ink); font-size: 11.5px; color: var(--ink-soft);
 }
-.mode:active { background: var(--paper); }
-.mode { align-items: flex-start; }
-.mode .no {
-  min-width: 26px; height: 26px; display: grid; place-items: center; margin-top: 1px;
-  background: var(--ink); color: var(--sheet); font-size: 13px; font-weight: 500;
-  border-radius: var(--radius); transform: rotate(-1.2deg); flex-shrink: 0;
+.ledger-head span { padding: 8px 10px; text-align: center; }
+.ledger-head span:nth-child(2) { text-align: left; border-inline: 1px solid var(--line); }
+.ledger .row {
+  display: grid; grid-template-columns: 52px 1fr 88px; align-items: stretch;
+  border-bottom: 1px solid var(--line); cursor: pointer; color: var(--ink); text-decoration: none;
 }
-.mode:nth-child(even) .no { transform: rotate(1.2deg); }
-.mode .go-ic { align-self: center; }
-.mode.lock .no {
-  background: none; color: var(--ink-soft); border: 1.5px dashed var(--line); transform: none;
+.ledger .row:last-child { border-bottom: none; }
+.ledger .row:active { background: var(--paper); }
+.ledger .no {
+  display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 500;
+  border-right: 1px solid var(--line);
 }
-.mode .tt { font-weight: 700; font-size: 16.5px; letter-spacing: -0.02em; }
-.daily-badge {
-  display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700; color: var(--stamp);
-  border: 1.5px solid currentColor; border-radius: var(--radius); padding: 2px 7px; transform: rotate(-2deg);
+.ledger .cell { padding: 14px 12px; }
+.ledger .tt { display: block; font-weight: 700; font-size: 15.5px; letter-spacing: -0.02em; }
+.ledger .dd { display: block; font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; line-height: 1.5; }
+.ledger .st { display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--line); }
+/* 현황 도장: 접수중(인주) / 완료(잉크) / 미개설 */
+.chop {
+  font-size: 11px; font-weight: 700; color: var(--stamp); border: 1.6px solid currentColor;
+  border-radius: var(--radius); padding: 4px 8px; transform: rotate(-4deg); letter-spacing: 0.02em;
 }
-.mode .dd { display: block; font-weight: 400; font-size: 13px; color: var(--ink-soft); margin-top: 4px; line-height: 1.55; }
-.mode .go-ic { margin-left: auto; color: var(--stamp); font-weight: 700; }
-.mode.lock { cursor: default; opacity: 0.65; padding-block: 14px; }
-.mode.lock .tt { color: var(--ink-soft); font-weight: 500; font-size: 15px; }
-.mode.lock:active { background: none; }
+.chop.done { color: var(--ink); }
+.chop.off { color: var(--ink-soft); border-style: dashed; transform: none; font-weight: 500; }
+.ledger .row.off { cursor: default; }
+.ledger .row.off .no,
+.ledger .row.off .tt { color: var(--ink-soft); }
+.ledger .row.off .tt { font-weight: 500; }
+.ledger .row.off:active { background: none; }
 @media (hover: hover) {
-  .mode:not(.lock):hover { background: var(--paper); }
-  .mode .go-ic { transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1); }
-  .mode:not(.lock):hover .go-ic { transform: translateX(4px); }
+  .ledger .row:not(.off):hover { background: var(--paper); }
 }
 
 /* ---- 계정 상태 한 줄 (홈) ---- */
@@ -268,12 +275,12 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
     to { opacity: 1; transform: none; }
   }
 
-  /* 접수 창구 목록이 서류 넘기듯 차례로 놓인다 */
-  .modes > * { animation: paper-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
-  .modes > *:nth-child(1) { animation-delay: 0.04s; }
-  .modes > *:nth-child(2) { animation-delay: 0.1s; }
-  .modes > *:nth-child(3) { animation-delay: 0.16s; }
-  .modes > *:nth-child(4) { animation-delay: 0.22s; }
+  /* 접수 대장 행이 서류 넘기듯 차례로 놓인다 */
+  .ledger .row { animation: paper-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+  .ledger .row:nth-child(2) { animation-delay: 0.05s; }
+  .ledger .row:nth-child(3) { animation-delay: 0.1s; }
+  .ledger .row:nth-child(4) { animation-delay: 0.15s; }
+  .ledger .row:nth-child(5) { animation-delay: 0.2s; }
 
   /* 밑줄이 왼쪽에서 그어진다 */
   .home h1 em::after { transform-origin: left; animation: underline-draw 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.3s backwards; }
@@ -407,6 +414,8 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .sheet { max-width: 640px; }
   .screen { padding: 36px 44px; }
   .sheet-header { padding: 22px 44px; }
+  .form-title { padding: 22px 24px 22px 44px; }
+  .form-no > span { padding: 6px 20px; }
   .sheet-footer { padding: 16px 44px; }
   .choices { gap: 14px; }
 }
