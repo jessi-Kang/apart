@@ -250,7 +250,6 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 /* 대신 키보드로 짚었을 때는 밑줄이 진해져 어디에 있는지는 알 수 있다 */
 .area-sel:focus-visible { border-bottom-color: var(--ink); }
 .area-note { grid-column: 2; font-size: 11.5px; color: var(--ink-soft); }
-.area-note .an-sub { display: block; margin-top: 2px; }
 /* 대장 아래 한 줄: 같은 행에 목적지가 둘이라는 것을 화면이 직접 말한다 */
 .ledger-note { margin-top: 10px; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
 .ledger-note b { color: var(--ink); font-weight: 700; }
