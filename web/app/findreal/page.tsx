@@ -372,11 +372,7 @@ export default function FindRealPage() {
           </p>
         )}
         <p className="note">
-          나머지 셋은 AI 작품입니다.
-          <br />
-          연속은 내일로 이어집니다.
-          <br />
-          오판하면 연속이 끊깁니다.
+          나머지 셋은 AI 작품입니다. 오판하면 연속이 끊기고, 연속은 내일로 이어집니다.
         </p>
       </aside>
 
@@ -443,7 +439,7 @@ export default function FindRealPage() {
               </p>
             )}
             <p className="pick-tip">
-              이 중 <b>진짜는 하나</b>. 나머지 셋은 AI가 지은 이름입니다.
+              넷 중 <b>진짜는 하나</b>. 나머지는 AI가 지었습니다.
             </p>
 
             <TimerBar

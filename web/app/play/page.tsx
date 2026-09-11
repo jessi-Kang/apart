@@ -399,9 +399,7 @@ export default function PlayPage() {
           </p>
         )}
         <p className="note">
-          정답마다 실제 위치와 준공년도가 공개됩니다.
-          <br />
-          판을 끝내면 통지서가 발급됩니다.
+          정답마다 실제 위치와 준공년도가 공개되고, 판을 끝내면 통지서가 발급됩니다.
         </p>
       </aside>
 
@@ -477,7 +475,7 @@ export default function PlayPage() {
             {/* 첫 판 첫 문제에만 규칙 한 줄 — 기록이 쌓인 사람에게는 다시 보이지 않는다 */}
             {endless && eCount === 0 && firstTime && (
               <p className="rule-hint">
-                이 이름, 실제로 있는 단지일까요? <b>틀리면 연속이 끊깁니다.</b>
+                실제로 있는 단지일까요? <b>틀리면 연속이 끊깁니다.</b>
               </p>
             )}
             <div className="qname-wrap paper-in" key={`${endless ? "e" : "d"}-${endless ? eCount : idx}`}>

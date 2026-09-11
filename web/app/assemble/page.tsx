@@ -530,7 +530,7 @@ export default function AssemblePage() {
             {/* 첫 판 첫 문제에만 규칙 한 줄 */}
             {endless && eCount === 0 && firstTime && (
               <p className="rule-hint">
-                조각을 눌러 단지명을 완성하세요. <b>함정 조각이 섞여 있습니다.</b>
+                조각을 눌러 단지명을 맞추세요. <b>함정도 섞여 있습니다.</b>
               </p>
             )}
             <div className="hintcard paper-in" key={endless ? `e${eCount}` : (puzzle as Puzzle).no}>
