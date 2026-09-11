@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
-import { SoundToggle } from "@/components/SoundToggle";
 import { TimerBar } from "@/components/TimerBar";
 import { gradeFor } from "@/lib/grades";
 import { bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
@@ -487,7 +486,6 @@ export default function PlayPage() {
         )}
 
         <footer className="sheet-footer">
-          <SoundToggle />
           <span>{endless ? "틀려도 계속됩니다. 연속 기록에 도전하세요." : "이름만 보고 판단합니다. 검색은 반칙."}</span>
           <span className="mono">{endless ? "무한 감별 중" : "내일 00:00 새 문제"}</span>
         </footer>

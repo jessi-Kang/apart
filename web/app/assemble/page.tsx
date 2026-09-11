@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { CloseX } from "@/components/CloseX";
-import { SoundToggle } from "@/components/SoundToggle";
 import { TimerBar } from "@/components/TimerBar";
 import { bumpEndlessRecord, endlessRecord, type EndlessRecord } from "@/lib/local";
 import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -481,7 +480,6 @@ export default function AssemblePage() {
         )}
 
         <footer className="sheet-footer">
-          <SoundToggle />
           <span>{endless ? "틀려도 계속됩니다. 연속 기록에 도전하세요." : "조각을 순서대로 눌러 이름을 완성하세요"}</span>
           <span className="mono">{endless ? "무한 조립 중" : "내일 00:00 새 문제"}</span>
         </footer>
