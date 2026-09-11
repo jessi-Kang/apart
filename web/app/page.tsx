@@ -122,7 +122,7 @@ export default async function HomePage() {
           <span>단지 정보 출처: 공공데이터포털 K-apt</span>
           <span className="mono">본편 갱신 00:00 KST</span>
           <span className="copyright">
-            © 2026 아파트 감별사 · <a href="mailto:jihyun.kang@me.com">jihyun.kang@me.com</a>
+            © 2026 아파트 감별사 · made by <a href="mailto:jihyun.kang@me.com">Jessi</a>
           </span>
         </footer>
       </main>
