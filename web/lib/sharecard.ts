@@ -175,6 +175,7 @@ async function drawGradeStamp(ctx: CanvasRenderingContext2D, cx: number, cy: num
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate((-2.5 * Math.PI) / 180);
+  ctx.globalAlpha = 0.92; // 꽉 찬 원색보다 살짝 눌린 인주 느낌
   ctx.font = font(700, 58);
   const tw = ctx.measureText(text).width;
   const w = tw + 110;
@@ -280,7 +281,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   ctx.fillStyle = INK_SOFT;
   ctx.font = font(700, 72);
   ctx.fillText(`/ ${data.total}`, W / 2 + 128, 500);
-  await drawSeal(ctx, right - 100, 330, 128, 0.85);
+  await drawSeal(ctx, right - 100, 330, 128, 0.4); // 관인은 배경 장식 — 등급 도장이 주인공
   await drawGradeStamp(ctx, W / 2, 640, data.gradeName);
 
   // 판정부/기록부 절취선 (웹 결과 화면과 동일한 구분)
