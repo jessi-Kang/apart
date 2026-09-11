@@ -367,8 +367,8 @@ export default function FindRealPage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? "무한 찾기 감정서" : "진짜 찾기 감정서"}
-              {quiz && ` · 제${ep}호 ${mm}.${dd}`}
+              {endless ? "무한 찾기" : `제${ep}호 공식전`}
+              {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
             </small>
           </Link>
           <span className="head-tools">
@@ -405,7 +405,8 @@ export default function FindRealPage() {
           <section className="screen">
             {endless ? (
               <p className="qlabel mono qlabel-row">
-                무한 {eCount + (phase === "solve" ? 1 : 0)}문제 · 연속 {combo.current} · 최고 {combo.best}
+                <span className="mode-chip">무한</span>
+                {eCount + (phase === "solve" ? 1 : 0)}문제 · 연속 {combo.current} · 최고 {combo.best}
                 {quiz && (
                   <button
                     type="button"
