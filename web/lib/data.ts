@@ -42,15 +42,15 @@ export const fakeNames: FakeName[] = (fakesJson.items as FakeName[]).filter(
 const MIN_POOL = 20; // 표본이 얇으면 같은 문제가 곧바로 되풀이된다
 
 /**
- * 고를 수 있는 구역.
- * 서울은 K-apt를 전수로 받아서 자치구까지 쪼갤 수 있지만, 다른 시·도는 아직
- * 400건 안팎만 받아 둔 상태라 구 단위로 쪼개면 한 구에 열 곳도 안 남는다.
- * 그래서 서울만 자치구를 열어 주고 나머지는 시·도 통째로 묶는다.
+ * 고를 수 있는 구역 = 시·도.
+ * 자치구까지 쪼갤 수 있는 건 전수 수집이 끝난 서울뿐이라, 서울만 구를 열면
+ * "왜 여기는 구가 있고 저기는 없지"가 생기고 게임마다 적용 범위도 갈렸다
+ * (조립은 구 단위로는 퍼즐이 3~20개뿐이라 시·도로 넓혀야 했다).
+ * 시·도 하나로 맞추면 세 창구가 같은 범위를 쓰고 설명할 것도 없어진다.
  */
 export interface RegionGroup {
   sido: string;
   label: string;
-  districts: string[]; // 비어 있으면 시·도 단위로만 고른다
 }
 
 const bySido = new Map<string, Apartment[]>();
@@ -65,19 +65,12 @@ const shortSido = (s: string) => s.replace(/특별자치시$|특별시$|광역�
 export const regions: RegionGroup[] = [...bySido.entries()]
   .filter(([, list]) => list.length >= MIN_POOL)
   .sort((a, b) => b[1].length - a[1].length)
-  .map(([sido, list]) => {
-    const gus = [...new Set(list.map((a) => a.sigungu))]
-      .filter((g) => list.filter((a) => a.sigungu === g).length >= MIN_POOL)
-      .sort((a, b) => a.localeCompare(b, "ko"));
-    return { sido, label: shortSido(sido), districts: sido === "서울특별시" ? gus : [] };
-  });
+  .map(([sido]) => ({ sido, label: shortSido(sido) }));
 
 const sidoSet = new Set(regions.map((r) => r.sido));
-const districtSet = new Set(regions.flatMap((r) => r.districts));
 
-/** 고른 값이 쓸 수 있는 구역인가 (시·도 이름이거나 자치구 이름) */
-export const isArea = (x: unknown): x is string =>
-  typeof x === "string" && (sidoSet.has(x) || districtSet.has(x));
+/** 고른 값이 쓸 수 있는 구역인가 */
+export const isArea = (x: unknown): x is string => typeof x === "string" && sidoSet.has(x);
 
 /**
  * 가짜 이름이 어느 구역의 말투인지 — "송파현대"처럼 지역/동 이름을 단 가짜는
@@ -140,9 +133,7 @@ for (const f of fakeNames) {
 /** 그 구역에서 낼 수 있는 진짜/가짜. area가 없거나 모르는 값이면 전국 */
 export function poolOf(area?: string | null): { reals: Apartment[]; fakes: FakeName[] } {
   if (!area || !isArea(area)) return { reals: apartments, fakes: fakeNames };
-  const isSido = sidoSet.has(area);
-  const reals = apartments.filter((a) => (isSido ? a.sido === area : a.sigungu === area));
-  // 시·도를 고른 경우 그 안의 모든 구를 허용 구역으로 본다
+  const reals = apartments.filter((a) => a.sido === area);
   const allow = new Set(reals.map((a) => guKey(a.sido, a.sigungu)));
   return {
     reals,
@@ -157,4 +148,26 @@ export function poolOf(area?: string | null): { reals: Apartment[]; fakes: FakeN
 }
 
 /** 화면에 쓰는 구역 이름 (서울특별시 → 서울) */
-export const areaLabel = (area: string) => (sidoSet.has(area) ? shortSido(area) : area);
+export const areaLabel = (area: string) => (isArea(area) ? shortSido(area) : area);
+
+/* ---------- 이름 조립의 구역 ---------- */
+
+const MIN_ASSEMBLE = 20; // 이보다 얇으면 같은 퍼즐이 바로 되풀이된다
+
+/**
+ * 조립 퍼즐은 이름에 공백이 있어야 조각으로 쪼개진다. 그런 단지가 전국에 677곳뿐이라
+ * 다른 창구보다 풀이 훨씬 얇다. 시·도 단위로는 세종 31곳 ~ 서울 259곳이라 쓸 만하고,
+ * 그보다 얇은 시·도가 생기면 전국으로 되돌린다.
+ */
+export function assemblePoolOf(area?: string | null): {
+  reals: Apartment[];
+  fakes: FakeName[];
+  sido: string | null;
+} {
+  const all = apartments.filter((a) => a.name.split(" ").length >= 2);
+  if (!area || !isArea(area)) return { reals: all, fakes: fakeNames, sido: null };
+  const reals = all.filter((a) => a.sido === area);
+  if (reals.length < MIN_ASSEMBLE) return { reals: all, fakes: fakeNames, sido: null };
+  // 함정 조각도 같은 범위의 가짜에서 뽑는다 — 딴 동네 단어만 함정이면 그게 곧 힌트다
+  return { reals, fakes: poolOf(area).fakes, sido: area };
+}

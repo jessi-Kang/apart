@@ -10,7 +10,7 @@ import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { assembleGradeFor } from "@/lib/grades";
-import { bumpEndlessRecord, endlessRecord, firstVisit, type EndlessRecord } from "@/lib/local";
+import { areaPref, bumpEndlessRecord, endlessRecord, firstVisit, type EndlessRecord } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxHint, sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -27,6 +27,8 @@ interface EndlessPuzzle {
   pieces: string[];
   answerLen: number;
   hint: { location: string; builtYear: number; households: number };
+  /** 서버가 실제로 좁힌 범위 (시·도). 없으면 전국 */
+  sido?: string | null;
 }
 
 interface TodayResponse {
@@ -92,11 +94,13 @@ export default function AssemblePage() {
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
   const [firstTime, setFirstTime] = useState(false); // 이 창구 첫 방문인가
+  const [area, setArea] = useState(""); // 조립은 시·도 단위로 좁힌다 (서버가 정한 범위를 그대로 받는다)
   const qStart = useRef(0);
 
   useEffect(() => {
     setERec(endlessRecord("assemble"));
     setFirstTime(firstVisit("assemble"));
+    setArea(areaPref());
     // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
     // quiz가 들어온 뒤에 열어야 해서 깃발만 세우고 아래 effect에서 처리한다
     const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
@@ -164,9 +168,13 @@ export default function AssemblePage() {
   }, [phase, idx, eCount, endless]);
 
   async function fetchEndless() {
-    const res = await fetch("/api/endless/assemble");
+    const a = areaPref();
+    const res = await fetch(`/api/endless/assemble${a ? `?area=${encodeURIComponent(a)}` : ""}`);
     if (!res.ok) throw new Error("endless_failed");
-    setEpz((await res.json()) as EndlessPuzzle);
+    const data = (await res.json()) as EndlessPuzzle;
+    setEpz(data);
+    // 자치구를 골랐어도 조립은 그 시·도로 넓혀 낸다. 화면은 실제 범위를 말해야 한다
+    setArea(data.sido ?? "");
   }
 
   async function startEndless() {
@@ -462,7 +470,7 @@ export default function AssemblePage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? "무한 조립" : `제${ep}호 공식전`}
+              {endless ? (area ? `무한 조립 · ${area.replace(/특별자치시$|특별시$|광역시$/, "")}` : "무한 조립") : `제${ep}호 공식전`}
               {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
             </small>
           </Link>
