@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { CloudSync } from "@/components/CloudSync";
 import { PwaRegister } from "@/components/PwaRegister";
@@ -33,6 +34,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <head>
+        {/* 설치 프롬프트는 번들 로드 전에 발사될 수 있어 헤드에서 선점해 둔다 */}
+        <Script id="bip-capture" strategy="beforeInteractive">
+          {`window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__aptgamBIP=e;try{window.dispatchEvent(new Event('aptgam:bip'))}catch(_){}});`}
+        </Script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
