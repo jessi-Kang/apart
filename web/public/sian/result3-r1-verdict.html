@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<title>결과 시안 R1 · 판정 통지서</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===== 결과 시안 R1 · 판정 통지서 =====
+     방향: 결과를 진짜 공문서처럼. 등급 도장이 주인공, 점수는 서식 항목.
+     다이얼: VARIANCE 4 / MOTION 4 / DENSITY 5 */
+  :root{ --paper:#f6f6f3; --sheet:#fdfdfb; --ink:#1b1b1e; --ink-soft:#5c5c62; --line:#d9d9d3; --stamp:#c73a2f; --radius:2px; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:light}
+  body{background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans KR",system-ui,sans-serif; -webkit-font-smoothing:antialiased; word-break:keep-all;}
+  button{appearance:none;-webkit-appearance:none;font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+  .mono{font-family:"IBM Plex Mono",monospace}
+  .frame{min-height:100dvh; display:flex; justify-content:center; padding:16px;}
+  .sheet{background:var(--sheet); border:1px solid var(--line); border-radius:var(--radius); width:100%; max-width:560px; display:flex; flex-direction:column;}
+  .head{display:grid; grid-template-columns:1fr auto; border-bottom:2px solid var(--ink);}
+  .head .t{padding:16px 20px;} .head .t b{font-size:16px;} .head .t small{display:block; color:var(--ink-soft); font-size:12px; margin-top:2px;}
+  .head .no{border-left:1px solid var(--line); display:grid; place-items:center; padding:0 18px; font-size:12.5px; font-weight:600;}
+
+  .body{padding:26px 20px 30px; display:flex; flex-direction:column;}
+  .doc-title{text-align:center; font-size:13px; letter-spacing:.35em; color:var(--ink-soft); margin-top:2px;}
+  .doc-title b{display:block; letter-spacing:-.03em; color:var(--ink); font-size:24px; margin-top:6px;}
+
+  /* 주인공: 등급 도장 */
+  .stamp-hero{display:grid; place-items:center; padding:30px 0 22px;}
+  .stamp{position:relative; color:var(--stamp); transform:rotate(-4deg); font-weight:700; font-size:30px; padding:20px 34px;}
+  .stamp i{position:absolute; inset:0; border:4px solid currentColor; border-radius:3px;}
+  .stamp i::after{content:""; position:absolute; inset:5px; border:1.4px solid currentColor;}
+  .stamp-sub{text-align:center; color:var(--ink-soft); font-size:13.5px; line-height:1.6;}
+
+  /* 서식 항목표 */
+  .form{margin-top:24px; border:1px solid var(--ink); border-radius:var(--radius);}
+  .form .r{display:grid; grid-template-columns:96px 1fr; border-bottom:1px solid var(--line);}
+  .form .r:last-child{border-bottom:none}
+  .form .k{padding:12px; font-size:12px; color:var(--ink-soft); background:var(--paper); border-right:1px solid var(--line); display:flex; align-items:center;}
+  .form .v{padding:12px 14px; font-size:15px; font-weight:600; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .form .v small{font-weight:400; color:var(--ink-soft); font-size:12px;}
+  .grid{display:flex; gap:5px;}
+  .grid i{width:20px; height:20px; border-radius:2px; background:var(--ink); position:relative;}
+  .grid i.x{background:var(--sheet); border:1.6px solid var(--stamp);}
+  .lvbar{flex:1; min-width:120px; height:8px; background:var(--paper); border:1px solid var(--line); border-radius:99px; overflow:hidden;}
+  .lvbar i{display:block; height:100%; width:62%; background:var(--ink); border-radius:99px;}
+
+  .cut{margin:24px 0 18px; border-top:2px dashed var(--line);}
+  .actions{display:flex; flex-direction:column; gap:10px;}
+  .btn{font-size:15px; font-weight:700; padding:16px 12px; border-radius:var(--radius); text-align:center;}
+  .btn-next{background:var(--ink); color:var(--sheet);}
+  .btn-ghost{background:var(--sheet); color:var(--ink); border:1px solid var(--line); font-weight:500; font-size:14px; padding:13px 12px;}
+  @media (min-width:768px){ .frame{align-items:center} .sheet{max-width:640px} }
+  @media (prefers-reduced-motion:no-preference){
+    .stamp{animation:slam .38s cubic-bezier(.22,1,.36,1) .15s backwards;}
+    @keyframes slam{from{opacity:0; transform:rotate(-4deg) scale(1.6)} to{opacity:1; transform:rotate(-4deg) scale(1)}}
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <main class="sheet">
+    <div class="head">
+      <div class="t"><b>아파트 감별사</b><small>감별 결과 통지서</small></div>
+      <div class="no mono">#2 · 09.11</div>
+    </div>
+    <div class="body">
+      <p class="doc-title">감별결과통지<b>제2호 감별 민원 처리 결과</b></p>
+
+      <div class="stamp-hero">
+        <span class="stamp"><i></i>부동산 카페 눈팅러</span>
+      </div>
+      <p class="stamp-sub">10문제 중 7문제 적중 · AI에 3번 속았습니다</p>
+
+      <div class="form">
+        <div class="r"><span class="k">판정</span><span class="v"><span class="grid"><i></i><i></i><i class="x"></i><i></i><i></i><i class="x"></i><i></i><i></i><i class="x"></i><i></i></span></span></div>
+        <div class="r"><span class="k">전국 순위</span><span class="v">상위 23% <small>표본 1,204명</small></span></div>
+        <div class="r"><span class="k">연속 접수</span><span class="v">4일째 <small>내일 자정 갱신</small></span></div>
+        <div class="r"><span class="k">감별사 등급</span><span class="v">Lv.2 견습 감별사 <span class="lvbar"><i></i></span> <small>+90점</small></span></div>
+      </div>
+
+      <div class="cut"></div>
+      <div class="actions">
+        <button class="btn btn-next">통지서 이미지 공유</button>
+        <button class="btn btn-ghost">무한 감별 계속</button>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
