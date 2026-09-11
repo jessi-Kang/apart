@@ -21,7 +21,7 @@
 ### 2-1. 출제 풀 (정적 파일, DB 아님)
 
 ```jsonc
-// web/data/apartments.json — K-apt 실데이터 5,469건 (서울 전수 + 경기·6대 광역시 표본)
+// web/data/apartments.json — K-apt 실데이터 7,532건 (서울 전수 + 시도 14곳 표본)
 { "items": [{
   "id": "kA10021295",        // "k" + kaptCode
   "name": "경희궁의아침4단지",
@@ -30,7 +30,7 @@
   "difficulty": "easy"       // easy | mid | hard (수집 시 규칙 라벨)
 }] }
 
-// web/data/fake_names.json — LLM 배치 생성 265건
+// web/data/fake_names.json — LLM 배치 생성 262건
 { "items": [{
   "id": "f01",
   "name": "e편한세상 더 프라임 노블",

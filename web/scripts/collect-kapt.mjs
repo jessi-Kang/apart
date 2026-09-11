@@ -43,7 +43,17 @@ const BASE_INFO = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphu
 const OUT = path.join(process.cwd(), "data", "apartments.collected.json");
 const LIMIT = Number(process.env.LIMIT ?? 800); // 기본정보 호출 상한 (일일 쿼터 보호)
 
-// 인자 없으면 서울(11)만. 시도코드: 행정표준코드 앞 2자리
+/**
+ * 시도코드 (행정표준코드 앞 2자리). 특별자치도 전환으로 바뀐 값이 있어 직접 찍어 확인했다.
+ *
+ *   11 서울  26 부산  27 대구  28 인천  30 대전  31 울산  36 세종  41 경기
+ *   43 충북  44 충남  47 경북  48 경남  50 제주
+ *   51 강원  ← 42가 아니다 (강원특별자치도)
+ *   52 전북  ← 45가 아니다 (전북특별자치도)
+ *
+ * 목록 API가 계속 0건을 돌려주는 코드: **29 광주, 46 전남.**
+ * 이웃 시도는 모두 정상이라 상류 데이터 구멍으로 본다. 바뀐 코드도 찾지 못했다.
+ */
 const SIDO_CODES = process.argv.slice(2).length ? process.argv.slice(2) : ["11"];
 
 const PET_NAMES = ["포레", "에듀", "노블", "퍼스티지", "센트럴", "리버", "레이크", "파크", "어반", "블리스", "그랑", "스카이", "뷰", "시티", "베뉴", "포레스트", "클래스"];
