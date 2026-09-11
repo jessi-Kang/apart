@@ -78,9 +78,14 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   opacity: 0.85; pointer-events: none; mix-blend-mode: multiply;
 }
 .home h1 { font-size: clamp(26px, 6.5vw, 36px); line-height: 1.25; letter-spacing: -0.03em; font-weight: 700; position: relative; max-width: 11ch; }
-.home h1 em { font-style: normal; color: var(--stamp); }
+.home h1 em { font-style: normal; color: var(--stamp); position: relative; }
+/* 결재하듯 손으로 그은 붉은 밑줄 */
+.home h1 em::after {
+  content: ""; position: absolute; left: -2%; right: -2%; bottom: -0.08em; height: 0.16em;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M2 7 Q 28 3.5, 54 6 T 98 4.5' fill='none' stroke='%23c73a2f' stroke-width='4.5' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+}
 .home .sub { margin-top: 12px; color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; max-width: 34ch; }
-.modes { margin-top: 20px; border-top: 1px solid var(--line); }
+.modes { margin-top: 24px; border-top: 1px solid var(--line); }
 .mode {
   width: 100%; text-align: left; background: none; border: none; cursor: pointer;
   display: flex; gap: 14px; align-items: baseline; padding: 17px 2px;
@@ -105,9 +110,14 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 .mode .dd { display: block; font-weight: 400; font-size: 13px; color: var(--ink-soft); margin-top: 4px; line-height: 1.55; }
 .mode .go-ic { margin-left: auto; color: var(--stamp); font-weight: 700; }
-.mode.lock { cursor: default; }
-.mode.lock .tt { color: var(--ink-soft); font-weight: 500; }
+.mode.lock { cursor: default; opacity: 0.65; padding-block: 14px; }
+.mode.lock .tt { color: var(--ink-soft); font-weight: 500; font-size: 15px; }
 .mode.lock:active { background: none; }
+@media (hover: hover) {
+  .mode:not(.lock):hover { background: var(--paper); }
+  .mode .go-ic { transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1); }
+  .mode:not(.lock):hover .go-ic { transform: translateX(4px); }
+}
 
 /* ---- 계정 상태 한 줄 (홈) ---- */
 .account-line { margin-top: 6px; font-size: 12.5px; color: var(--ink-soft); }
@@ -256,6 +266,20 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   @keyframes paper-in {
     from { opacity: 0; transform: translateY(14px) rotate(0.4deg); }
     to { opacity: 1; transform: none; }
+  }
+
+  /* 접수 창구 목록이 서류 넘기듯 차례로 놓인다 */
+  .modes > * { animation: paper-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+  .modes > *:nth-child(1) { animation-delay: 0.04s; }
+  .modes > *:nth-child(2) { animation-delay: 0.1s; }
+  .modes > *:nth-child(3) { animation-delay: 0.16s; }
+  .modes > *:nth-child(4) { animation-delay: 0.22s; }
+
+  /* 밑줄이 왼쪽에서 그어진다 */
+  .home h1 em::after { transform-origin: left; animation: underline-draw 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.3s backwards; }
+  @keyframes underline-draw {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
   }
 
   /* 판정 카드가 미끄러져 들어오고, 도장이 내리찍힌다 */

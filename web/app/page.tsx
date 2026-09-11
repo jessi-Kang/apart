@@ -67,7 +67,7 @@ export default function HomePage() {
                   감별 O/X<span className="daily-badge">오늘의 본편</span>
                 </span>
                 <span className="dd">
-                  오늘의 10문제 · <HomeStatus date={date} />
+                  하루 10문제 · <HomeStatus date={date} />
                 </span>
               </span>
               <span className="go-ic">→</span>
@@ -76,7 +76,7 @@ export default function HomePage() {
               <span className="no mono">2</span>
               <span>
                 <span className="tt">이름 조립</span>
-                <span className="dd">힌트 보고 실존 단지명 조립 · 매일 새 10문제</span>
+                <span className="dd">힌트로 실존 단지명 조립 · 매일 10문제</span>
               </span>
               <span className="go-ic">→</span>
             </Link>
