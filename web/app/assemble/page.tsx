@@ -419,6 +419,12 @@ export default function AssemblePage() {
               이 단지를 조립하세요: <b>{puzzle.hint.location}</b>
               <br />
               {puzzle.hint.builtYear}년 준공 · {puzzle.hint.households.toLocaleString()}세대
+              {phase === "solve" && hintMask && (
+                <p className="choseong">
+                  <span className="mono">{hintMask}</span>
+                  {!endless && <small>힌트 공개마다 −4점</small>}
+                </p>
+              )}
             </div>
 
             <TimerBar
@@ -427,13 +433,6 @@ export default function AssemblePage() {
               resetKey={endless ? `e${eCount}` : idx}
               onExpire={() => check(true)}
             />
-
-            {phase === "solve" && hintMask && (
-              <p className="choseong">
-                <span className="mono">{hintMask}</span>
-                {!endless && <small>힌트 공개마다 −4점</small>}
-              </p>
-            )}
 
             <div className="slots">
               {Array.from({ length: puzzle.answerLen }, (_, k) => {
