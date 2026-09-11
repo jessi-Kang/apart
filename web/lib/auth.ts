@@ -61,8 +61,17 @@ export async function readSession(): Promise<Session | null> {
   return verifySessionToken(store.get(SESSION_COOKIE)?.value);
 }
 
-/** 프록시(Vercel) 뒤에서도 올바른 외부 origin을 얻는다 */
+/**
+ * 프록시(Vercel) 뒤에서도 올바른 외부 origin을 얻는다.
+ *
+ * 프로덕션에서는 요청이 어느 주소로 들어왔든 정식 도메인으로 고정한다.
+ * 요청 호스트를 그대로 쓰면 베르셀이 만들어 주는 옛 주소로 들어온 사람의
+ * redirect_uri가 그 옛 주소로 만들어져 구글이 튕겼다. 미들웨어가 이미 정식
+ * 도메인으로 넘기지만, 리디렉션 URI는 한 글자만 어긋나도 로그인이 통째로
+ * 막히는 값이라 여기서도 못을 박는다.
+ */
 export function requestOrigin(req: Request): string {
+  if (process.env.VERCEL_ENV === "production") return "https://apt-game.app";
   const h = req.headers;
   const proto = h.get("x-forwarded-proto") ?? "https";
   const host = h.get("x-forwarded-host") ?? h.get("host");
