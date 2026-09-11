@@ -54,11 +54,16 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .sheet-footer span:last-child { flex-shrink: 0; white-space: nowrap; }
 .sheet-footer { flex-wrap: wrap; }
 .sheet-footer .copyright { flex-basis: 100%; white-space: normal; margin-top: 2px; }
-.sheet-footer .copyright a { color: inherit; text-underline-offset: 3px; }
+/* 링크는 밑줄 대신 진한 잉크로 구분하고, 호버·포커스에서 인주색으로 반응 */
+.sheet-footer .copyright a,
 .foot-install {
-  font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
-  text-decoration: underline; text-underline-offset: 3px;
+  color: var(--ink); font-weight: 500; text-decoration: none; transition: color 0.12s ease;
 }
+.foot-install { font-size: inherit; font-family: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.sheet-footer .copyright a:hover,
+.sheet-footer .copyright a:focus-visible,
+.foot-install:hover,
+.foot-install:focus-visible { color: var(--stamp); }
 .install-tip { display: block; margin-top: 6px; color: var(--stamp); }
 @media (max-width: 479px) {
   .sheet-footer { flex-direction: column; gap: 3px; align-items: flex-start; }
@@ -109,9 +114,13 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .account-line b { color: var(--ink); }
 .account-line a,
 .account-line button {
-  font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
-  text-decoration: underline; text-underline-offset: 3px;
+  font: inherit; font-weight: 500; color: var(--ink); background: none; border: 0; padding: 0;
+  cursor: pointer; text-decoration: none; transition: color 0.12s ease;
 }
+.account-line a:hover,
+.account-line a:focus-visible,
+.account-line button:hover,
+.account-line button:focus-visible { color: var(--stamp); }
 
 /* ---- 버튼 ---- */
 .btn {
