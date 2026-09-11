@@ -27,7 +27,7 @@ interface AnswerResponse {
   sample?: number;
 }
 
-type Phase = "loading" | "question" | "reveal" | "result" | "error";
+type Phase = "loading" | "question" | "reveal" | "result" | "eresult" | "error";
 
 const TIME_LIMIT = 12; // 초 — 이름 보고 직감으로 찍는 게임이라 짧게
 
@@ -53,8 +53,13 @@ export default function PlayPage() {
   const [run, setRun] = useState(0);
   const [eCount, setECount] = useState(0);
   const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
-  const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
+  const [sHits, setSHits] = useState(0); // 이번 세션 적중 수
+  const [sBest, setSBest] = useState(0); // 이번 세션 최고 연속
+  const [eCopied, setECopied] = useState(false);
   const qStart = useRef(0);
+  const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
+  const sessionTimes = useRef<number[]>([]); // 이번 세션 전체 풀이 시간(ms)
+  const startBest = useRef(0); // 세션 시작 시점의 역대 최고 (신기록 판정용)
 
   useEffect(() => {
     setERec(endlessRecord("ox"));
@@ -98,7 +103,12 @@ export default function PlayPage() {
       setEndless(true);
       setRun(0);
       setECount(0);
+      setSHits(0);
+      setSBest(0);
+      setECopied(false);
       runTimes.current = [];
+      sessionTimes.current = [];
+      startBest.current = endlessRecord("ox").best;
       setReveal(null);
       setPhase("question");
     } catch {
@@ -110,6 +120,22 @@ export default function PlayPage() {
 
   const runAvgMs = () =>
     runTimes.current.length ? Math.round(runTimes.current.reduce((a, b) => a + b, 0) / runTimes.current.length) : null;
+  const sessionAvgMs = () =>
+    sessionTimes.current.length
+      ? Math.round(sessionTimes.current.reduce((a, b) => a + b, 0) / sessionTimes.current.length)
+      : null;
+
+  function finishEndless() {
+    sfxResult();
+    setPhase("eresult");
+  }
+
+  function shareEndless() {
+    sfxTap();
+    const avg = fmtSec(sessionAvgMs());
+    const text = `아파트 감별사 무한 감별 🔥\n${eCount}문제 ${sHits}적중 · 최고 연속 ${sBest}${avg ? ` · 평균 ${avg}` : ""}\n${location.origin}`;
+    navigator.clipboard?.writeText(text).then(() => setECopied(true));
+  }
 
   async function answer(choice: "real" | "fake" | "timeout") {
     if (busy || phase !== "question") return;
@@ -129,10 +155,13 @@ export default function PlayPage() {
         setReveal(data);
         setTimedOut(choice === "timeout");
         setECount((c) => c + 1);
+        sessionTimes.current.push(dt);
         if (data.correct) {
           runTimes.current.push(dt);
           const nextRun = run + 1;
           setRun(nextRun);
+          setSHits((h) => h + 1);
+          setSBest((b) => Math.max(b, nextRun));
           setERec(bumpEndlessRecord("ox", nextRun, runAvgMs()));
           sfxStampRight();
         } else {
@@ -359,8 +388,59 @@ export default function PlayPage() {
                 <button className="btn btn-next full" onClick={next} disabled={busy}>
                   {endless ? "다음 문제 계속" : idx + 1 === quiz!.items.length ? "감별 등급 확인" : "다음 문제"}
                 </button>
+                {endless && (
+                  <button className="btn btn-ghost full" onClick={finishEndless} disabled={busy}>
+                    여기까지 — 세션 결과 보기
+                  </button>
+                )}
               </div>
             )}
+          </section>
+        )}
+
+        {phase === "eresult" && (
+          <section className="screen result">
+            <p className="score-label mono">무한 감별 세션 결과</p>
+            <p className="big">
+              {sHits} / {eCount}
+            </p>
+            <p className="grade-desc">
+              {sBest > startBest.current
+                ? `신기록! 최고 연속 ${sBest}. 어제의 나를 이겼습니다.`
+                : eCount > 0 && sHits / eCount >= 0.8
+                  ? "감별력이 물이 올랐습니다. 기록까지 조금 남았습니다."
+                  : eCount > 0 && sHits / eCount >= 0.5
+                    ? "반타작 이상. AI 작명도 만만치 않죠."
+                    : "AI가 오늘은 한 수 위였습니다. 설욕전을 권합니다."}
+            </p>
+            <ul className="review">
+              <li>
+                <span className="nm">이번 세션 최고 연속</span>
+                <span className="tag">{sBest}{sBest > startBest.current ? " · 신기록" : ""}</span>
+              </li>
+              <li>
+                <span className="nm">평균 풀이 시간</span>
+                <span className="tag">{fmtSec(sessionAvgMs()) ?? "-"}</span>
+              </li>
+              <li>
+                <span className="nm">역대 최고 연속</span>
+                <span className="tag">
+                  {eRec.best}
+                  {fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}
+                </span>
+              </li>
+            </ul>
+            <div className="result-actions">
+              <button className="btn btn-next" onClick={startEndless} disabled={busy}>
+                다시 무한 감별 — 기록 깨러 가기
+              </button>
+              <button className="btn btn-ghost" onClick={shareEndless}>
+                {eCopied ? "복사 완료. 붙여넣기만 하면 됩니다" : "세션 결과 복사해서 자랑하기"}
+              </button>
+              <Link className="btn btn-ghost" href="/">
+                창구로 돌아가기
+              </Link>
+            </div>
           </section>
         )}
 

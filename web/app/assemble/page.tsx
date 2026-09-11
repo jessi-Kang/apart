@@ -35,7 +35,7 @@ interface CheckResponse {
   meta: { location: string; builtYear: number; households: number };
 }
 
-type Phase = "loading" | "solve" | "reveal" | "done" | "error";
+type Phase = "loading" | "solve" | "reveal" | "done" | "eresult" | "error";
 
 const RESULT_KEY = "aptgam:assemble";
 const TIME_LIMIT = 40; // 초 — 조각을 읽고 조립할 시간이 필요하다
@@ -60,7 +60,12 @@ export default function AssemblePage() {
   const [run, setRun] = useState(0);
   const [eCount, setECount] = useState(0);
   const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
+  const [sHits, setSHits] = useState(0);
+  const [sBest, setSBest] = useState(0);
+  const [eCopied, setECopied] = useState(false);
   const runTimes = useRef<number[]>([]);
+  const sessionTimes = useRef<number[]>([]);
+  const startBest = useRef(0);
   const qStart = useRef(0);
 
   useEffect(() => {
@@ -107,7 +112,12 @@ export default function AssemblePage() {
       setEndless(true);
       setRun(0);
       setECount(0);
+      setSHits(0);
+      setSBest(0);
+      setECopied(false);
       runTimes.current = [];
+      sessionTimes.current = [];
+      startBest.current = endlessRecord("assemble").best;
       setPicked([]);
       setReveal(null);
       setPhase("solve");
@@ -131,6 +141,22 @@ export default function AssemblePage() {
 
   const runAvgMs = () =>
     runTimes.current.length ? Math.round(runTimes.current.reduce((a, b) => a + b, 0) / runTimes.current.length) : null;
+  const sessionAvgMs = () =>
+    sessionTimes.current.length
+      ? Math.round(sessionTimes.current.reduce((a, b) => a + b, 0) / sessionTimes.current.length)
+      : null;
+
+  function finishEndless() {
+    sfxResult();
+    setPhase("eresult");
+  }
+
+  function shareEndless() {
+    sfxTap();
+    const avg = fmtSec(sessionAvgMs());
+    const text = `아파트 감별사 무한 조립 🧩\n${eCount}퍼즐 ${sHits}성공 · 최고 연속 ${sBest}${avg ? ` · 평균 ${avg}` : ""}\n${location.origin}`;
+    navigator.clipboard?.writeText(text).then(() => setECopied(true));
+  }
 
   /** fromTimeout=true면 미완성 조립이라도 그대로 제출한다 (시간 초과) */
   async function check(fromTimeout = false) {
@@ -158,10 +184,13 @@ export default function AssemblePage() {
       setTimedOut(fromTimeout && !data.correct);
       if (endless) {
         setECount((c) => c + 1);
+        sessionTimes.current.push(dt);
         if (data.correct) {
           runTimes.current.push(dt);
           const nextRun = run + 1;
           setRun(nextRun);
+          setSHits((h) => h + 1);
+          setSBest((b) => Math.max(b, nextRun));
           setERec(bumpEndlessRecord("assemble", nextRun, runAvgMs()));
           sfxStampRight();
         } else {
@@ -368,8 +397,57 @@ export default function AssemblePage() {
                 <button className="btn btn-next full" onClick={next} disabled={busy}>
                   {endless ? "다음 퍼즐 계속" : idx + 1 === total ? "결과 보기" : "다음 문제"}
                 </button>
+                {endless && (
+                  <button className="btn btn-ghost full" onClick={finishEndless} disabled={busy}>
+                    여기까지 — 세션 결과 보기
+                  </button>
+                )}
               </div>
             )}
+          </section>
+        )}
+
+        {phase === "eresult" && (
+          <section className="screen result">
+            <p className="score-label mono">무한 조립 세션 결과</p>
+            <p className="big">
+              {sHits} / {eCount}
+            </p>
+            <p className="grade-desc">
+              {sBest > startBest.current
+                ? `신기록! 최고 연속 ${sBest}. 조립 손맛이 올라왔습니다.`
+                : eCount > 0 && sHits / eCount >= 0.7
+                  ? "함정 조각이 안 통하는 수준입니다."
+                  : "함정 조각의 승리. 다음 세션에서 설욕을."}
+            </p>
+            <ul className="review">
+              <li>
+                <span className="nm">이번 세션 최고 연속</span>
+                <span className="tag">{sBest}{sBest > startBest.current ? " · 신기록" : ""}</span>
+              </li>
+              <li>
+                <span className="nm">평균 조립 시간</span>
+                <span className="tag">{fmtSec(sessionAvgMs()) ?? "-"}</span>
+              </li>
+              <li>
+                <span className="nm">역대 최고 연속</span>
+                <span className="tag">
+                  {eRec.best}
+                  {fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}
+                </span>
+              </li>
+            </ul>
+            <div className="result-actions">
+              <button className="btn btn-next" onClick={startEndless} disabled={busy}>
+                다시 무한 조립 — 기록 깨러 가기
+              </button>
+              <button className="btn btn-ghost" onClick={shareEndless}>
+                {eCopied ? "복사 완료. 붙여넣기만 하면 됩니다" : "세션 결과 복사해서 자랑하기"}
+              </button>
+              <Link className="btn btn-ghost" href="/">
+                창구로 돌아가기
+              </Link>
+            </div>
           </section>
         )}
 

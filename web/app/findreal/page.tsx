@@ -26,7 +26,7 @@ interface CheckResponse {
   meta: { location: string; builtYear: number; households: number };
 }
 
-type Phase = "loading" | "solve" | "reveal" | "done" | "error";
+type Phase = "loading" | "solve" | "reveal" | "done" | "eresult" | "error";
 
 const RESULT_KEY = "aptgam:findreal";
 const TIME_LIMIT = 15; // 초 — 4개를 읽고 고를 시간
@@ -50,6 +50,11 @@ export default function FindRealPage() {
   const [endless, setEndless] = useState(false);
   const [eOptions, setEOptions] = useState<string[] | null>(null);
   const [eCount, setECount] = useState(0);
+  const [sHits, setSHits] = useState(0);
+  const [sMaxCombo, setSMaxCombo] = useState(0); // 세션 중 도달한 최고 콤보
+  const [eCopied, setECopied] = useState(false);
+  const sessionTimes = useRef<number[]>([]);
+  const startBest = useRef(0);
   const qStart = useRef(0);
 
   useEffect(() => {
@@ -97,6 +102,11 @@ export default function FindRealPage() {
       await fetchEndless();
       setEndless(true);
       setECount(0);
+      setSHits(0);
+      setSMaxCombo(0);
+      setECopied(false);
+      sessionTimes.current = [];
+      startBest.current = comboState().best;
       setPicked(null);
       setReveal(null);
       setPhase("solve");
@@ -133,12 +143,17 @@ export default function FindRealPage() {
       setReveal(data);
       setTimedOut(option === null);
       if (!endless) setMarks((m) => [...m, data.correct]);
-      else setECount((c) => c + 1);
+      else {
+        setECount((c) => c + 1);
+        sessionTimes.current.push(dt);
+        if (data.correct) setSHits((h) => h + 1);
+      }
       if (data.correct) sfxStampRight();
       else sfxStampWrong();
       // 콤보는 데일리·무한 공통 기록 — 풀이 시간도 함께 쌓는다
       const next = applyComboPick(data.correct, dt);
       setCombo(next);
+      if (endless) setSMaxCombo((m) => Math.max(m, next.current));
       if (next.current >= 2) sfxCombo();
       setPhase("reveal");
     } catch {
@@ -183,6 +198,22 @@ export default function FindRealPage() {
 
   const hits = marks.filter(Boolean).length;
   const runAvg = combo.runCount ? fmtSec((combo.runTotalMs ?? 0) / combo.runCount) : null;
+  const sessionAvgMs = () =>
+    sessionTimes.current.length
+      ? Math.round(sessionTimes.current.reduce((a, b) => a + b, 0) / sessionTimes.current.length)
+      : null;
+
+  function finishEndless() {
+    sfxResult();
+    setPhase("eresult");
+  }
+
+  function shareEndless() {
+    sfxTap();
+    const avg = fmtSec(sessionAvgMs());
+    const text = `아파트 감별사 무한 진짜 찾기 🎯\n${eCount}라운드 ${sHits}적중 · 최고 콤보 ${sMaxCombo}${avg ? ` · 평균 ${avg}` : ""}\n${location.origin}`;
+    navigator.clipboard?.writeText(text).then(() => setECopied(true));
+  }
 
   function share() {
     if (!quiz) return;
@@ -315,9 +346,58 @@ export default function FindRealPage() {
                   <button className="btn btn-next full" onClick={next} disabled={busy}>
                     {endless ? "다음 라운드 계속" : idx + 1 === total ? "결과 보기" : "다음 라운드"}
                   </button>
+                  {endless && (
+                    <button className="btn btn-ghost full" onClick={finishEndless} disabled={busy}>
+                      여기까지 — 세션 결과 보기
+                    </button>
+                  )}
                 </div>
               </>
             )}
+          </section>
+        )}
+
+        {phase === "eresult" && (
+          <section className="screen result">
+            <p className="score-label mono">무한 진짜 찾기 세션 결과</p>
+            <p className="big">
+              {sHits} / {eCount}
+            </p>
+            <p className="grade-desc">
+              {sMaxCombo > startBest.current
+                ? `신기록! 최고 콤보 ${sMaxCombo}. 어제의 나를 이겼습니다.`
+                : combo.current > 0
+                  ? `콤보 ${combo.current} 유지 중 — 다음 세션에서 이어집니다.`
+                  : "콤보가 끊긴 채 마감. 다음 세션에서 다시 쌓으세요."}
+            </p>
+            <ul className="review">
+              <li>
+                <span className="nm">세션 중 최고 콤보</span>
+                <span className="tag">{sMaxCombo}{sMaxCombo > startBest.current ? " · 신기록" : ""}</span>
+              </li>
+              <li>
+                <span className="nm">평균 판단 시간</span>
+                <span className="tag">{fmtSec(sessionAvgMs()) ?? "-"}</span>
+              </li>
+              <li>
+                <span className="nm">역대 최고 콤보</span>
+                <span className="tag">
+                  {combo.best}
+                  {fmtSec(combo.bestAvgMs) ? ` (평균 ${fmtSec(combo.bestAvgMs)})` : ""}
+                </span>
+              </li>
+            </ul>
+            <div className="result-actions">
+              <button className="btn btn-next" onClick={startEndless} disabled={busy}>
+                다시 무한 찾기 — 콤보 이어가기
+              </button>
+              <button className="btn btn-ghost" onClick={shareEndless}>
+                {eCopied ? "복사 완료. 붙여넣기만 하면 됩니다" : "세션 결과 복사해서 자랑하기"}
+              </button>
+              <Link className="btn btn-ghost" href="/">
+                창구로 돌아가기
+              </Link>
+            </div>
           </section>
         )}
 
