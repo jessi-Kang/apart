@@ -3,6 +3,7 @@ import { kstDateString, episodeNumber } from "@/lib/daily";
 import { AccountBar } from "@/components/AccountBar";
 import { DailyChop, FindTail, OxTail } from "@/components/LedgerStatus";
 import { LevelChip } from "@/components/LevelBar";
+import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 
 export const dynamic = "force-dynamic";
@@ -36,8 +37,8 @@ export default function HomePage() {
             <b>아파트 감별사</b>
             <small>감별 민원 접수 창구</small>
           </div>
-          <div className="form-no mono">
-            <span>제{ep}호</span>
+          <div className="form-no">
+            <span>#{ep}</span>
             <span>
               {mm}.{dd}
             </span>
@@ -45,6 +46,9 @@ export default function HomePage() {
         </header>
 
         <section className="screen home">
+          <div className="home-seal" aria-hidden="true">
+            <Seal size={124} />
+          </div>
           <h1>
             오늘 처리할
             <br />
