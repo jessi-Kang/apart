@@ -140,7 +140,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .result .score-label { font-size: 13px; color: var(--ink-soft); }
 .result .big { font-size: clamp(46px, 13vw, 72px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.05; margin-top: 6px; }
 .stamp {
-  position: relative; display: inline-block; margin-top: 18px;
+  position: relative; display: inline-block; margin-top: 26px;
   color: var(--stamp); transform: rotate(-2.5deg); align-self: flex-start;
   max-width: 100%;
 }
@@ -149,8 +149,12 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   position: relative; display: block; padding: 14px 22px;
   font-weight: 700; font-size: clamp(18px, 5vw, 24px); letter-spacing: -0.02em;
 }
-.grade-desc { margin-top: 16px; color: var(--ink-soft); font-size: 14px; line-height: 1.65; max-width: 32ch; }
-.grid-line { margin-top: 22px; display: flex; gap: 6px; }
+.grade-desc { margin-top: 20px; color: var(--ink-soft); font-size: 14px; line-height: 1.65; max-width: 32ch; }
+/* 판정부(점수·등급 도장)와 기록부(그리드·복기)를 절취선으로 구분 */
+.grid-line {
+  margin-top: 30px; padding-top: 24px; border-top: 1px dashed var(--line);
+  width: 100%; display: flex; gap: 6px;
+}
 .grid-line svg { display: block; }
 @media (max-width: 419px) {
   /* 26px 고정 10칸은 360px대에서 줄이 꺾인다 — 한 줄 유지가 공유 그리드의 정체성 */
@@ -158,9 +162,9 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .grid-line > * { flex: 1; min-width: 0; }
   .grid-line svg { width: 100%; max-width: 26px; height: auto; margin: 0 auto; }
 }
-.top-note { margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
+.top-note { margin-top: 16px; font-size: 13px; color: var(--ink-soft); }
 .top-note b { color: var(--stamp); }
-.review { margin-top: 20px; border-top: 1px solid var(--line); }
+.review { margin-top: 26px; border-top: 1px solid var(--line); }
 .review li {
   list-style: none; display: flex; justify-content: space-between; gap: 12px;
   padding: 11px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px;
