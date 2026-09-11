@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * 공유 이미지 생성 (감별 결과 통지서, 1080×1350 캔버스 → PNG)
- * 구성은 듀오링고식(히어로 → 큰 타이포 → 스탯 카드 → 링크),
- * 비주얼은 확정 시안 A의 접수 서류 물성(종이·잉크·도장 빨강)을 따른다.
+ * 공유 이미지 생성 (확정 시안 S2 "접수증", 1080×1350 캔버스 → PNG)
+ * 창구에서 뽑아준 영수증 한 장이 콘셉트다. 절취 지그재그 종이 위에
+ * 괘선과 열거식 항목, 맨 아래 등급 도장과 바코드.
  * 런타임 의존성 0: Canvas 2D로 직접 그린다.
  */
 
@@ -17,20 +17,19 @@ export interface ShareCardData {
   episode: number;
   date: string; // YYYY-MM-DD
   subtitle: string; // "감별 결과 통지서" 등 모드별 서류명
-  headerRight?: string; // 지정 시 "#회차 · 날짜" 대신 이 문구 (무한 모드용)
+  headerRight?: string; // 지정 시 "제N호 · 날짜" 대신 이 문구 (무한 모드용)
   score: number;
   total: number;
   totalText?: string; // 지정 시 "/ total" 대신 이 단위 표기 (예: "연속")
   marks: boolean[];
   gradeName: string;
-  stats: ShareStat[]; // 2장 또는 4장 (2장 단위 행)
+  stats: ShareStat[];
 }
 
 const PAPER = "#f6f6f3";
 const SHEET = "#fdfdfb";
 const INK = "#1b1b1e";
 const INK_SOFT = "#5c5c62";
-const LINE = "#d9d9d3";
 const STAMP = "#c73a2f";
 
 const W = 1080;
@@ -43,6 +42,37 @@ function font(weight: number, size: number, family = SANS) {
   return `${weight} ${size}px ${family}`;
 }
 
+/** 숫자·기호만 있는 값은 모노로 — 영수증의 금액 열처럼 자리가 맞는다 */
+function isNumeric(text: string) {
+  return /^[\x20-\x7E·]+$/.test(text);
+}
+
+/**
+ * 자간을 준 텍스트. ctx.letterSpacing은 브라우저 지원이 갈려
+ * 글자 단위로 직접 배치한다 (영수증 서식의 정체성이 자간이라 포기할 수 없다).
+ */
+function fillTracked(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  tracking: number,
+  align: "left" | "center" | "right" = "left",
+) {
+  const chars = [...text];
+  const widths = chars.map((c) => ctx.measureText(c).width);
+  const total = widths.reduce((a, b) => a + b, 0) + tracking * Math.max(0, chars.length - 1);
+  let cx = align === "left" ? x : align === "center" ? x - total / 2 : x - total;
+  const prevAlign = ctx.textAlign;
+  ctx.textAlign = "left";
+  chars.forEach((c, i) => {
+    ctx.fillText(c, cx, y);
+    cx += widths[i] + tracking;
+  });
+  ctx.textAlign = prevAlign;
+  return total;
+}
+
 /** SVG 문자열을 이미지로 래스터 (feTurbulence 등 SVG 필터가 그대로 적용된다) */
 function svgImage(svg: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -53,8 +83,7 @@ function svgImage(svg: string): Promise<HTMLImageElement> {
   });
 }
 
-/** 관인: 도형부는 웹 Seal 컴포넌트와 동일한 SVG(feTurbulence 포함)를 래스터해
- * 질감까지 똑같이 가져오고, 링 텍스트만 페이지 폰트로 캔버스에 그린다 */
+/** 관인: 웹 Seal 컴포넌트와 같은 SVG(feTurbulence 포함)를 래스터해 질감까지 맞춘다 */
 const SEAL_SHAPE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <filter id="sr" x="-8%" y="-8%" width="116%" height="116%">
     <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7" result="n"/>
@@ -72,7 +101,7 @@ const SEAL_SHAPE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200
       <rect x="84" y="72" width="32" height="52" rx="2"/>
       <rect x="92" y="65" width="16" height="7" rx="1.5"/>
     </g>
-    <g fill="${SHEET}">
+    <g fill="${PAPER}">
       <rect x="89" y="79" width="8" height="7" rx="1"/>
       <rect x="103" y="79" width="8" height="7" rx="1"/>
       <rect x="89" y="91" width="8" height="7" rx="1"/>
@@ -84,42 +113,22 @@ const SEAL_SHAPE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200
   </g>
 </svg>`;
 
-async function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, alpha = 1) {
+/** 종이에 남은 도장 흔적 — 영수증 뒤 배경 장식 */
+async function drawGhostSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate((-12 * Math.PI) / 180); // 손으로 찍은 도장은 반듯할 수 없다 — 홈 관인과 같은 기울기
-  ctx.globalAlpha = alpha;
+  ctx.rotate((10 * Math.PI) / 180);
+  ctx.globalAlpha = 0.12;
   try {
     const img = await svgImage(SEAL_SHAPE_SVG);
     ctx.drawImage(img, -r, -r, r * 2, r * 2);
   } catch {
-    // SVG 래스터 실패 시 민무늬 원으로 폴백
     ctx.strokeStyle = STAMP;
-    ctx.lineWidth = r * 0.055;
+    ctx.lineWidth = r * 0.09;
     ctx.beginPath();
-    ctx.arc(0, 0, r * 0.92, 0, Math.PI * 2);
+    ctx.arc(0, 0, r * 0.9, 0, Math.PI * 2);
     ctx.stroke();
   }
-  // 링 텍스트: 밴드 중앙(0.68r)에 글자 중심 정렬 — 웹 Seal의 central 정렬과 동일
-  ctx.fillStyle = STAMP;
-  const ringText = (text: string, radius: number, size: number, top: boolean) => {
-    ctx.font = font(700, size);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    const chars = [...text.replace(/\s/g, "")];
-    const step = (21 * Math.PI) / 180; // 글자당 21° — 웹과 동일
-    const total = step * (chars.length - 1);
-    for (let i = 0; i < chars.length; i++) {
-      const a = top ? -total / 2 + step * i : total / 2 - step * i;
-      ctx.save();
-      ctx.rotate(a);
-      ctx.translate(0, top ? -radius : radius);
-      ctx.fillText(chars[i], 0, 0);
-      ctx.restore();
-    }
-  };
-  ringText("아파트 감별사", r * 0.68, r * 0.16, true);
-  ringText("감별민원 접수처", r * 0.68, r * 0.14, false);
   ctx.restore();
 }
 
@@ -159,8 +168,7 @@ function drawTile(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   ctx.restore();
 }
 
-/** 등급 도장: 결과 페이지 Stamp 컴포넌트의 SVG 프레임을 그대로 래스터.
- * viewBox 240×72를 목표 크기로 늘리는 것까지 웹(preserveAspectRatio:none)과 동일 */
+/** 등급 도장 프레임: 결과 화면 Stamp 컴포넌트의 SVG를 그대로 래스터 */
 function stampFrameSvg(w: number, h: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 240 72" preserveAspectRatio="none">
   <filter id="fr" x="-10%" y="-18%" width="120%" height="136%">
@@ -174,57 +182,47 @@ function stampFrameSvg(w: number, h: number): string {
 </svg>`;
 }
 
-async function drawGradeStamp(ctx: CanvasRenderingContext2D, cx: number, cy: number, text: string) {
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate((-3.5 * Math.PI) / 180);
-  ctx.globalAlpha = 0.92; // 꽉 찬 원색보다 살짝 눌린 인주 느낌
-  ctx.font = font(700, 58);
-  const tw = ctx.measureText(text).width;
-  const w = tw + 110;
-  const h = 128;
-  try {
-    const img = await svgImage(stampFrameSvg(w, h));
-    ctx.drawImage(img, -w / 2, -h / 2, w, h);
-  } catch {
-    // 폴백: 민무늬 이중 테두리
-    ctx.strokeStyle = STAMP;
-    ctx.lineWidth = 7;
-    ctx.strokeRect(-w / 2 + 4, -h / 2 + 4, w - 8, h - 8);
+/** 절취선 지그재그를 위아래에 문 영수증 외곽 경로 */
+function tapePath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  const tooth = 40; // 톱니 하나의 폭
+  const depth = 18; // 톱니 깊이
+  const n = Math.max(2, Math.round(w / tooth));
+  const step = w / n;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  for (let i = 0; i < n; i++) {
+    ctx.lineTo(x + step * (i + 0.5), y - depth);
+    ctx.lineTo(x + step * (i + 1), y);
   }
-  ctx.fillStyle = STAMP;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, 0, 3);
-  ctx.restore();
+  ctx.lineTo(x + w, y + h);
+  for (let i = n; i > 0; i--) {
+    ctx.lineTo(x + step * (i - 0.5), y + h + depth);
+    ctx.lineTo(x + step * (i - 1), y + h);
+  }
+  ctx.closePath();
 }
 
-function drawStatCard(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  value: string,
-  label: string,
-  accent = false,
-) {
+/** 바코드: 날짜·점수에서 뽑은 시드로 굵기를 흩는다 (매번 같은 판은 같은 무늬) */
+function drawBarcode(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, seedKey: string) {
+  let seed = 2166136261;
+  for (const ch of seedKey) {
+    seed ^= ch.charCodeAt(0);
+    seed = Math.imul(seed, 16777619);
+  }
+  const rand = () => {
+    seed = Math.imul(seed ^ (seed >>> 15), seed | 1);
+    seed ^= seed + Math.imul(seed ^ (seed >>> 7), seed | 61);
+    return ((seed ^ (seed >>> 14)) >>> 0) / 4294967296;
+  };
   ctx.save();
-  ctx.fillStyle = SHEET;
-  ctx.strokeStyle = LINE;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, 4);
-  ctx.fill();
-  ctx.stroke();
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = accent ? STAMP : INK;
-  ctx.font = font(700, 46);
-  ctx.fillText(value, x + 34, y + h / 2 + 0);
-  ctx.fillStyle = INK_SOFT;
-  ctx.font = font(500, 23);
-  ctx.fillText(label, x + 34, y + h / 2 + 42);
+  ctx.fillStyle = INK;
+  let cx = x;
+  while (cx < x + w) {
+    const bar = 3 + Math.floor(rand() * 7);
+    const gap = 4 + Math.floor(rand() * 7);
+    ctx.fillRect(cx, y, Math.min(bar, x + w - cx), h);
+    cx += bar + gap;
+  }
   ctx.restore();
 }
 
@@ -232,9 +230,10 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   // 캔버스는 document.fonts에 로드된 페이지 폰트를 그대로 쓴다 — 먼저 로드 보장
   try {
     await Promise.all([
-      document.fonts.load(`700 90px ${SANS}`),
-      document.fonts.load(`500 30px ${SANS}`),
-      document.fonts.load(`400 28px ${MONO}`),
+      document.fonts.load(`700 34px ${SANS}`),
+      document.fonts.load(`500 24px ${SANS}`),
+      document.fonts.load(`500 24px ${MONO}`),
+      document.fonts.load(`700 30px ${MONO}`),
     ]);
   } catch {
     /* 폰트 로드 실패 시 시스템 폰트로 진행 */
@@ -245,96 +244,182 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   canvas.height = H;
   const ctx = canvas.getContext("2d")!;
 
-  // 종이 바탕 + 시트
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
-  const M = 56; // 시트 여백
-  ctx.fillStyle = SHEET;
-  ctx.strokeStyle = LINE;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(M, M, W - M * 2, H - M * 2, 4);
-  ctx.fill();
-  ctx.stroke();
+  await drawGhostSeal(ctx, W - 196, H - 212, 150);
 
-  const left = M + 56;
-  const right = W - M - 56;
+  const [yyyy, mm, dd] = data.date.split("-");
+  const modeName = data.subtitle.replace(/\s*(통지서|접수증|신청서)$/, "");
+  const issued = data.headerRight ?? `제${data.episode}호 · ${yyyy}.${mm}.${dd}`;
+  // 본편은 "적중 7 / 10", 무한은 "최고 연속 12" — 판의 성적표 한 줄
+  const hitLabel = data.totalText ? `최고 ${data.totalText}` : "적중";
+  const hitValue = data.totalText ? String(data.score) : `${data.score} / ${data.total}`;
 
-  // 헤더 + 공문서 이중 괘선
-  ctx.fillStyle = INK;
-  ctx.textAlign = "left";
-  ctx.font = font(700, 40);
-  ctx.fillText("아파트 감별사", left, M + 92);
-  ctx.fillStyle = INK_SOFT;
-  ctx.font = font(400, 27);
-  ctx.fillText(data.subtitle, left, M + 136);
-  ctx.textAlign = "right";
-  ctx.font = font(400, 28, MONO);
-  const [, mm, dd] = data.date.split("-");
-  ctx.fillText(data.headerRight ?? `#${data.episode} · ${mm}.${dd}`, right, M + 100);
-  ctx.fillStyle = INK;
-  ctx.fillRect(M, M + 172, W - M * 2, 5);
-  ctx.fillRect(M, M + 183, W - M * 2, 2);
+  const TAPE_W = 692;
+  const TAPE_X = (W - TAPE_W) / 2;
+  const PAD_X = 46;
+  const inX = TAPE_X + PAD_X;
+  const inW = TAPE_W - PAD_X * 2;
 
-  // 히어로: 큰 점수 + 등급 도장 + 관인
-  ctx.fillStyle = INK;
-  ctx.textAlign = "center";
-  ctx.font = font(700, 230);
-  ctx.fillText(String(data.score), W / 2 - 60, 512);
-  ctx.fillStyle = INK_SOFT;
-  ctx.font = font(700, 72);
-  ctx.fillText(data.totalText ?? `/ ${data.total}`, W / 2 + 128, 500);
-  await drawSeal(ctx, right - 100, 330, 128, 0.4); // 관인은 배경 장식 — 등급 도장이 주인공
-  await drawGradeStamp(ctx, W / 2, 640, data.gradeName);
+  // 등급 도장 크기는 글자 폭에 맞춘다 — 먼저 재고 나서 레이아웃을 짠다
+  ctx.font = font(700, 31);
+  const stampW = Math.min(inW, ctx.measureText(data.gradeName).width + 78);
+  const stampH = 104;
+  const stampImg = await svgImage(stampFrameSvg(stampW, stampH)).catch(() => null);
 
-  // 판정부/기록부 절취선 (웹 결과 화면과 동일한 구분)
-  ctx.strokeStyle = LINE;
-  ctx.lineWidth = 2;
-  ctx.setLineDash([8, 8]);
-  ctx.beginPath();
-  ctx.moveTo(left, 756);
-  ctx.lineTo(right, 756);
-  ctx.stroke();
-  ctx.setLineDash([]);
+  // 블록을 먼저 쌓아 전체 높이를 구한 뒤, 종이를 그 높이로 그린다
+  type Block = { h: number; draw: (y: number) => void };
+  const blocks: Block[] = [];
+  const space = (h: number) => blocks.push({ h, draw: () => undefined });
 
-  // 판정 그리드 (한 줄)
-  const ts = 66;
-  const gap = 14;
-  const gw = ts * data.marks.length + gap * (data.marks.length - 1);
-  let gx = (W - gw) / 2;
-  for (const m of data.marks) {
-    drawTile(ctx, gx, 794, ts, m);
-    gx += ts + gap;
-  }
+  const rule = () => {
+    space(22);
+    blocks.push({
+      h: 3,
+      draw: (y) => {
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 9]);
+        ctx.beginPath();
+        ctx.moveTo(inX, y + 1.5);
+        ctx.lineTo(inX + inW, y + 1.5);
+        ctx.stroke();
+        ctx.restore();
+      },
+    });
+    space(22);
+  };
 
-  // 스탯 카드 (2장 단위 행 — 푸터 점선과 겹치지 않게 배치)
-  const cw = (right - left - 24) / 2;
-  const ch = 124;
-  const rows = Math.ceil(data.stats.length / 2);
-  const cy = rows === 1 ? 972 : 902;
-  data.stats.forEach((st, i) => {
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    drawStatCard(ctx, left + col * (cw + 24), cy + row * (ch + 20), cw, ch, st.value, st.label, st.accent ?? false);
+  const row = (label: string, value: string, opts: { bold?: boolean; accent?: boolean } = {}) => {
+    const size = opts.bold ? 28 : 24;
+    blocks.push({
+      h: opts.bold ? 52 : 46,
+      draw: (y) => {
+        const base = y + (opts.bold ? 36 : 32);
+        ctx.textBaseline = "alphabetic";
+        ctx.textAlign = "left";
+        ctx.fillStyle = opts.bold ? INK : INK_SOFT;
+        ctx.font = font(opts.bold ? 700 : 500, size);
+        ctx.fillText(label, inX, base);
+        ctx.textAlign = "right";
+        ctx.fillStyle = opts.accent ? STAMP : INK;
+        ctx.font = font(opts.bold ? 700 : 500, size, isNumeric(value) ? MONO : SANS);
+        ctx.fillText(value, inX + inW, base);
+      },
+    });
+  };
+
+  space(54);
+  blocks.push({
+    h: 44,
+    draw: (y) => {
+      ctx.fillStyle = INK;
+      ctx.font = font(700, 34);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      fillTracked(ctx, "아파트 감별사", TAPE_X + TAPE_W / 2, y + 34, 4.2, "center");
+    },
   });
+  space(10);
+  blocks.push({
+    h: 28,
+    draw: (y) => {
+      ctx.fillStyle = INK_SOFT;
+      ctx.font = font(400, 21);
+      fillTracked(ctx, `감별 민원 접수증 · ${issued}`, TAPE_X + TAPE_W / 2, y + 21, 1.3, "center");
+    },
+  });
+  rule();
+  row(modeName, data.totalText ? `${data.total}판` : `${data.total}문`);
 
-  // 푸터
-  ctx.strokeStyle = LINE;
-  ctx.lineWidth = 2;
-  ctx.setLineDash([8, 8]);
-  ctx.beginPath();
-  ctx.moveTo(left, H - M - 108);
-  ctx.lineTo(right, H - M - 108);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.textAlign = "left";
-  ctx.fillStyle = INK_SOFT;
-  ctx.font = font(400, 26);
-  ctx.fillText("진짜 아파트냐, AI가 지은 이름이냐", left, H - M - 62);
-  ctx.textAlign = "right";
-  ctx.fillStyle = STAMP;
-  ctx.font = font(700, 28, MONO);
-  ctx.fillText("apt-gam.vercel.app", right, H - M - 62);
+  // 판정 타일 한 줄
+  const ts = Math.min(46, Math.floor((inW - 9 * 8) / Math.max(1, data.marks.length)));
+  blocks.push({
+    h: ts + 26,
+    draw: (y) => {
+      const gap = 8;
+      const gw = ts * data.marks.length + gap * Math.max(0, data.marks.length - 1);
+      let gx = TAPE_X + (TAPE_W - gw) / 2;
+      for (const m of data.marks) {
+        drawTile(ctx, gx, y + 16, ts, m);
+        gx += ts + gap;
+      }
+    },
+  });
+  rule();
+  row(hitLabel, hitValue, { bold: true });
+  for (const st of data.stats) row(st.label, st.value, { accent: st.accent });
+
+  space(30);
+  blocks.push({
+    h: stampH,
+    draw: (y) => {
+      ctx.save();
+      ctx.translate(TAPE_X + TAPE_W / 2, y + stampH / 2);
+      ctx.rotate((-4 * Math.PI) / 180);
+      ctx.globalAlpha = 0.92;
+      if (stampImg) ctx.drawImage(stampImg, -stampW / 2, -stampH / 2, stampW, stampH);
+      ctx.fillStyle = STAMP;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = font(700, 31);
+      ctx.fillText(data.gradeName, 0, -10);
+      ctx.font = font(700, 15, MONO);
+      fillTracked(ctx, "APPROVED", 0, 26, 6, "center");
+      ctx.restore();
+    },
+  });
+  space(12);
+  rule();
+  space(6);
+  blocks.push({
+    h: 62,
+    draw: (y) => drawBarcode(ctx, inX + 28, y, inW - 56, 62, `${data.date}#${data.score}#${data.total}`),
+  });
+  space(18);
+  blocks.push({
+    h: 30,
+    draw: (y) => {
+      ctx.fillStyle = STAMP;
+      ctx.font = font(700, 22, MONO);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      fillTracked(ctx, "apt-gam.vercel.app", TAPE_X + TAPE_W / 2, y + 22, 1.8, "center");
+    },
+  });
+  space(44);
+
+  const tapeH = blocks.reduce((a, b) => a + b.h, 0);
+  // 항목이 많아 종이가 캔버스를 넘치면 통째로 줄인다 (잘리는 것보다 낫다)
+  const maxH = H - 120;
+  const scale = tapeH > maxH ? maxH / tapeH : 1;
+  const tapeY = (H - tapeH * scale) / 2;
+
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.rotate((-1.2 * Math.PI) / 180);
+  ctx.translate(-W / 2, -H / 2);
+  ctx.translate(0, tapeY);
+  ctx.scale(1, scale);
+  ctx.translate(0, -tapeY);
+
+  ctx.save();
+  ctx.shadowColor = "rgba(27,27,30,0.18)";
+  ctx.shadowBlur = 26;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = SHEET;
+  tapePath(ctx, TAPE_X, tapeY, TAPE_W, tapeH);
+  ctx.fill();
+  ctx.restore();
+
+  let cy = tapeY;
+  for (const b of blocks) {
+    b.draw(cy);
+    cy += b.h;
+  }
+  ctx.restore();
 
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob 실패"))), "image/png");
@@ -360,4 +445,9 @@ export async function shareCardImage(data: ShareCardData): Promise<"shared" | "d
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
   return "downloaded";
+}
+
+// 렌더 검증용 훅 (Playwright에서 픽셀을 직접 확인한다)
+if (typeof window !== "undefined") {
+  (window as unknown as { __renderShareCard?: typeof renderShareCard }).__renderShareCard = renderShareCard;
 }
