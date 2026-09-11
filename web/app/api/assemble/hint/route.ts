@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assembleHint } from "@/lib/assemble";
 import { kstDateString } from "@/lib/daily";
+import { areaFromUrl } from "@/lib/areaparam";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,7 @@ export function GET(req: Request) {
   const url = new URL(req.url);
   const no = Number(url.searchParams.get("no"));
   const tier = Number(url.searchParams.get("tier"));
-  const hint = assembleHint(kstDateString(), no, tier);
+  const hint = assembleHint(kstDateString(), no, tier, areaFromUrl(req.url));
   if (!hint) return NextResponse.json({ error: "bad_request" }, { status: 400 });
   return NextResponse.json(hint, { headers: { "Cache-Control": "no-store" } });
 }

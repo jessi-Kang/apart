@@ -34,6 +34,8 @@ interface EndlessPuzzle {
 interface TodayResponse {
   date: string;
   episode: number;
+  /** 서버가 실제로 적용한 구역. 빈 문자열이면 전국 공식전 */
+  area?: string;
   items: Puzzle[];
 }
 
@@ -88,6 +90,7 @@ export default function AssemblePage() {
   const [sBest, setSBest] = useState(0);
   const [sMarks, setSMarks] = useState<boolean[]>([]); // 판의 문제별 판정 (공유 카드 그리드)
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
+  const [dTop, setDTop] = useState<number | null>(null); // 공식전 순위 (그날 그 구역 그 창구)
   const [pendingOfficial, setPendingOfficial] = useState(false); // 홈에서 공식전으로 바로 들어왔는가
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const runTimes = useRef<number[]>([]);
@@ -104,7 +107,8 @@ export default function AssemblePage() {
     // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
     // quiz가 들어온 뒤에 열어야 해서 깃발만 세우고 아래 effect에서 처리한다
     const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
-    fetch("/api/assemble/today")
+    const officialArea = areaPref();
+    fetch(`/api/assemble/today${officialArea ? `?area=${encodeURIComponent(officialArea)}` : ""}`)
       .then((r) => r.json())
       .then((data: TodayResponse) => {
         setQuiz(data);
@@ -151,7 +155,7 @@ export default function AssemblePage() {
         try {
           const url = endless
             ? `/api/endless/assemble/hint?id=${encodeURIComponent((puzzle as EndlessPuzzle).id)}&tier=${i + 1}`
-            : `/api/assemble/hint?no=${(puzzle as Puzzle).no}&tier=${i + 1}`;
+            : `/api/assemble/hint?no=${(puzzle as Puzzle).no}&tier=${i + 1}${quiz?.area ? `&area=${encodeURIComponent(quiz.area)}` : ""}`;
           const res = await fetch(url);
           if (!res.ok) return;
           const { mask } = (await res.json()) as { mask: string };
@@ -272,12 +276,14 @@ export default function AssemblePage() {
         date: string;
         marks: boolean[];
         points?: number;
+        topPct?: number | null;
       } | null;
       if (!saved || saved.date !== quiz.date) return;
       sfxTap();
       setEndless(false);
       setMarks(saved.marks);
       setPoints(saved.points ?? 0);
+      setDTop(saved.topPct ?? null);
       setXpRes(null); // 경험치는 이미 받았다
       setImgState("idle");
       setPhase("done");
@@ -305,7 +311,7 @@ export default function AssemblePage() {
         : await fetch("/api/assemble/check", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ date: quiz!.date, no: (puzzle as Puzzle).no, guess }),
+            body: JSON.stringify({ date: quiz!.date, no: (puzzle as Puzzle).no, guess, area: quiz!.area ?? "" }),
           });
       if (!res.ok) throw new Error("check_failed");
       const data = (await res.json()) as CheckResponse;
@@ -372,13 +378,26 @@ export default function AssemblePage() {
     }
     sfxResult();
     setOfficialDone(true);
-    try {
-      localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks, points }));
-    } catch {
-      /* 무시 */
-    }
     setXpRes(addXp(points + 20)); // 속도·힌트가 반영된 조립 점수 + 완주 20점
     setPhase("done");
+    // 공식전 완주 접수: 그날 그 구역 조립 참가자끼리의 순위
+    setDTop(null);
+    const score = marks.filter(Boolean).length;
+    void fetch("/api/assemble/finish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: quiz.date, score, area: quiz.area ?? "" }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { top: number | null } | null) => {
+        setDTop(d?.top ?? null);
+        try {
+          localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks, points, topPct: d?.top ?? null, area: quiz.area ?? "" }));
+        } catch {
+          /* 무시 */
+        }
+      })
+      .catch(() => undefined);
   }
 
   const success = marks.filter(Boolean).length;
@@ -417,6 +436,9 @@ export default function AssemblePage() {
   }
 
   const ep = quiz?.episode ?? "";
+  /** 공식전 이름 — 구역별 공식전이면 구역을 함께 밝힌다 (제3호 부산 공식전) */
+  const officialArea = (quiz?.area ?? "").replace(/특별자치시$|특별시$|광역시$/, "");
+  const officialName = officialArea ? `제${ep}호 ${officialArea} 공식전` : `제${ep}호 공식전`;
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
 
   async function shareEndlessImage() {
@@ -470,7 +492,7 @@ export default function AssemblePage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? (area ? `무한 조립 · ${area.replace(/특별자치시$|특별시$|광역시$/, "")}` : "무한 조립") : `제${ep}호 공식전`}
+              {endless ? (area ? `무한 조립 · ${area.replace(/특별자치시$|특별시$|광역시$/, "")}` : "무한 조립") : officialName}
               {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
             </small>
           </Link>
@@ -523,7 +545,7 @@ export default function AssemblePage() {
               </p>
             ) : (
               <p className="qlabel mono qlabel-row">
-                <span className="mode-chip official">제{ep}호 공식전</span>
+                <span className="mode-chip official">{officialName}</span>
                 {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
               </p>
             )}
@@ -718,6 +740,18 @@ export default function AssemblePage() {
               <VRow label="무한 기록">
                 최고 연속 {eRec.best}
                 {fmtSec(eRec.avgMs) && <small>평균 {fmtSec(eRec.avgMs)}</small>}
+              </VRow>
+              <VRow label={officialArea ? `${officialArea} 순위` : "전국 순위"}>
+                {dTop !== null ? (
+                  <>
+                    상위 <span className="accent">{dTop}%</span>{" "}
+                    <small>{officialArea ? `${officialArea} 참가자 기준` : "전국 참가자 기준"}</small>
+                  </>
+                ) : (
+                  <>
+                    집계 중 <small>표본 100명부터 공개</small>
+                  </>
+                )}
               </VRow>
               <VRow label="직급">
                 <LevelBar result={xpRes} />

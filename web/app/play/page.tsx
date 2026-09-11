@@ -18,6 +18,8 @@ import { sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/li
 interface TodayResponse {
   date: string;
   episode: number;
+  /** 서버가 실제로 적용한 구역. 빈 문자열이면 전국 공식전 */
+  area?: string;
   items: { no: number; name: string }[];
 }
 
@@ -77,7 +79,9 @@ export default function PlayPage() {
     setArea(areaPref().replace(/특별자치시$|특별시$|광역시$/, ""));
     // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다
     const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
-    fetch("/api/quiz/today")
+    // 공식전도 구역을 따른다. 같은 (날짜, 구역)이면 누구나 같은 10문제다
+    const officialArea = areaPref();
+    fetch(`/api/quiz/today${officialArea ? `?area=${encodeURIComponent(officialArea)}` : ""}`)
       .then((r) => r.json())
       .then((data: TodayResponse) => {
         setQuiz(data);
@@ -248,7 +252,7 @@ export default function PlayPage() {
       const res = await fetch("/api/quiz/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: quiz.date, no: item.no, choice }),
+        body: JSON.stringify({ date: quiz.date, no: item.no, choice, area: quiz.area ?? "" }),
       });
       if (!res.ok) throw new Error("answer_failed");
       const data = (await res.json()) as AnswerResponse;
@@ -299,13 +303,13 @@ export default function PlayPage() {
       const res = await fetch("/api/quiz/finish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: quiz.date, score }),
+        body: JSON.stringify({ date: quiz.date, score, area: quiz.area ?? "" }),
       });
       if (res.ok) {
         const data = (await res.json()) as { top: number | null };
         setTopPct(data.top);
         // 순위까지 저장해 둬야 성적표를 다시 열었을 때 "집계 중"으로 퇴보하지 않는다
-        saveResult({ date: quiz.date, marks, review, topPct: data.top });
+        saveResult({ date: quiz.date, marks, review, topPct: data.top, area: quiz.area ?? "" });
       }
     } catch {
       /* 집계 실패는 결과 표시에 영향 없음 */
@@ -334,7 +338,7 @@ export default function PlayPage() {
         stats: [
           {
             value: topPct !== null ? `상위 ${topPct}%` : "집계 중",
-            label: "오늘 전국 순위",
+            label: officialArea ? `오늘 ${officialArea} 순위` : "오늘 전국 순위",
             accent: topPct !== null,
           },
           { value: `${Math.max(streak, 1)}일`, label: "연속 감별" },
@@ -349,6 +353,9 @@ export default function PlayPage() {
   }
 
   const ep = quiz?.episode ?? "";
+  /** 공식전 이름 — 구역별 공식전이면 구역을 함께 밝힌다 (제3호 부산 공식전) */
+  const officialArea = (quiz?.area ?? "").replace(/특별자치시$|특별시$|광역시$/, "");
+  const officialName = officialArea ? `제${ep}호 ${officialArea} 공식전` : `제${ep}호 공식전`;
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
   const currentName = endless ? eq : quiz?.items[idx]?.name;
 
@@ -408,7 +415,7 @@ export default function PlayPage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? (area ? `무한 감별 · ${area}` : "무한 감별") : `제${ep}호 공식전`}
+              {endless ? (area ? `무한 감별 · ${area}` : "무한 감별") : officialName}
               {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
             </small>
           </Link>
@@ -467,7 +474,7 @@ export default function PlayPage() {
                   ))}
                 </div>
                 <p className="qlabel mono qlabel-row">
-                  <span className="mode-chip official">제{ep}호 공식전</span>
+                  <span className="mode-chip official">{officialName}</span>
                   {String(idx + 1).padStart(2, "0")} / 10
                 </p>
               </>
@@ -608,7 +615,7 @@ export default function PlayPage() {
               <VRow label="판정">
                 <MiniGrid marks={marks} label={`10문제 중 ${score}문제 정답`} />
               </VRow>
-              <VRow label="전국 순위">
+              <VRow label={officialArea ? `${officialArea} 순위` : "전국 순위"}>
                 {topPct !== null ? (
                   <>
                     상위 <span className="accent">{topPct}%</span>

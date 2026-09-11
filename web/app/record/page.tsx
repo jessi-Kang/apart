@@ -32,7 +32,7 @@ export default function RecordPage() {
   const [asm, setAsm] = useState({ best: 0, avgMs: null as number | null });
   const [combo, setCombo] = useState<ComboState>({ current: 0, best: 0 });
   const [streak, setStreak] = useState({ count: 0, playedToday: false });
-  const [today, setToday] = useState<{ date: string; marks: boolean[] } | null>(null);
+  const [today, setToday] = useState<{ date: string; marks: boolean[]; area: string } | null>(null);
   const [ranks, setRanks] = useState<RanksResponse | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -48,11 +48,15 @@ export default function RecordPage() {
     setAsm(a);
     setCombo(c);
     setStreak(currentStreak(date));
-    setToday(saved ? { date: saved.date, marks: saved.marks } : null);
+    setToday(saved ? { date: saved.date, marks: saved.marks, area: saved.area ?? "" } : null);
     setLoaded(true);
 
     const q = new URLSearchParams({ ox: String(o.best), assemble: String(a.best), findreal: String(c.best) });
-    if (saved) q.set("score", String(saved.marks.filter(Boolean).length));
+    if (saved) {
+      q.set("score", String(saved.marks.filter(Boolean).length));
+      // 순위는 그날 그 구역 공식전 참가자끼리만 비교한다
+      if (saved.area) q.set("area", saved.area);
+    }
     fetch(`/api/records?${q.toString()}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: RanksResponse | null) => setRanks(d))
@@ -138,7 +142,7 @@ export default function RecordPage() {
           <div className="cut" />
 
           <VForm>
-            <VRow label="오늘 공식전">
+            <VRow label={today?.area ? `오늘 ${today.area.replace(/특별자치시$|특별시$|광역시$/, "")} 공식전` : "오늘 공식전"}>
               {today ? (
                 <MiniGrid marks={today.marks} label={`${today.marks.length}문제 중 ${score}문제 적중`} />
               ) : (
@@ -148,7 +152,7 @@ export default function RecordPage() {
               )}
             </VRow>
             {today && (
-              <VRow label="전국 순위">
+              <VRow label={today?.area ? `${today.area.replace(/특별자치시$|특별시$|광역시$/, "")} 순위` : "전국 순위"}>
                 {ranks?.daily?.top != null ? (
                   <>
                     상위 <span className="accent">{ranks.daily.top}%</span> <small>{ranks.daily.sample}명</small>

@@ -1,5 +1,5 @@
-import { apartments, fakeNames, type Apartment, type FakeName, type Difficulty } from "./data";
-import { mulberry32, seededShuffle } from "./seeded";
+import { poolOf, type Apartment, type FakeName, type Difficulty } from "./data";
+import { rngForDate, seededShuffle } from "./seeded";
 
 /**
  * 데일리 출제 (docs/02 §2)
@@ -53,9 +53,14 @@ export function pickByDifficulty<T extends { difficulty: Difficulty }>(
 /** 난이도 커브: 위치별 목표 난이도 (docs/02) */
 const CURVE: Difficulty[] = ["easy", "easy", "mid", "mid", "mid", "mid", "mid", "hard", "hard", "hard"];
 
-export function quizForDate(date: string): QuizItem[] {
-  const seed = Number(date.replaceAll("-", ""));
-  const rng = mulberry32(seed);
+/**
+ * 그날 그 구역의 10문제.
+ * area가 없으면 전국 공식전. 구역을 주면 그 구역 단지·말투로만 낸다.
+ * 같은 (날짜, 구역)이면 누가 열어도 같은 문제 — 그래야 순위를 비교할 수 있다.
+ */
+export function quizForDate(date: string, area?: string | null): QuizItem[] {
+  const { reals, fakes } = poolOf(area);
+  const rng = rngForDate(date, 0, area);
 
   const realCount = 4 + Math.floor(rng() * 3); // 4~6
   const kinds = seededShuffle(
@@ -69,9 +74,9 @@ export function quizForDate(date: string): QuizItem[] {
   return kinds.map((kind, idx) => {
     const want = CURVE[idx];
     if (kind === "real") {
-      return { no: idx + 1, kind, real: pickByDifficulty(apartments, want, rng, usedReal) };
+      return { no: idx + 1, kind, real: pickByDifficulty(reals, want, rng, usedReal) };
     }
-    return { no: idx + 1, kind, fake: pickByDifficulty(fakeNames, want, rng, usedFake) };
+    return { no: idx + 1, kind, fake: pickByDifficulty(fakes, want, rng, usedFake) };
   });
 }
 

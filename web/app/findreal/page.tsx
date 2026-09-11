@@ -23,6 +23,8 @@ interface Round {
 interface TodayResponse {
   date: string;
   episode: number;
+  /** 서버가 실제로 적용한 구역. 빈 문자열이면 전국 공식전 */
+  area?: string;
   items: Round[];
 }
 
@@ -63,6 +65,7 @@ export default function FindRealPage() {
   const [sMaxCombo, setSMaxCombo] = useState(0); // 판에서 도달한 최고 연속
   const [sMarks, setSMarks] = useState<boolean[]>([]); // 판의 문제별 판정 (공유 카드 그리드)
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
+  const [dTop, setDTop] = useState<number | null>(null); // 공식전 순위 (그날 그 구역 그 창구)
   const [pendingOfficial, setPendingOfficial] = useState(false); // 홈에서 공식전으로 바로 들어왔는가
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const [area, setArea] = useState(""); // 담당 구역 (빈 값이면 서울 전체)
@@ -76,7 +79,8 @@ export default function FindRealPage() {
     // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
     // quiz가 들어온 뒤에 열어야 해서 깃발만 세우고 아래 effect에서 처리한다
     const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
-    fetch("/api/findreal/today")
+    const officialArea = areaPref();
+    fetch(`/api/findreal/today${officialArea ? `?area=${encodeURIComponent(officialArea)}` : ""}`)
       .then((r) => r.json())
       .then((data: TodayResponse) => {
         setQuiz(data);
@@ -160,7 +164,9 @@ export default function FindRealPage() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(
-              option === null ? { date: quiz!.date, no: roundNo, timeout: true } : { date: quiz!.date, no: roundNo, pick: option },
+              option === null
+                ? { date: quiz!.date, no: roundNo, timeout: true, area: quiz!.area ?? "" }
+                : { date: quiz!.date, no: roundNo, pick: option, area: quiz!.area ?? "" },
             ),
           });
       if (!res.ok) throw new Error("check_failed");
@@ -216,13 +222,26 @@ export default function FindRealPage() {
     }
     sfxResult();
     setOfficialDone(true);
-    try {
-      localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
-    } catch {
-      /* 무시 */
-    }
     setXpRes(addXp(marks.filter(Boolean).length * 10 + 20));
     setPhase("done");
+    // 공식전 완주 접수: 그날 그 구역 찾기 참가자끼리의 순위
+    setDTop(null);
+    const score = marks.filter(Boolean).length;
+    void fetch("/api/findreal/finish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: quiz.date, score, area: quiz.area ?? "" }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { top: number | null } | null) => {
+        setDTop(d?.top ?? null);
+        try {
+          localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks, topPct: d?.top ?? null, area: quiz.area ?? "" }));
+        } catch {
+          /* 무시 */
+        }
+      })
+      .catch(() => undefined);
   }
 
   const hits = marks.filter(Boolean).length;
@@ -282,11 +301,13 @@ export default function FindRealPage() {
       const saved = JSON.parse(localStorage.getItem(RESULT_KEY) ?? "null") as {
         date: string;
         marks: boolean[];
+        topPct?: number | null;
       } | null;
       if (!saved || saved.date !== quiz.date) return;
       sfxTap();
       setEndless(false);
       setMarks(saved.marks);
+      setDTop(saved.topPct ?? null);
       setXpRes(null); // 경험치는 이미 받았다
       setImgState("idle");
       setPhase("done");
@@ -326,6 +347,9 @@ export default function FindRealPage() {
   }
 
   const ep = quiz?.episode ?? "";
+  /** 공식전 이름 — 구역별 공식전이면 구역을 함께 밝힌다 (제3호 부산 공식전) */
+  const officialArea = (quiz?.area ?? "").replace(/특별자치시$|특별시$|광역시$/, "");
+  const officialName = officialArea ? `제${ep}호 ${officialArea} 공식전` : `제${ep}호 공식전`;
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
 
   async function shareEndlessImage() {
@@ -381,7 +405,7 @@ export default function FindRealPage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? (area ? `무한 찾기 · ${area}` : "무한 찾기") : `제${ep}호 공식전`}
+              {endless ? (area ? `무한 찾기 · ${area}` : "무한 찾기") : officialName}
               {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
             </small>
           </Link>
@@ -434,7 +458,7 @@ export default function FindRealPage() {
               </p>
             ) : (
               <p className="qlabel mono qlabel-row">
-                <span className="mode-chip official">제{ep}호 공식전</span>
+                <span className="mode-chip official">{officialName}</span>
                 {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
               </p>
             )}
@@ -581,6 +605,18 @@ export default function FindRealPage() {
               <VRow label="역대 최고">
                 {combo.best}
                 {fmtSec(combo.bestAvgMs) && <small>평균 {fmtSec(combo.bestAvgMs)}</small>}
+              </VRow>
+              <VRow label={officialArea ? `${officialArea} 순위` : "전국 순위"}>
+                {dTop !== null ? (
+                  <>
+                    상위 <span className="accent">{dTop}%</span>{" "}
+                    <small>{officialArea ? `${officialArea} 참가자 기준` : "전국 참가자 기준"}</small>
+                  </>
+                ) : (
+                  <>
+                    집계 중 <small>표본 100명부터 공개</small>
+                  </>
+                )}
               </VRow>
               <VRow label="직급">
                 <LevelBar result={xpRes} />

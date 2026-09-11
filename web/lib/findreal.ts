@@ -1,4 +1,4 @@
-import { apartments, fakeNames, type Apartment, type FakeName, type Difficulty } from "./data";
+import { poolOf, type Apartment, type FakeName, type Difficulty } from "./data";
 import { pickByDifficulty } from "./daily";
 import { seededShuffle, rngForDate } from "./seeded";
 
@@ -24,20 +24,21 @@ interface InternalRound {
   options: string[];
 }
 
-function roundsForDate(date: string): InternalRound[] {
-  const rng = rngForDate(date, SEED_OFFSET);
+function roundsForDate(date: string, area?: string | null): InternalRound[] {
+  const { reals, fakes: fakePool } = poolOf(area);
+  const rng = rngForDate(date, SEED_OFFSET, area);
   const usedReal = new Set<Apartment>();
   const usedFake = new Set<FakeName>();
   return ROUND_DIFF.map((want) => {
-    const real = pickByDifficulty(apartments, want, rng, usedReal);
-    const fakes = [0, 1, 2].map(() => pickByDifficulty(fakeNames, want, rng, usedFake));
+    const real = pickByDifficulty(reals, want, rng, usedReal);
+    const fakes = [0, 1, 2].map(() => pickByDifficulty(fakePool, want, rng, usedFake));
     const options = seededShuffle([real.name, ...fakes.map((f) => f.name)], rng);
     return { real, fakes, options };
   });
 }
 
-export function findRealForDate(date: string): FindRealRound[] {
-  return roundsForDate(date).map((r, idx) => ({ no: idx + 1, options: r.options }));
+export function findRealForDate(date: string, area?: string | null): FindRealRound[] {
+  return roundsForDate(date, area).map((r, idx) => ({ no: idx + 1, options: r.options }));
 }
 
 /** 서버 판정: 고른 이름이 진짜인지. 오답이어도 진짜와 메타를 공개한다.
@@ -46,8 +47,9 @@ export function checkFindReal(
   date: string,
   no: number,
   pick: string | null,
+  area?: string | null,
 ): { correct: boolean; answer: string; meta: { location: string; builtYear: number; households: number } } | null {
-  const round = roundsForDate(date)[no - 1];
+  const round = roundsForDate(date, area)[no - 1];
   if (!round || (pick !== null && !round.options.includes(pick))) return null;
   const r = round.real;
   return {
