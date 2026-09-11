@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SYNC_EVENT } from "@/lib/cloud";
 import { currentLevel, type LevelInfo, type XpResult } from "@/lib/level";
 import { sfxLevelUp } from "@/lib/sound";
 
@@ -38,7 +39,12 @@ export function LevelBar({ result }: { result?: XpResult | null }) {
 /** 홈 카드용 한 줄 요약 */
 export function LevelChip() {
   const [info, setInfo] = useState<LevelInfo | null>(null);
-  useEffect(() => setInfo(currentLevel()), []);
+  useEffect(() => {
+    const refresh = () => setInfo(currentLevel());
+    refresh();
+    window.addEventListener(SYNC_EVENT, refresh);
+    return () => window.removeEventListener(SYNC_EVENT, refresh);
+  }, []);
   if (!info) return null;
   return (
     <span className="status-chip">

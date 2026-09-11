@@ -99,6 +99,21 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .mode.lock .tt { color: var(--ink-soft); font-weight: 500; }
 .mode.lock:active { background: none; }
 
+/* ---- 접수인 등록 (계정) ---- */
+.account-line {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 16px; padding: 11px 14px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--sheet); font-size: 13px; color: var(--ink-soft); line-height: 1.55;
+}
+.account-line strong { color: var(--ink); }
+.account-btn {
+  font-size: 13px; font-weight: 700; color: var(--sheet); background: var(--ink);
+  border: 1px solid var(--ink); border-radius: var(--radius); padding: 8px 14px; cursor: pointer;
+  text-decoration: none; transition: transform 0.12s ease; flex-shrink: 0;
+}
+.account-btn:active { transform: translateY(1px); }
+.account-btn-ghost { background: var(--sheet); color: var(--ink-soft); border-color: var(--line); font-weight: 500; }
+
 /* ---- 앱 설치 안내 (홈) ---- */
 .install-line {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
