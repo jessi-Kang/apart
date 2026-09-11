@@ -64,7 +64,16 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .sheet-footer .copyright a:focus-visible,
 .foot-install:hover,
 .foot-install:focus-visible { color: var(--stamp); }
-.install-tip { display: block; margin-top: 6px; color: var(--stamp); }
+/* 브라우저가 설치 다이얼로그를 안 내줄 때만 나오는 수동 경로 안내 */
+.install-tip {
+  display: block; margin-top: 8px; padding: 10px 12px;
+  border: 1px dashed var(--line); border-radius: var(--radius); background: var(--paper);
+  color: var(--ink-soft); line-height: 1.55;
+}
+.install-tip b { display: block; color: var(--ink); font-size: 12.5px; }
+.install-tip .it-path { display: block; margin-top: 5px; color: var(--ink); font-weight: 500; }
+.install-tip .it-path i { font-style: normal; color: var(--ink-soft); margin: 0 5px; }
+.install-tip small { display: block; margin-top: 4px; font-size: 11.5px; }
 
 /* 게임 헤더 우측 도구: 배경음 · 닫기 */
 /* 헤더가 baseline 정렬이라 그대로 두면 스피커가 닫기 버튼보다 위로 뜬다 */
