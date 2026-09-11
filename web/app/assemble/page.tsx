@@ -596,13 +596,8 @@ export default function AssemblePage() {
             ) : (
               <div className="choices">
                 <button className="btn btn-next full" onClick={next} disabled={busy}>
-                  {endless ? "다음 퍼즐 계속" : idx + 1 === total ? "결과 보기" : "다음 문제"}
+                  {!endless && idx + 1 === total ? "결과 보기" : "다음 문제"}
                 </button>
-                {endless && (
-                  <button className="btn btn-ghost full" onClick={finishEndless} disabled={busy}>
-                    여기까지 — 세션 결과 보기
-                  </button>
-                )}
               </div>
             )}
           </section>
@@ -611,7 +606,7 @@ export default function AssemblePage() {
         {phase === "eresult" && (
           <section className="screen result">
             <div className="result-seal" aria-hidden="true">
-              <Seal size={184} />
+              <Seal size={140} />
             </div>
             <DocTitle eyebrow="조립결과통지" title="무한 조립 세션 결과" />
             <StampHero name={eGradeName} />
@@ -655,7 +650,7 @@ export default function AssemblePage() {
                       ? "저장 완료"
                       : eImgState === "failed"
                         ? "다시 시도"
-                        : "세션 통지서 공유"}
+                        : "통지서 공유"}
               </button>
               <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
                 다시 도전
@@ -670,7 +665,7 @@ export default function AssemblePage() {
         {phase === "done" && quiz && (
           <section className="screen result">
             <div className="result-seal" aria-hidden="true">
-              <Seal size={184} />
+              <Seal size={140} />
             </div>
             <DocTitle eyebrow="조립결과통지" title={`제${ep}호 조립 결과`} />
             <StampHero name={dGrade.name} />
@@ -703,10 +698,10 @@ export default function AssemblePage() {
                       ? "저장 완료"
                       : imgState === "failed"
                         ? "다시 시도"
-                        : "통지서 이미지 공유"}
+                        : "통지서 공유"}
               </button>
               <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
-                무한 조립 계속
+                무한 계속
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기

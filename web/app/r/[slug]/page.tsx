@@ -84,7 +84,7 @@ export default async function ResultPage({ params }: Props) {
           </p>
           <div className="result-actions">
             <Link className="btn btn-next" href="/play">
-              나도 감별하러 가기
+              나도 감별하기
             </Link>
           </div>
         </section>

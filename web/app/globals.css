@@ -152,14 +152,14 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 
 /* ---- 버튼 ---- */
 .btn {
-  font-size: 15px; font-weight: 700; letter-spacing: -0.01em; padding: 16px 12px;
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em; padding: 15px 12px;
   border-radius: var(--radius); cursor: pointer; transition: transform 0.12s ease;
   text-align: center; text-decoration: none; display: block;
 }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .btn-next { width: 100%; background: var(--ink); color: var(--sheet); border: 1px solid var(--ink); }
-.btn-ghost { background: var(--sheet); color: var(--ink); border: 1px solid var(--line); font-size: 14px; padding: 14px 12px; }
+.btn-ghost { background: var(--sheet); color: var(--ink); border: 1px solid var(--line); font-size: 14px; padding: 13px 12px; }
 
 /* ---- 설치 안내 토스트 (창구에 붙은 안내 쪽지) ---- */
 .install-toast {
@@ -230,7 +230,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .doc-title b { display: block; letter-spacing: -0.03em; text-indent: 0; color: var(--ink); font-size: 22px; margin-top: 6px; }
 .stamp-hero { display: grid; place-items: center; padding: 28px 0 20px; }
 .stamp-hero .stamp { margin-top: 0; align-self: auto; transform: rotate(-4deg); font-size: clamp(22px, 6.4vw, 30px); }
-.stamp-sub { text-align: center; color: var(--ink-soft); font-size: 13.5px; line-height: 1.6; }
+.stamp-sub { text-wrap: balance; text-align: center; color: var(--ink-soft); font-size: 13.5px; line-height: 1.6; }
 .vform { margin-top: 22px; border: 1px solid var(--ink); border-radius: var(--radius); }
 .vrow { display: grid; grid-template-columns: 96px 1fr; border-bottom: 1px solid var(--line); }
 .vrow:last-child { border-bottom: none; }
@@ -417,11 +417,12 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
    결과 화면 안에서 스태킹을 격리한다 — 안 그러면 흰 시트 밖 종이
    배경에서만 보이는 사고가 난다 (실기기 제보) */
 .result { position: relative; isolation: isolate; overflow: hidden; }
-/* 홈과 같은 문법: 머리 쪽 모서리에 크게, 종이 밖으로 물려 잘리게 찍는다.
-   서식표 한가운데 겹치면 통지서가 얼룩진 복사본처럼 읽힌다 */
+/* 결과 화면의 관인은 잘리지 않고 모서리에 온전히 앉는다.
+   홈은 크게 물려 잘리는 게 어울렸지만, 여기선 주인공이 등급 도장이라
+   반쯤 잘린 관인이 헤더 괘선에 걸리면 위치가 애매해 보인다 */
 .result-seal {
-  position: absolute; top: -34px; right: -52px; z-index: -1;
-  opacity: 0.1; transform: rotate(-14deg); pointer-events: none;
+  position: absolute; top: 6px; right: 6px; z-index: -1;
+  opacity: 0.07; transform: rotate(-14deg); pointer-events: none;
   mix-blend-mode: multiply;
 }
 
@@ -467,6 +468,10 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .form-no > span { padding: 6px 20px; }
   .sheet-footer { padding: 16px 44px; }
   .choices { gap: 14px; }
+  /* 결과 버튼: 시트 폭을 꽉 채우면 과하게 크다. 폭을 묶고 서식 바로 아래에 붙인다 */
+  .result-actions { margin-top: 28px; padding-top: 0; width: 100%; max-width: 400px; margin-inline: auto; }
+  .result-actions .btn { font-size: 14.5px; padding: 13px 12px; }
+  .result-actions .btn-ghost { font-size: 13.5px; padding: 12px 12px; }
 }
 
 /* ============ 데스크탑 ≥1024: 좌측 레일 + 시트 ============ */
@@ -476,7 +481,8 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
     gap: 48px; padding: 56px 48px; max-width: 1200px; margin: 0 auto; width: 100%;
   }
   .rail { display: flex; flex-direction: column; width: 300px; flex-shrink: 0; padding-top: 8px; }
-  .rail h2 { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.25; word-break: keep-all; }
+  /* text-wrap: balance — 마지막 줄에 한 어절만 떨어지는 고아 줄바꿈을 브라우저가 알아서 막는다 */
+  .rail h2 { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.25; word-break: keep-all; text-wrap: balance; }
   .rail h2 em { font-style: normal; color: var(--stamp); }
   .rail .date { margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
   .rail .note {

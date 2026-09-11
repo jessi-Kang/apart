@@ -367,7 +367,10 @@ export default function PlayPage() {
         <h2>
           이름만 보고
           <br />
-          판단하십시오. <em>검색은 반칙</em>
+          판단하십시오.
+          <br />
+          {/* 붙여 쓰는 두 어절이라 사이에 NBSP — "검색은 / 반칙"으로 쪼개지면 문장이 죽는다 */}
+          <em>검색은{" "}반칙</em>
         </h2>
         {quiz && (
           <p className="date mono">
@@ -501,13 +504,8 @@ export default function PlayPage() {
             ) : (
               <div className="choices">
                 <button className="btn btn-next full" onClick={next} disabled={busy}>
-                  {endless ? "다음 문제 계속" : idx + 1 === quiz!.items.length ? "감별 등급 확인" : "다음 문제"}
+                  {!endless && idx + 1 === quiz!.items.length ? "결과 보기" : "다음 문제"}
                 </button>
-                {endless && (
-                  <button className="btn btn-ghost full" onClick={finishEndless} disabled={busy}>
-                    여기까지 — 세션 결과 보기
-                  </button>
-                )}
               </div>
             )}
           </section>
@@ -516,7 +514,7 @@ export default function PlayPage() {
         {phase === "eresult" && (
           <section className="screen result">
             <div className="result-seal" aria-hidden="true">
-              <Seal size={184} />
+              <Seal size={140} />
             </div>
             <DocTitle eyebrow="감별결과통지" title="무한 감별 세션 결과" />
             <StampHero name={eGradeName} />
@@ -560,7 +558,7 @@ export default function PlayPage() {
                       ? "저장 완료"
                       : eImgState === "failed"
                         ? "다시 시도"
-                        : "세션 통지서 공유"}
+                        : "통지서 공유"}
               </button>
               <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
                 다시 도전
@@ -575,7 +573,7 @@ export default function PlayPage() {
         {phase === "result" && quiz && (
           <section className="screen result">
             <div className="result-seal" aria-hidden="true">
-              <Seal size={184} />
+              <Seal size={140} />
             </div>
             <DocTitle eyebrow="감별결과통지" title={`제${ep}호 감별 결과`} />
             <StampHero name={grade.name} />
@@ -613,10 +611,10 @@ export default function PlayPage() {
                       ? "저장 완료"
                       : imgState === "failed"
                         ? "다시 시도"
-                        : "통지서 이미지 공유"}
+                        : "통지서 공유"}
               </button>
               <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
-                무한 감별 계속
+                무한 계속
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기

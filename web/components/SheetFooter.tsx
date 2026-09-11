@@ -1,4 +1,3 @@
-import { BgmToggle } from "./BgmToggle";
 import { FooterInstall } from "./FooterInstall";
 
 /** 전 페이지 공용 푸터 — 출처와 저작자 표기만 남긴다.
@@ -12,7 +11,6 @@ export function SheetFooter() {
         <a href="https://vibelog-orcin.vercel.app/log" target="_blank" rel="noopener noreferrer">
           개발 일지
         </a>
-        <BgmToggle />
         <FooterInstall />
       </span>
     </footer>
