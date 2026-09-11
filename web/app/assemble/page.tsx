@@ -8,6 +8,7 @@ import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
+import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { assembleGradeFor, ASSEMBLE_GRADES } from "@/lib/grades";
 import { bumpEndlessRecord, endlessRecord, type EndlessRecord } from "@/lib/local";
@@ -525,10 +526,7 @@ export default function AssemblePage() {
           </section>
         )}
 
-        <footer className="sheet-footer">
-          <span>{endless ? "틀려도 계속됩니다. 연속 기록에 도전하세요." : "조각을 순서대로 눌러 이름을 완성하세요"}</span>
-          <span className="mono">{endless ? "무한 조립 중" : "내일 00:00 새 문제"}</span>
-        </footer>
+        <SheetFooter />
       </main>
     </div>
   );

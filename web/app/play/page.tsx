@@ -8,6 +8,7 @@ import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
+import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { gradeFor, GRADES } from "@/lib/grades";
 import { bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
@@ -488,14 +489,6 @@ export default function PlayPage() {
               무한 감별 최고 연속 {eRec.best}
               {fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}
             </p>
-            <ul className="review">
-              {review.map((r) => (
-                <li key={r.no}>
-                  <span className={`nm ${r.correct ? "" : "x"}`}>{r.name}</span>
-                  <span className={`tag ${r.kind === "real" ? "" : "f"}`}>{r.kind === "real" ? "진짜" : "가짜"}</span>
-                </li>
-              ))}
-            </ul>
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
                 {imgState === "busy"
@@ -518,10 +511,7 @@ export default function PlayPage() {
           </section>
         )}
 
-        <footer className="sheet-footer">
-          <span>{endless ? "틀려도 계속됩니다. 연속 기록에 도전하세요." : "이름만 보고 판단합니다. 검색은 반칙."}</span>
-          <span className="mono">{endless ? "무한 감별 중" : "내일 00:00 새 문제"}</span>
-        </footer>
+        <SheetFooter />
       </main>
     </div>
   );

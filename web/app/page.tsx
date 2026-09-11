@@ -2,6 +2,7 @@ import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { ComboStatus, HomeStatus } from "@/components/HomeStatus";
 import { LevelChip } from "@/components/LevelBar";
+import { SheetFooter } from "@/components/SheetFooter";
 import { Seal } from "@/components/Seal";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +75,7 @@ export default function HomePage() {
               <span className="no mono">2</span>
               <span>
                 <span className="tt">이름 조립</span>
-                <span className="dd">힌트 보고 실존 단지명 조립 · 매일 새 3문제</span>
+                <span className="dd">힌트 보고 실존 단지명 조립 · 매일 새 10문제</span>
               </span>
               <span className="go-ic">→</span>
             </Link>
@@ -98,13 +99,7 @@ export default function HomePage() {
           </nav>
         </section>
 
-        <footer className="sheet-footer">
-          <span>단지 정보 출처: 공공데이터포털 K-apt</span>
-          <span className="mono">본편 갱신 00:00 KST</span>
-          <span className="copyright">
-            © 2026 아파트 감별사 · made by <a href="mailto:jihyun.kang@me.com">Jessi</a>
-          </span>
-        </footer>
+        <SheetFooter />
       </main>
     </div>
   );
