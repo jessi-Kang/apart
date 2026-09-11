@@ -18,8 +18,10 @@ export interface SavedResult {
   date: string;
   marks: boolean[];
   review: ReviewItem[];
-  /** 집계에서 받은 전국 상위 % — 성적표를 다시 열 때 그대로 보여준다 */
+  /** 집계에서 받은 상위 % — 성적표를 다시 열 때 그대로 보여준다 */
   topPct?: number | null;
+  /** 어느 구역 공식전이었나. 빈 값이면 전국 */
+  area?: string;
 }
 
 const RESULT_KEY = "aptgam:result";

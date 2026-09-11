@@ -1,4 +1,4 @@
-import { apartments, fakeNames, type Apartment } from "./data";
+import { assemblePoolOf, type Apartment } from "./data";
 import { choseongHint } from "./hangul";
 import { seededShuffle, rngForDate as rngForDateWithOffset } from "./seeded";
 
@@ -18,23 +18,25 @@ export interface AssemblePuzzle {
 
 const SEED_OFFSET = 777_000_000; // 본편 시드와 절대 겹치지 않게
 
-function rngForDate(date: string) {
-  return rngForDateWithOffset(date, SEED_OFFSET);
+function rngForDate(date: string, area?: string | null) {
+  return rngForDateWithOffset(date, SEED_OFFSET, area);
 }
 
-/** 그날의 정답 단지 10개 (조각 2개 이상으로 쪼개지는 이름만) */
-function answersForDate(date: string): Apartment[] {
-  const rng = rngForDate(date);
-  const pool = apartments.filter((a) => a.name.split(" ").length >= 2);
-  return seededShuffle(pool, rng).slice(0, 10);
+/** 그날 그 구역의 정답 단지 10개 (조각 2개 이상으로 쪼개지는 이름만) */
+function answersForDate(date: string, area?: string | null): Apartment[] {
+  const rng = rngForDate(date, area);
+  return seededShuffle(assemblePoolOf(area).reals, rng).slice(0, 10);
 }
 
-/** 함정 조각 풀: 가짜 이름 토큰 (중복 제거) */
-const DECOY_POOL = [...new Set(fakeNames.flatMap((f) => f.name.split(" ")))];
+/** 함정 조각 풀: 같은 구역 가짜 이름의 토큰 (중복 제거) */
+function decoyPool(area?: string | null): string[] {
+  return [...new Set(assemblePoolOf(area).fakes.flatMap((f) => f.name.split(" ")))];
+}
 
-export function assembleForDate(date: string): AssemblePuzzle[] {
-  const rng = rngForDate(date);
-  return answersForDate(date).map((apt, idx) => {
+export function assembleForDate(date: string, area?: string | null): AssemblePuzzle[] {
+  const rng = rngForDate(date, area);
+  const DECOY_POOL = decoyPool(area);
+  return answersForDate(date, area).map((apt, idx) => {
     const answer = apt.name.split(" ");
     const decoys = seededShuffle(
       DECOY_POOL.filter((t) => !answer.includes(t)),
@@ -54,8 +56,8 @@ export function assembleForDate(date: string): AssemblePuzzle[] {
 }
 
 /** 시간 경과 초성 힌트: tier가 오를 때마다 조각 하나당 랜덤 한 글자씩 연다 */
-export function assembleHint(date: string, no: number, tier: number): { mask: string } | null {
-  const target = answersForDate(date)[no - 1];
+export function assembleHint(date: string, no: number, tier: number, area?: string | null): { mask: string } | null {
+  const target = answersForDate(date, area)[no - 1];
   if (!target || !Number.isInteger(tier) || tier < 1) return null;
   return { mask: choseongHint(target.name, Math.min(tier, 3), `${date}#${no}`) };
 }
@@ -65,8 +67,9 @@ export function checkAssemble(
   date: string,
   no: number,
   guess: string[],
+  area?: string | null,
 ): { correct: boolean; answer: string; meta: AssemblePuzzle["hint"] } | null {
-  const target = answersForDate(date)[no - 1];
+  const target = answersForDate(date, area)[no - 1];
   if (!target) return null;
   return {
     correct: guess.join(" ") === target.name,

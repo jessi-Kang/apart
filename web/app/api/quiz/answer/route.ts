@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { kstDateString, quizForDate } from "@/lib/daily";
 import { recordAnswer, answerRate } from "@/lib/stats";
+import { normalizeArea } from "@/lib/areaparam";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ interface Body {
   no?: number;
   choice?: "real" | "fake" | "timeout"; // timeout = 시간 초과 (무조건 오답)
   practice?: boolean; // 판정만 하고 집계에 넣지 않는다
+  area?: unknown; // 구역별 공식전. 모르는 값은 전국으로 떨어진다
 }
 
 /** 서버 판정: 정답 여부 + 공개 정보(실단지 메타 / 가짜 힌트) + 전국 정답률 */
@@ -25,10 +27,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
-  const item = quizForDate(today)[no! - 1];
+  const area = normalizeArea(body.area);
+  const item = quizForDate(today, area)[no! - 1];
   const correct = choice === item.kind;
-  if (body.practice !== true) await recordAnswer(today, no!, correct);
-  const { rate, sample } = await answerRate(today, no!);
+  if (body.practice !== true) await recordAnswer(today, no!, correct, area, "ox");
+  const { rate, sample } = await answerRate(today, no!, 100, area, "ox");
 
   if (item.kind === "real") {
     const r = item.real!;

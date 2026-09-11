@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { rankAmongRuns, RUN_MODES, type RunMode } from "@/lib/runstats";
 import { kstDateString } from "@/lib/daily";
 import { topPercent } from "@/lib/stats";
+import { areaFromUrl } from "@/lib/areaparam";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export async function GET(req: Request) {
 
   const score = int("score");
   const daily =
-    score === null ? null : await topPercent(kstDateString(), score).catch(() => null);
+    score === null ? null : await topPercent(kstDateString(), score, 100, areaFromUrl(req.url)).catch(() => null);
 
   return NextResponse.json(
     { endless, daily },
