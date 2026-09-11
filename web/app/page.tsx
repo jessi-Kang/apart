@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
-import { AccountBar } from "@/components/AccountBar";
 import { DailyChop, FindTail, RecTail } from "@/components/LedgerStatus";
-import { LevelChip } from "@/components/LevelBar";
+import { IdBadge } from "@/components/IdBadge";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 
@@ -55,11 +54,7 @@ export default function HomePage() {
             감별 민원을 <em>선택</em>하세요
           </h1>
           <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 감별{" "}게임</p>
-          <p className="home-level">
-            <LevelChip />
-          </p>
-
-          <AccountBar />
+          <IdBadge />
 
           <nav className="ledger" aria-label="게임 목록">
             <div className="ledger-head mono">
