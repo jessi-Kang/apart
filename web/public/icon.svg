@@ -1,24 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t">
-  <title id="t">아파트 감별사 아이콘</title>
-  <!-- 종이 바탕 -->
-  <rect x="2" y="2" width="60" height="60" rx="6" fill="#fdfdfb" stroke="#1b1b1e" stroke-width="3"/>
-  <!-- 잉크 아파트 몸체 -->
-  <rect x="16" y="14" width="24" height="38" rx="2" fill="#1b1b1e"/>
-  <!-- 옥탑 -->
-  <rect x="22" y="9" width="12" height="5" rx="1.5" fill="#1b1b1e"/>
-  <!-- 창문 2x4 (불 켜진 창 = 종이색) -->
-  <g fill="#fdfdfb">
-    <rect x="20" y="19" width="6" height="5" rx="1"/>
-    <rect x="30" y="19" width="6" height="5" rx="1"/>
-    <rect x="20" y="27" width="6" height="5" rx="1"/>
-    <rect x="30" y="27" width="6" height="5" rx="1"/>
-    <rect x="20" y="35" width="6" height="5" rx="1"/>
-    <rect x="30" y="35" width="6" height="5" rx="1"/>
-    <rect x="26" y="44" width="6" height="8" rx="1"/>
-  </g>
-  <!-- 판정 도장: 붉은 체크 소인 -->
-  <g transform="rotate(-12 46 44)">
-    <circle cx="46" cy="44" r="11" fill="#fdfdfb" stroke="#c73a2f" stroke-width="3"/>
-    <path d="M40.5 44.5l3.5 3.5 7-8" fill="none" stroke="#c73a2f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <title id="t">아파트 감별사 관인 아이콘</title>
+  <defs>
+    <filter id="inkpress" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="linearRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.14 0.16" numOctaves="2" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/>
+    </filter>
+    <mask id="inkwear">
+      <rect width="64" height="64" fill="#fff"/>
+      <rect width="64" height="64" fill="#000" filter="url(#speck)" opacity="0.45"/>
+    </mask>
+    <filter id="speck" color-interpolation-filters="linearRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="4"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  9 0 0 0 -6.7"/>
+    </filter>
+  </defs>
+  <g filter="url(#inkpress)" mask="url(#inkwear)">
+    <circle cx="32" cy="32" r="30" fill="#c73a2f"/>
+    <circle cx="32" cy="32" r="24.6" fill="none" stroke="#f6f6f3" stroke-width="1.9"/>
+    <g fill="#f6f6f3">
+      <rect x="18.5" y="15.5" width="13.5" height="31" rx="1.6"/>
+      <rect x="34.8" y="23.5" width="12.2" height="23" rx="1.6"/>
+      <rect x="15.5" y="48" width="33" height="2.5" rx="1.25"/>
+    </g>
+    <g fill="#c73a2f">
+      <rect x="21.2" y="18.8" width="3.4" height="3.4" rx="0.8"/>
+      <rect x="26.2" y="18.8" width="3.4" height="3.4" rx="0.8"/>
+      <rect x="21.2" y="24.8" width="3.4" height="3.4" rx="0.8"/>
+      <rect x="26.2" y="24.8" width="3.4" height="3.4" rx="0.8"/>
+      <rect x="21.2" y="30.8" width="3.4" height="3.4" rx="0.8"/>
+      <rect x="26.2" y="30.8" width="3.4" height="3.4" rx="0.8"/>
+      <rect x="21.2" y="36.8" width="3.4" height="3.4" rx="0.8"/>
+      <rect x="26.2" y="36.8" width="3.4" height="3.4" rx="0.8"/>
+      <rect x="37.4" y="26.6" width="3.2" height="3.2" rx="0.8"/>
+      <rect x="42.2" y="26.6" width="3.2" height="3.2" rx="0.8"/>
+      <rect x="37.4" y="32.4" width="3.2" height="3.2" rx="0.8"/>
+      <rect x="42.2" y="32.4" width="3.2" height="3.2" rx="0.8"/>
+      <rect x="37.4" y="38.2" width="3.2" height="3.2" rx="0.8"/>
+      <rect x="42.2" y="38.2" width="3.2" height="3.2" rx="0.8"/>
+      <rect x="23.3" y="42.4" width="3.2" height="4.2" rx="0.8"/>
+    </g>
   </g>
 </svg>
