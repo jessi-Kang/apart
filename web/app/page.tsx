@@ -67,6 +67,11 @@ export default function HomePage() {
                 <span className="cell">
                   <span className="tt">감별 O/X</span>
                   <span className="dd">이름 하나를 보고 진짜/가짜</span>
+                  <span className="cell-go" aria-hidden="true">
+                    <svg width="11" height="11" viewBox="0 0 11 11">
+                      <path d="M3.4 1.6L7.2 5.5 3.4 9.4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
                 </span>
               </Link>
               {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
@@ -81,6 +86,11 @@ export default function HomePage() {
                 <span className="cell">
                   <span className="tt">이름 조립</span>
                   <span className="dd">힌트로 단지명 조립</span>
+                  <span className="cell-go" aria-hidden="true">
+                    <svg width="11" height="11" viewBox="0 0 11 11">
+                      <path d="M3.4 1.6L7.2 5.5 3.4 9.4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
                 </span>
               </Link>
               {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
@@ -95,6 +105,11 @@ export default function HomePage() {
                 <span className="cell">
                   <span className="tt">진짜 찾기</span>
                   <span className="dd">넷 중 진짜는 하나</span>
+                  <span className="cell-go" aria-hidden="true">
+                    <svg width="11" height="11" viewBox="0 0 11 11">
+                      <path d="M3.4 1.6L7.2 5.5 3.4 9.4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
                 </span>
               </Link>
               {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니

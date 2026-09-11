@@ -7,7 +7,7 @@ import { PwaRegister } from "@/components/PwaRegister";
 
 export const metadata: Metadata = {
   title: "아파트 감별사",
-  description: "이거 진짜 있는 아파트야, AI가 지어낸 거야? 하루 10문제 데일리 퀴즈",
+  description: "이거 진짜 있는 아파트야, AI가 지어낸 거야? 하루 10문제 공식전",
   // SVG(벡터)와 고해상도 PNG를 함께 선언한다 — SVG를 못 쓰거나
   // 저해상도로 래스터하는 컨텍스트(구형 브라우저·검색결과·북마크)가 PNG를 집게.
   icons: {

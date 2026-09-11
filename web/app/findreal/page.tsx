@@ -10,7 +10,7 @@ import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { findGradeFor } from "@/lib/grades";
-import { applyComboPick, areaPref, comboState, type ComboState } from "@/lib/local";
+import { applyComboPick, areaPref, comboState, firstVisit, type ComboState } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxCombo, sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -63,12 +63,12 @@ export default function FindRealPage() {
   const [eCount, setECount] = useState(0);
   const [sHits, setSHits] = useState(0);
   const [sMaxCombo, setSMaxCombo] = useState(0); // 판에서 도달한 최고 연속
-  const [sMarks, setSMarks] = useState<boolean[]>([]); // 판의 문제별 판정 (공유 카드 그리드)
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
   const [dTop, setDTop] = useState<number | null>(null); // 공식전 순위 (그날 그 구역 그 창구)
   const [pendingOfficial, setPendingOfficial] = useState(false); // 홈에서 공식전으로 바로 들어왔는가
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const [area, setArea] = useState(""); // 담당 구역 (빈 값이면 서울 전체)
+  const [firstTime, setFirstTime] = useState(false); // 이 창구 첫 방문인가
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
   const qStart = useRef(0);
@@ -76,6 +76,7 @@ export default function FindRealPage() {
   useEffect(() => {
     setCombo(comboState());
     setArea(areaPref().replace(/특별자치시$|특별시$|광역시$/, ""));
+    setFirstTime(firstVisit("findreal"));
     // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
     // quiz가 들어온 뒤에 열어야 해서 깃발만 세우고 아래 effect에서 처리한다
     const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
@@ -133,7 +134,6 @@ export default function FindRealPage() {
       setECount(0);
       setSHits(0);
       setSMaxCombo(0);
-      setSMarks([]);
       setEImgState("idle");
       sessionTimes.current = [];
       startBest.current = comboState().best;
@@ -177,7 +177,6 @@ export default function FindRealPage() {
       if (!endless) setMarks((m) => [...m, data.correct]);
       else {
         setECount((c) => c + 1);
-        setSMarks((m) => [...m, data.correct]);
         sessionTimes.current.push(dt);
         if (data.correct) setSHits((h) => h + 1);
       }
@@ -365,7 +364,7 @@ export default function FindRealPage() {
         score: sMaxCombo,
         total: eCount,
         totalText: "연속",
-        marks: sMarks.slice(-10),
+        marks: [], // 무한은 문제 수가 열려 있어 10칸 그리드로 못 담는다
         gradeName: eGradeName,
         stats: [
           { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
@@ -411,10 +410,14 @@ export default function FindRealPage() {
           </Link>
           <span className="head-tools">
             <SoundToggle />
+            {/* 결과·성적표 화면에는 "창구로 돌아가기" 버튼이 이미 있다.
+                같은 일을 하는 X를 헤더에 또 두면 나가는 문이 둘로 보인다 */}
+            {(phase === "solve" || phase === "reveal") && (
             <CloseX
               inProgress={!endless && (phase === "solve" || phase === "reveal")}
               onClose={endless && (phase === "solve" || phase === "reveal") && eCount > 0 ? finishEndless : undefined}
             />
+            )}
             </span>
         </header>
 
@@ -444,7 +447,7 @@ export default function FindRealPage() {
             {endless ? (
               <p className="qlabel mono qlabel-row">
                 <span className="mode-chip">무한</span>
-                {eCount + (phase === "solve" ? 1 : 0)}문제 · 연속 {combo.current} · 최고 {combo.best}
+                {eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 {combo.current} · 최고 {combo.best}
                 {quiz && (
                   <button
                     type="button"
@@ -452,7 +455,7 @@ export default function FindRealPage() {
                     onClick={officialDone ? replayOfficial : startOfficial}
                     disabled={busy}
                   >
-                    제{ep}호 {officialDone ? "성적표" : "공식전"}
+                    {officialDone ? "성적표 보기" : "공식전 출전"}
                   </button>
                 )}
               </p>
@@ -462,9 +465,11 @@ export default function FindRealPage() {
                 {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
               </p>
             )}
-            <p className="pick-tip">
-              넷 중 <b>진짜는 하나</b>. 나머지는 AI가 지었습니다.
-            </p>
+            {endless && eCount === 0 && firstTime && (
+              <p className="pick-tip">
+                넷 중 <b>진짜는 하나</b>. 나머지는 AI가 지었습니다.
+              </p>
+            )}
 
             <TimerBar
               seconds={TIME_LIMIT}
@@ -536,9 +541,6 @@ export default function FindRealPage() {
               {eCount}문제 중 {sHits}문제 적중 · 최고 연속 {sMaxCombo}
             </p>
             <VForm>
-              <VRow label="판정">
-                <MiniGrid marks={sMarks.slice(-10)} label={`${eCount}문제 중 ${sHits}문제 적중`} />
-              </VRow>
               <VRow label="이번 판">
                 연속 {sMaxCombo} <small>평균 {fmtSec(sessionAvgMs()) ?? "-"}</small>
               </VRow>

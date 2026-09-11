@@ -182,6 +182,18 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 /* 무한 개장: 접수 도장과 다른 종류 — 잉크를 채워 누른 승인 도장 */
 .chop.done { background: var(--ink); border-color: var(--ink); color: var(--sheet); transform: rotate(3deg); }
 .chop.off { color: var(--ink-soft); border-style: dashed; transform: none; font-weight: 500; }
+/* 아직 안 친 공식전은 도장이 아니라 권유다. 도장은 이미 찍힌 것에만 쓴다 */
+.chop-go {
+  display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+  font-size: 11px; font-weight: 700; color: var(--stamp); letter-spacing: -0.01em;
+}
+/* 창구 행이 눌린다는 표시. 안내 문구 없이도 손이 가야 한다 */
+.ledger .cell { position: relative; padding-right: 22px; }
+.cell-go {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  color: var(--line); display: flex;
+}
+.ledger .rmain:active .cell-go { color: var(--ink-soft); }
 .ledger .row.off { cursor: default; opacity: 0.5; }
 .ledger .row.off .no,
 .ledger .row.off .tt { color: var(--ink-soft); }
@@ -424,6 +436,8 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .slot .sh b { font-size: 14px; font-weight: 500; color: var(--ink-soft); letter-spacing: 0; }
 .slot .sh i { width: 4px; height: 4px; border-radius: 50%; background: var(--line); }
 .hint-note { margin-top: 2px; text-align: center; font-size: 11.5px; color: var(--ink-soft); }
+/* 힌트 시점 안내: 조각 위, 타이머 바로 위 */
+.hint-when { margin-top: 10px; font-size: 11.5px; color: var(--ink-soft); letter-spacing: -0.01em; }
 .hint-note b { color: var(--stamp); font-weight: 700; }
 .pool { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin: 16px 0 20px; flex: 1; align-content: flex-start; }
 .tile {

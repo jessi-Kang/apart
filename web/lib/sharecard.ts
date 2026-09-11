@@ -358,21 +358,24 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   rule();
   row(modeName, `${data.total}문제`);
 
-  // 판정 타일 한 줄
-  const ts = Math.min(46, Math.floor((inW - 9 * 8) / Math.max(1, data.marks.length)));
-  blocks.push({
-    h: ts + 26,
-    draw: (y) => {
-      const gap = 8;
-      const gw = ts * data.marks.length + gap * Math.max(0, data.marks.length - 1);
-      let gx = TAPE_X + (TAPE_W - gw) / 2;
-      for (const m of data.marks) {
-        drawTile(ctx, gx, y + 16, ts, m);
-        gx += ts + gap;
-      }
-    },
-  });
-  rule();
+  // 판정 타일 한 줄. 문제 수가 고정된 공식전에서만 그린다 —
+  // 무한은 41문제를 풀어도 타일은 10칸뿐이라 "41문제 중 23적중"과 아귀가 안 맞는다.
+  if (data.marks.length) {
+    const ts = Math.min(46, Math.floor((inW - 9 * 8) / Math.max(1, data.marks.length)));
+    blocks.push({
+      h: ts + 26,
+      draw: (y) => {
+        const gap = 8;
+        const gw = ts * data.marks.length + gap * Math.max(0, data.marks.length - 1);
+        let gx = TAPE_X + (TAPE_W - gw) / 2;
+        for (const m of data.marks) {
+          drawTile(ctx, gx, y + 16, ts, m);
+          gx += ts + gap;
+        }
+      },
+    });
+    rule();
+  }
   row(hitLabel, hitValue, { bold: true });
   for (const st of data.stats) row(st.label, st.value, { accent: st.accent });
 

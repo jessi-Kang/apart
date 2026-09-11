@@ -88,7 +88,6 @@ export default function AssemblePage() {
   const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
   const [sHits, setSHits] = useState(0);
   const [sBest, setSBest] = useState(0);
-  const [sMarks, setSMarks] = useState<boolean[]>([]); // 판의 문제별 판정 (공유 카드 그리드)
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
   const [dTop, setDTop] = useState<number | null>(null); // 공식전 순위 (그날 그 구역 그 창구)
   const [pendingOfficial, setPendingOfficial] = useState(false); // 홈에서 공식전으로 바로 들어왔는가
@@ -191,7 +190,6 @@ export default function AssemblePage() {
       setECount(0);
       setSHits(0);
       setSBest(0);
-      setSMarks([]);
       setEImgState("idle");
       runTimes.current = [];
       sessionTimes.current = [];
@@ -319,7 +317,6 @@ export default function AssemblePage() {
       setTimedOut(fromTimeout && !data.correct);
       if (endless) {
         setECount((c) => c + 1);
-        setSMarks((m) => [...m, data.correct]);
         sessionTimes.current.push(dt);
         if (data.correct) {
           runTimes.current.push(dt);
@@ -454,7 +451,7 @@ export default function AssemblePage() {
         score: sBest,
         total: eCount,
         totalText: "연속",
-        marks: sMarks.slice(-10),
+        marks: [], // 무한은 문제 수가 열려 있어 10칸 그리드로 못 담는다
         gradeName: eGradeName,
         stats: [
           { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
@@ -498,10 +495,14 @@ export default function AssemblePage() {
           </Link>
           <span className="head-tools">
             <SoundToggle />
+            {/* 결과·성적표 화면에는 "창구로 돌아가기" 버튼이 이미 있다.
+                같은 일을 하는 X를 헤더에 또 두면 나가는 문이 둘로 보인다 */}
+            {(phase === "solve" || phase === "reveal") && (
             <CloseX
               inProgress={!endless && (phase === "solve" || phase === "reveal")}
               onClose={endless && (phase === "solve" || phase === "reveal") && eCount > 0 ? finishEndless : undefined}
             />
+            )}
             </span>
         </header>
 
@@ -539,7 +540,7 @@ export default function AssemblePage() {
                     onClick={officialDone ? replayOfficial : startOfficial}
                     disabled={busy}
                   >
-                    제{ep}호 {officialDone ? "성적표" : "공식전"}
+                    {officialDone ? "성적표 보기" : "공식전 출전"}
                   </button>
                 )}
               </p>
@@ -564,6 +565,13 @@ export default function AssemblePage() {
                 {puzzle.hint.builtYear}년 준공 · {puzzle.hint.households.toLocaleString()}세대
               </span>
             </div>
+
+            {/* 힌트가 언제 열리는지 모르면 그냥 시간이 흐르는 것으로만 보인다 */}
+            <p className="hint-when">
+              {hintTier > 0
+                ? `초성 ${hintTier}단계 공개됨 · 정답 칸에 표시`
+                : "15초 · 25초 · 33초에 초성이 한 글자씩 열립니다"}
+            </p>
 
             <TimerBar
               seconds={TIME_LIMIT}
@@ -672,9 +680,6 @@ export default function AssemblePage() {
               {eCount}문제 중 {sHits}문제 조립 · 최고 연속 {sBest}
             </p>
             <VForm>
-              <VRow label="판정">
-                <MiniGrid marks={sMarks.slice(-10)} label={`${eCount}문제 중 ${sHits}문제 조립 성공`} />
-              </VRow>
               <VRow label="이번 판">
                 연속 {sBest} <small>평균 {fmtSec(sessionAvgMs()) ?? "-"}</small>
               </VRow>

@@ -31,9 +31,18 @@ export function DailyChop({ mode, date }: { mode: keyof typeof KEY_BY_MODE; date
     window.addEventListener(SYNC_EVENT, refresh);
     return () => window.removeEventListener(SYNC_EVENT, refresh);
   }, [mode, date]);
-  // 열 이름이 이미 "공식전"이라 도장까지 같은 말을 쓰면 상태 표시로만 읽힌다.
-  // 여기는 누르는 자리이므로 할 일을 쓴다: 아직이면 출전, 치렀으면 성적표
-  return <span className={done ? "chop done" : "chop"}>{done ? "성적표" : "출전"}</span>;
+  // 도장은 "이미 찍힌 것"이다. 아직 안 친 공식전에 도장을 찍어 두면
+  // "출전 완료"로 읽힌다. 치르기 전에는 도장 대신 권유 문구를 쓴다.
+  return done ? (
+    <span className="chop done">성적표</span>
+  ) : (
+    <span className="chop-go">
+      출전하기
+      <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden="true">
+        <path d="M2.6 1.2L6 4.5 2.6 7.8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
 }
 
 /** 무한 기록 꼬리: 최고 연속 (없으면 도전 문구) */
