@@ -3,9 +3,10 @@ import { randomOx, judgeOx } from "@/lib/endless";
 
 export const dynamic = "force-dynamic";
 
-/** 무한 감별: GET = 랜덤 문제, POST = 판정 (집계 미반영) */
-export function GET() {
-  return NextResponse.json(randomOx());
+/** 무한 감별: GET = 랜덤 문제(?area=자치구면 그 구역만), POST = 판정 (집계 미반영) */
+export function GET(req: Request) {
+  const area = new URL(req.url).searchParams.get("area");
+  return NextResponse.json(randomOx(area));
 }
 
 export async function POST(req: Request) {

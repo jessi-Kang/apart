@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
+import { districts } from "@/lib/data";
+import { AreaPicker } from "@/components/AreaPicker";
 import { DailyChop, FindTail, RecTail } from "@/components/LedgerStatus";
 import { IdBadge } from "@/components/IdBadge";
 import { Seal } from "@/components/Seal";
@@ -55,6 +57,7 @@ export default function HomePage() {
           </h1>
           <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 감별{" "}게임</p>
           <IdBadge />
+          <AreaPicker districts={districts} />
 
           <nav className="ledger" aria-label="게임 목록">
             <div className="ledger-head mono">
@@ -104,7 +107,7 @@ export default function HomePage() {
             <div className="row off">
               <span className="no mono">4</span>
               <span className="cell">
-                <span className="tt">작명소 · 우리 동네</span>
+                <span className="tt">작명소</span>
                 <span className="dd">2단계 개설 예정 창구</span>
               </span>
               <span className="st">

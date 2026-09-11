@@ -167,6 +167,30 @@ export function currentStreak(date: string): { count: number; playedToday: boole
   }
 }
 
+/* ---- 담당 구역 (우리 동네 출제) ---- */
+
+const AREA_KEY = "aptgam:area";
+export const AREA_EVENT = "aptgam:area-change";
+
+/** 지금 고른 구역. 빈 값이면 서울 전체에서 무작위 출제 */
+export function areaPref(): string {
+  try {
+    return localStorage.getItem(AREA_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export function setAreaPref(area: string) {
+  try {
+    if (area) localStorage.setItem(AREA_KEY, area);
+    else localStorage.removeItem(AREA_KEY);
+  } catch {
+    /* 저장 실패는 이번 판에만 적용 */
+  }
+  window.dispatchEvent(new Event(AREA_EVENT));
+}
+
 /**
  * 이 창구에 처음 왔는가 (첫 문제의 규칙 한 줄 노출용).
  * 최고 연속으로 판단하면 계속 틀리는 사람에게 규칙이 영원히 따라다닌다.

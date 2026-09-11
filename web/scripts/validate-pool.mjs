@@ -11,6 +11,9 @@
  *     ("사실상 실존"인 가짜는 정답 시비를 만든다)
  *  3. 블랙리스트 단어(지역 비하·비속어 계열) 포함 시 실패
  *  4. 형식: 길이 4~20자, 중복 id/이름 없음, 필수 필드 존재
+ *  5. 관리 단위(101동·제2관리사무소·임대 등)가 이름 칸에 들어온 행은 경고.
+ *     lib/data.ts가 출제 전에 같은 규칙으로 걸러내므로 실패는 아니지만,
+ *     수집본을 승격하기 전에 몇 건이 버려지는지는 보여야 한다.
  *
  * CI와 로컬에서 데이터 교체 때마다 돌린다. 실패 시 exit 1.
  */
@@ -63,6 +66,12 @@ for (const r of real) {
   if (!r.sido || !r.sigungu || !r.builtYear || !r.households)
     errors.push(`실단지 메타 결측: ${r.name}`);
 }
+
+// 5. 관리 단위 행 (lib/data.ts의 ADMIN_NOISE와 같은 규칙 — 바꿀 때 같이 고친다)
+const ADMIN_NOISE =
+  /관리사무소|\d{3,}\s*동|제\s*\d|\d+\s*구역|임대|\d+\s*호(?!반|텔)|주택도시공사|도시개발공사|SH공사/;
+const noisy = [...real, ...fake].filter((it) => ADMIN_NOISE.test(it.name));
+if (noisy.length) warn.push(`관리 단위로 보여 출제에서 제외되는 이름 ${noisy.length}건 (예: ${noisy.slice(0, 3).map((n) => n.name).join(", ")})`);
 
 // 1~3. 가짜 대조
 for (const f of fake) {
