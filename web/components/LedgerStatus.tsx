@@ -52,11 +52,11 @@ export function RecTail({ mode }: { mode: "ox" | "assemble" }) {
 
 /** 진짜 찾기 설명 꼬리: 최고 연속 */
 export function FindTail() {
-  const [tail, setTail] = useState(" · 연속 기록 도전");
+  const [tail, setTail] = useState("연속 기록 도전");
   useEffect(() => {
     const refresh = () => {
       const { best } = comboState();
-      if (best > 0) setTail(` · 최고 연속 ${best}`);
+      if (best > 0) setTail(`최고 연속 ${best}`);
     };
     refresh();
     window.addEventListener(SYNC_EVENT, refresh);

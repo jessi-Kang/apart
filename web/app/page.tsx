@@ -66,8 +66,9 @@ export default function HomePage() {
               <span className="no mono">1</span>
               <span className="cell">
                 <span className="tt">감별 O/X</span>
-                <span className="dd">
-                  무한 감별 · <RecTail mode="ox" />
+                <span className="dd">이름 하나를 보고 진짜/가짜</span>
+                <span className="dd-rec">
+                  <RecTail mode="ox" />
                 </span>
               </span>
               <span className="st">
@@ -78,8 +79,9 @@ export default function HomePage() {
               <span className="no mono">2</span>
               <span className="cell">
                 <span className="tt">이름 조립</span>
-                <span className="dd">
-                  힌트로 실존 단지명 조립 · <RecTail mode="assemble" />
+                <span className="dd">힌트로 단지명 조립</span>
+                <span className="dd-rec">
+                  <RecTail mode="assemble" />
                 </span>
               </span>
               <span className="st">
@@ -90,8 +92,8 @@ export default function HomePage() {
               <span className="no mono">3</span>
               <span className="cell">
                 <span className="tt">진짜 찾기</span>
-                <span className="dd">
-                  넷 중 진짜는 하나
+                <span className="dd">넷 중 진짜는 하나</span>
+                <span className="dd-rec">
                   <FindTail />
                 </span>
               </span>
