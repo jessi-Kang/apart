@@ -52,6 +52,7 @@ export default function FindRealPage() {
   const [combo, setCombo] = useState<ComboState>({ current: 0, best: 0 });
   const [busy, setBusy] = useState(false);
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
+  const [eImgState, setEImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
   const [xpRes, setXpRes] = useState<XpResult | null>(null);
   const [eXpRes, setEXpRes] = useState<XpResult | null>(null);
 
@@ -61,6 +62,7 @@ export default function FindRealPage() {
   const [eCount, setECount] = useState(0);
   const [sHits, setSHits] = useState(0);
   const [sMaxCombo, setSMaxCombo] = useState(0); // 세션 중 도달한 최고 콤보
+  const [sMarks, setSMarks] = useState<boolean[]>([]); // 세션 라운드별 판정 (공유 카드 그리드)
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
   const qStart = useRef(0);
@@ -113,6 +115,8 @@ export default function FindRealPage() {
       setECount(0);
       setSHits(0);
       setSMaxCombo(0);
+      setSMarks([]);
+      setEImgState("idle");
       sessionTimes.current = [];
       startBest.current = comboState().best;
       setPicked(null);
@@ -153,6 +157,7 @@ export default function FindRealPage() {
       if (!endless) setMarks((m) => [...m, data.correct]);
       else {
         setECount((c) => c + 1);
+        setSMarks((m) => [...m, data.correct]);
         sessionTimes.current.push(dt);
         if (data.correct) setSHits((h) => h + 1);
       }
@@ -249,6 +254,34 @@ export default function FindRealPage() {
 
   const ep = quiz?.episode ?? "";
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
+
+  async function shareEndlessImage() {
+    if (!quiz || eImgState === "busy") return;
+    sfxTap();
+    setEImgState("busy");
+    try {
+      const result = await shareCardImage({
+        episode: quiz.episode,
+        date: quiz.date,
+        subtitle: "무한 진짜 찾기 통지서",
+        headerRight: `무한 감정 · ${mm}.${dd}`,
+        score: sMaxCombo,
+        total: eCount,
+        totalText: "콤보",
+        marks: sMarks.slice(-10),
+        gradeName: sMaxCombo > startBest.current ? "신기록 갱신" : sMaxCombo >= 5 ? "매의 눈" : "감정 수련",
+        stats: [
+          { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
+          { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 판단 시간" },
+          { value: `${Math.max(combo.best, sMaxCombo)}`, label: "역대 최고 콤보", accent: sMaxCombo > startBest.current },
+          { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
+        ],
+      });
+      setEImgState(result);
+    } catch {
+      setEImgState("failed");
+    }
+  }
 
   return (
     <div className="frame">
@@ -419,6 +452,17 @@ export default function FindRealPage() {
               </li>
             </ul>
             <div className="result-actions">
+              <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
+                {eImgState === "busy"
+                  ? "통지서를 발급하는 중"
+                  : eImgState === "shared"
+                    ? "공유 완료. 한 장 더 발급됩니다"
+                    : eImgState === "downloaded"
+                      ? "저장 완료. 갤러리에서 확인하세요"
+                      : eImgState === "failed"
+                        ? "발급 실패. 다시 시도해 주세요"
+                        : "세션 결과 이미지로 자랑하기"}
+              </button>
               <button className="btn btn-next" onClick={startEndless} disabled={busy}>
                 다시 무한 찾기 — 콤보 이어가기
               </button>

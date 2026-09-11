@@ -50,6 +50,7 @@ export default function PlayPage() {
   const [streak, setStreak] = useState(0);
   const [busy, setBusy] = useState(false);
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
+  const [eImgState, setEImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
   const [xpRes, setXpRes] = useState<XpResult | null>(null); // 이번 완주 획득 점수
   const [eXpRes, setEXpRes] = useState<XpResult | null>(null); // 무한 세션 획득 점수
 
@@ -61,6 +62,7 @@ export default function PlayPage() {
   const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
   const [sHits, setSHits] = useState(0); // 이번 세션 적중 수
   const [sBest, setSBest] = useState(0); // 이번 세션 최고 연속
+  const [sMarks, setSMarks] = useState<boolean[]>([]); // 세션 라운드별 판정 (공유 카드 그리드)
   const qStart = useRef(0);
   const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
   const sessionTimes = useRef<number[]>([]); // 이번 세션 전체 풀이 시간(ms)
@@ -110,6 +112,8 @@ export default function PlayPage() {
       setECount(0);
       setSHits(0);
       setSBest(0);
+      setSMarks([]);
+      setEImgState("idle");
       runTimes.current = [];
       sessionTimes.current = [];
       startBest.current = endlessRecord("ox").best;
@@ -155,6 +159,7 @@ export default function PlayPage() {
         setReveal(data);
         setTimedOut(choice === "timeout");
         setECount((c) => c + 1);
+        setSMarks((m) => [...m, data.correct]);
         sessionTimes.current.push(dt);
         if (data.correct) {
           runTimes.current.push(dt);
@@ -274,6 +279,35 @@ export default function PlayPage() {
   const ep = quiz?.episode ?? "";
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
   const currentName = endless ? eq : quiz?.items[idx]?.name;
+
+  async function shareEndlessImage() {
+    if (!quiz || eImgState === "busy") return;
+    sfxTap();
+    setEImgState("busy");
+    try {
+      const rate = eCount > 0 ? sHits / eCount : 0;
+      const result = await shareCardImage({
+        episode: quiz.episode,
+        date: quiz.date,
+        subtitle: "무한 감별 통지서",
+        headerRight: `무한 감별 · ${mm}.${dd}`,
+        score: sBest,
+        total: eCount,
+        totalText: "연속",
+        marks: sMarks.slice(-10),
+        gradeName: sBest > startBest.current ? "신기록 갱신" : rate >= 0.8 ? "상급 감별" : rate >= 0.5 ? "감별 수련" : "재수련 요망",
+        stats: [
+          { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
+          { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 풀이 시간" },
+          { value: `${Math.max(eRec.best, sBest)}`, label: "역대 최고 연속", accent: sBest > startBest.current },
+          { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
+        ],
+      });
+      setEImgState(result);
+    } catch {
+      setEImgState("failed");
+    }
+  }
 
   return (
     <div className="frame">
@@ -449,6 +483,17 @@ export default function PlayPage() {
               </li>
             </ul>
             <div className="result-actions">
+              <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
+                {eImgState === "busy"
+                  ? "통지서를 발급하는 중"
+                  : eImgState === "shared"
+                    ? "공유 완료. 한 장 더 발급됩니다"
+                    : eImgState === "downloaded"
+                      ? "저장 완료. 갤러리에서 확인하세요"
+                      : eImgState === "failed"
+                        ? "발급 실패. 다시 시도해 주세요"
+                        : "세션 결과 이미지로 자랑하기"}
+              </button>
               <button className="btn btn-next" onClick={startEndless} disabled={busy}>
                 다시 무한 감별 — 기록 깨러 가기
               </button>
