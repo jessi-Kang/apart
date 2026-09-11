@@ -407,7 +407,18 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   color: var(--stamp); transform: rotate(-3.5deg); align-self: flex-start;
   max-width: 100%;
 }
-.stamp-frame { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* 도장 테두리. 두 겹 다 CSS 테두리라 문구 길이와 무관하게 굵기가 일정하고,
+   변위 필터는 이 상자에 통째로 건다 (Stamp.tsx 주석 참고) */
+.stamp-filter { position: absolute; width: 0; height: 0; }
+.stamp-frame {
+  position: absolute; inset: 0;
+  border: 3px solid currentColor;
+  filter: url(#stamp-rough);
+}
+.stamp-frame::after {
+  content: ""; position: absolute; inset: 3px;
+  border: 1.2px solid currentColor;
+}
 .stamp-text {
   position: relative; display: block; padding: 14px 22px;
   font-weight: 700; font-size: clamp(18px, 5vw, 24px); letter-spacing: -0.02em;
