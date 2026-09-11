@@ -8,6 +8,7 @@ import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
+import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { findGradeFor, FIND_GRADES } from "@/lib/grades";
 import { applyComboPick, comboState, type ComboState } from "@/lib/local";
@@ -475,10 +476,7 @@ export default function FindRealPage() {
           </section>
         )}
 
-        <footer className="sheet-footer">
-          <span>{endless ? "오판하면 콤보가 끊깁니다. 신중하게." : "진짜 하나를 골라 누르세요"}</span>
-          <span className="mono">{endless ? "무한 감정 중" : "내일 00:00 새 라운드"}</span>
-        </footer>
+        <SheetFooter />
       </main>
     </div>
   );

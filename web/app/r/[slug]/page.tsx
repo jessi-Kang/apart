@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GridTile } from "@/components/GridTile";
+import { SheetFooter } from "@/components/SheetFooter";
 import { Stamp } from "@/components/Stamp";
 import { episodeNumber } from "@/lib/daily";
 import { gradeFor } from "@/lib/grades";
@@ -80,19 +81,10 @@ export default async function ResultPage({ params }: Props) {
             <Link className="btn btn-next" href="/play">
               나도 오늘 문제 감별하기
             </Link>
-            <Link className="btn btn-ghost" href="/yesterday">
-              어제 문제 정답 보기
-            </Link>
           </div>
         </section>
 
-        <footer className="sheet-footer">
-          <span>하루 10문제 · 매일 자정 갱신</span>
-          <span className="mono">apt-gam</span>
-          <span className="copyright">
-            © 2026 아파트 감별사 · made by <a href="mailto:jihyun.kang@me.com">Jessi</a>
-          </span>
-        </footer>
+        <SheetFooter />
       </main>
     </div>
   );

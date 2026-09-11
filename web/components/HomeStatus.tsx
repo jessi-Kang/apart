@@ -18,7 +18,7 @@ export function HomeStatus({ date }: { date: string }) {
 
 /** 진짜 찾기 카드 상태: 최고 콤보를 상시 노출해 깨러 오게 한다 (docs/06) */
 export function ComboStatus() {
-  const [text, setText] = useState("매일 3라운드");
+  const [text, setText] = useState("매일 10라운드");
 
   useEffect(() => {
     const { current, best } = comboState();
