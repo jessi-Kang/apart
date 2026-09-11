@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { regions } from "@/lib/data";
-import { AreaPicker } from "@/components/AreaPicker";
-import { DailyChop, FindTail, RecTail } from "@/components/LedgerStatus";
+import { DailyChop } from "@/components/LedgerStatus";
 import { IdBadge } from "@/components/IdBadge";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
@@ -54,8 +53,7 @@ export default function HomePage() {
             감별 민원을 <em>선택</em>하세요
           </h1>
           <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 게임</p>
-          <IdBadge />
-          <AreaPicker regions={regions} />
+          <IdBadge regions={regions} />
 
           <nav className="ledger" aria-label="게임 목록">
             <div className="ledger-head mono">
@@ -69,9 +67,6 @@ export default function HomePage() {
                 <span className="cell">
                   <span className="tt">감별 O/X</span>
                   <span className="dd">이름 하나를 보고 진짜/가짜</span>
-                  <span className="dd-rec">
-                    <RecTail mode="ox" />
-                  </span>
                 </span>
               </Link>
               {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
@@ -86,9 +81,6 @@ export default function HomePage() {
                 <span className="cell">
                   <span className="tt">이름 조립</span>
                   <span className="dd">힌트로 단지명 조립</span>
-                  <span className="dd-rec">
-                    <RecTail mode="assemble" />
-                  </span>
                 </span>
               </Link>
               {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
@@ -103,9 +95,6 @@ export default function HomePage() {
                 <span className="cell">
                   <span className="tt">진짜 찾기</span>
                   <span className="dd">넷 중 진짜는 하나</span>
-                  <span className="dd-rec">
-                    <FindTail />
-                  </span>
                 </span>
               </Link>
               {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니

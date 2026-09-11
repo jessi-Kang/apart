@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DocTitle, MiniGrid, VForm, VRow } from "@/components/VerdictForm";
 import { LevelBar } from "@/components/LevelBar";
+import { GoogleMark } from "@/components/GoogleMark";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
-import { comboState, currentStreak, endlessRecord, loadResult, type ComboState } from "@/lib/local";
+import { comboState, currentStreak, endlessRecord, type ComboState } from "@/lib/local";
 import { currentLevel, type LevelInfo } from "@/lib/level";
 
 interface Me {
@@ -19,7 +20,41 @@ interface Rank {
 }
 interface RanksResponse {
   endless: Record<string, Rank | null>;
-  daily: Rank | null;
+  /** 창구별 공식전 순위 (ox / assemble / findreal) */
+  daily: Record<string, Rank | null>;
+}
+
+/** 오늘 그 창구 공식전을 쳤다면 남는 것 */
+interface DailyRun {
+  marks: boolean[];
+  area: string;
+  topPct: number | null;
+}
+
+const DAILY_KEYS = { ox: "aptgam:result", assemble: "aptgam:assemble", findreal: "aptgam:findreal" } as const;
+const GAMES = [
+  { mode: "ox", label: "감별 O/X", href: "/play" },
+  { mode: "assemble", label: "이름 조립", href: "/assemble" },
+  { mode: "findreal", label: "진짜 찾기", href: "/findreal" },
+] as const;
+
+/** 세 창구의 오늘 공식전 기록을 한 번에 읽는다 (창구마다 저장 키가 다르다) */
+function readDaily(date: string): Record<string, DailyRun | null> {
+  const out: Record<string, DailyRun | null> = {};
+  for (const [mode, key] of Object.entries(DAILY_KEYS)) {
+    try {
+      const raw = JSON.parse(localStorage.getItem(key) ?? "null") as
+        | { date?: string; marks?: boolean[]; area?: string; topPct?: number | null }
+        | null;
+      out[mode] =
+        raw && raw.date === date && Array.isArray(raw.marks)
+          ? { marks: raw.marks, area: raw.area ?? "", topPct: raw.topPct ?? null }
+          : null;
+    } catch {
+      out[mode] = null;
+    }
+  }
+  return out;
 }
 
 const fmtSec = (ms: number | null | undefined) =>
@@ -32,7 +67,7 @@ export default function RecordPage() {
   const [asm, setAsm] = useState({ best: 0, avgMs: null as number | null });
   const [combo, setCombo] = useState<ComboState>({ current: 0, best: 0 });
   const [streak, setStreak] = useState({ count: 0, playedToday: false });
-  const [today, setToday] = useState<{ date: string; marks: boolean[]; area: string } | null>(null);
+  const [daily, setDaily] = useState<Record<string, DailyRun | null>>({});
   const [ranks, setRanks] = useState<RanksResponse | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -42,20 +77,21 @@ export default function RecordPage() {
     const o = endlessRecord("ox");
     const a = endlessRecord("assemble");
     const c = comboState();
-    const saved = loadResult(date);
+    const runs = readDaily(date);
+    setDaily(runs);
     setLevel(currentLevel());
     setOx(o);
     setAsm(a);
     setCombo(c);
     setStreak(currentStreak(date));
-    setToday(saved ? { date: saved.date, marks: saved.marks, area: saved.area ?? "" } : null);
     setLoaded(true);
 
     const q = new URLSearchParams({ ox: String(o.best), assemble: String(a.best), findreal: String(c.best) });
-    if (saved) {
-      q.set("score", String(saved.marks.filter(Boolean).length));
-      // 순위는 그날 그 구역 공식전 참가자끼리만 비교한다
-      if (saved.area) q.set("area", saved.area);
+    // 공식전 순위는 창구마다 따로, 그때 고른 구역 안에서만 비교한다
+    for (const [mode, run] of Object.entries(runs)) {
+      if (!run) continue;
+      q.set(`d_${mode}`, String(run.marks.filter(Boolean).length));
+      if (run.area) q.set(`a_${mode}`, run.area);
     }
     fetch(`/api/records?${q.toString()}`)
       .then((r) => (r.ok ? r.json() : null))
@@ -83,8 +119,6 @@ export default function RecordPage() {
       </>
     );
   };
-
-  const score = today ? today.marks.filter(Boolean).length : 0;
 
   return (
     <div className="frame">
@@ -142,28 +176,45 @@ export default function RecordPage() {
           <div className="cut" />
 
           <VForm>
-            <VRow label={today?.area ? `오늘 ${today.area.replace(/특별자치시$|특별시$|광역시$/, "")} 공식전` : "오늘 공식전"}>
-              {today ? (
-                <MiniGrid marks={today.marks} label={`${today.marks.length}문제 중 ${score}문제 적중`} />
-              ) : (
-                <>
-                  미출전 <small>창구에서 신청할 수 있습니다</small>
-                </>
-              )}
-            </VRow>
-            {today && (
-              <VRow label={today?.area ? `${today.area.replace(/특별자치시$|특별시$|광역시$/, "")} 순위` : "전국 순위"}>
-                {ranks?.daily?.top != null ? (
-                  <>
-                    상위 <span className="accent">{ranks.daily.top}%</span> <small>{ranks.daily.sample}명</small>
-                  </>
-                ) : (
-                  <>
-                    집계 중 <small>표본 100명부터 공개</small>
-                  </>
-                )}
-              </VRow>
-            )}
+            {/* 공식전은 창구마다 문제도 순위도 따로다. 한 행에 뭉쳐 두면
+                어느 게임 성적인지 알 수 없다 */}
+            {GAMES.map((g) => {
+              const run = daily[g.mode];
+              const areaName = (run?.area ?? "").replace(/특별자치시$|특별시$|광역시$/, "");
+              const rank = ranks?.daily?.[g.mode];
+              return (
+                <VRow key={g.mode} label={`${g.label} 공식전`}>
+                  {run ? (
+                    <>
+                      <MiniGrid
+                        marks={run.marks}
+                        label={`${run.marks.length}문제 중 ${run.marks.filter(Boolean).length}문제 적중`}
+                      />
+                      <span className="vr-rank">
+                        {rank?.top != null ? (
+                          <>
+                            {areaName || "전국"} 상위 <span className="accent">{rank.top}%</span>{" "}
+                            <small>{rank.sample}명</small>
+                          </>
+                        ) : run.topPct != null ? (
+                          <>
+                            {areaName || "전국"} 상위 <span className="accent">{run.topPct}%</span>
+                          </>
+                        ) : (
+                          <>
+                            집계 중 <small>표본 100명부터 공개</small>
+                          </>
+                        )}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      미출전 <small>창구의 출전 도장을 누르면 신청됩니다</small>
+                    </>
+                  )}
+                </VRow>
+              );
+            })}
             <VRow label="직급">
               <LevelBar />
             </VRow>
@@ -172,6 +223,7 @@ export default function RecordPage() {
                 <span className="acct-line">
                   {me.user ? (
                     <>
+                      <GoogleMark />
                       {me.user.name}
                       <button
                         type="button"
@@ -186,7 +238,10 @@ export default function RecordPage() {
                   ) : (
                     <>
                       이 기기에만 저장 중
-                      <a href="/api/auth/login">Google로 보관</a>
+                      <a href="/api/auth/login">
+                        <GoogleMark />
+                        Google로 보관
+                      </a>
                     </>
                   )}
                 </span>
