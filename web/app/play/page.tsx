@@ -9,7 +9,7 @@ import { SoundToggle } from "@/components/SoundToggle";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { gradeFor } from "@/lib/grades";
-import { bumpStreak, bumpEndlessRecord, comboState, endlessRecord, firstVisit, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
+import { areaPref, bumpStreak, bumpEndlessRecord, comboState, endlessRecord, firstVisit, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -64,6 +64,7 @@ export default function PlayPage() {
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const [firstTime, setFirstTime] = useState(false); // 이 창구 첫 방문인가
+  const [area, setArea] = useState(""); // 담당 구역 (빈 값이면 서울 전체)
   const qStart = useRef(0);
   const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
   const sessionTimes = useRef<number[]>([]); // 이번 판 전체 풀이 시간(ms)
@@ -72,6 +73,7 @@ export default function PlayPage() {
   useEffect(() => {
     setERec(endlessRecord("ox"));
     setFirstTime(firstVisit("ox"));
+    setArea(areaPref());
     fetch("/api/quiz/today")
       .then((r) => r.json())
       .then((data: TodayResponse) => {
@@ -90,7 +92,8 @@ export default function PlayPage() {
   }, [phase, idx, eCount]);
 
   async function fetchEndless() {
-    const res = await fetch("/api/endless/ox");
+    const a = areaPref();
+    const res = await fetch(`/api/endless/ox${a ? `?area=${encodeURIComponent(a)}` : ""}`);
     if (!res.ok) throw new Error("endless_failed");
     setEq(((await res.json()) as { name: string }).name);
   }
@@ -392,7 +395,7 @@ export default function PlayPage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? "무한 감별" : `제${ep}호 공식전`}
+              {endless ? (area ? `무한 감별 · ${area}` : "무한 감별") : `제${ep}호 공식전`}
               {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
             </small>
           </Link>

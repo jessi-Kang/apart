@@ -94,7 +94,8 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 
 - **정답을 클라이언트에 미리 내려주지 않는 이유**: 소스 보기로 만점 치팅 방지. 판정은 서버에서만. 자동화 치팅은 여전히 가능하지만 순위 경쟁이 없어 방어 비용을 더 들이지 않는다.
 - 캐시: `today` 계열만 `max-age=60`, 나머지는 `no-store` 또는 기본값. 문제 자체가 시드 생성이라 CDN 장시간 캐시의 이득이 크지 않다.
-- 미구현: `/api/quiz/yesterday`(어제 문제 열람), 우리 동네 모드 `/api/local/{sigungu}/quiz`, `/admin/*`.
+- 구역 출제: `/api/endless/ox`와 `/api/endless/find`가 `?area=<자치구>`를 받는다. 알 수 없는 값은 무시하고 서울 전체로 낸다.
+- 미구현: `/api/quiz/yesterday`(어제 문제 열람), `/admin/*`.
 
 ## 4. 출제 로직
 

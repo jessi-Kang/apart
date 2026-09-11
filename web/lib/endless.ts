@@ -1,4 +1,4 @@
-import { apartments, fakeNames, type Apartment } from "./data";
+import { apartments, fakeNames, poolOf, type Apartment } from "./data";
 import { choseongHint } from "./hangul";
 
 /**
@@ -29,9 +29,10 @@ function metaOf(a: Apartment) {
 
 /* ---------- 감별 O/X ---------- */
 
-export function randomOx(): { name: string } {
+export function randomOx(area?: string | null): { name: string } {
+  const { reals, fakes } = poolOf(area);
   const real = Math.random() < 0.5;
-  return { name: real ? pick(apartments).name : pick(fakeNames).name };
+  return { name: real ? pick(reals).name : pick(fakes).name };
 }
 
 export function judgeOx(
@@ -51,10 +52,11 @@ export function judgeOx(
 
 /* ---------- 진짜 찾기 ---------- */
 
-export function randomFind(): { options: string[] } {
-  const real = pick(apartments);
+export function randomFind(area?: string | null): { options: string[] } {
+  const pool = poolOf(area);
+  const real = pick(pool.reals);
   const fakes = new Set<string>();
-  while (fakes.size < 3) fakes.add(pick(fakeNames).name);
+  while (fakes.size < 3) fakes.add(pick(pool.fakes).name);
   const options = [real.name, ...fakes];
   for (let i = options.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

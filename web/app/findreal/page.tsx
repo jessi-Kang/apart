@@ -9,7 +9,7 @@ import { SoundToggle } from "@/components/SoundToggle";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { findGradeFor } from "@/lib/grades";
-import { applyComboPick, comboState, type ComboState } from "@/lib/local";
+import { applyComboPick, areaPref, comboState, type ComboState } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxCombo, sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -63,12 +63,14 @@ export default function FindRealPage() {
   const [sMarks, setSMarks] = useState<boolean[]>([]); // 판의 문제별 판정 (공유 카드 그리드)
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
+  const [area, setArea] = useState(""); // 담당 구역 (빈 값이면 서울 전체)
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
   const qStart = useRef(0);
 
   useEffect(() => {
     setCombo(comboState());
+    setArea(areaPref());
     fetch("/api/findreal/today")
       .then((r) => r.json())
       .then((data: TodayResponse) => {
@@ -97,7 +99,8 @@ export default function FindRealPage() {
   const total = quiz?.items.length ?? 10;
 
   async function fetchEndless() {
-    const res = await fetch("/api/endless/find");
+    const a = areaPref();
+    const res = await fetch(`/api/endless/find${a ? `?area=${encodeURIComponent(a)}` : ""}`);
     if (!res.ok) throw new Error("endless_failed");
     setEOptions(((await res.json()) as { options: string[] }).options);
   }
@@ -367,7 +370,7 @@ export default function FindRealPage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? "무한 찾기" : `제${ep}호 공식전`}
+              {endless ? (area ? `무한 찾기 · ${area}` : "무한 찾기") : `제${ep}호 공식전`}
               {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
             </small>
           </Link>
