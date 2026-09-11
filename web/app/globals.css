@@ -90,14 +90,14 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   display: flex; align-items: center; justify-content: center;
 }
 .form-no > span + span { border-top: 1px solid var(--line); }
-.home h1 { font-size: clamp(26px, 6.5vw, 36px); line-height: 1.25; letter-spacing: -0.03em; font-weight: 700; position: relative; max-width: 11ch; }
+.home h1 { font-size: clamp(26px, 6.5vw, 36px); line-height: 1.25; letter-spacing: -0.03em; font-weight: 700; position: relative; }
 .home h1 em { font-style: normal; color: var(--stamp); position: relative; }
 /* 결재하듯 손으로 그은 붉은 밑줄 */
 .home h1 em::after {
   content: ""; position: absolute; left: -2%; right: -2%; bottom: -0.08em; height: 0.16em;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M2 7 Q 28 3.5, 54 6 T 98 4.5' fill='none' stroke='%23c73a2f' stroke-width='4.5' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
 }
-.home .sub { margin-top: 12px; color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; max-width: 34ch; }
+.home .sub { margin-top: 12px; color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; }
 /* 접수 대장 표: 순번 / 창구 / 현황 */
 .ledger { margin-top: 22px; border: 1px solid var(--ink); border-radius: var(--radius); overflow: hidden; }
 .ledger-head {
