@@ -85,6 +85,7 @@ const SEAL_SHAPE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200
 async function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, alpha = 1) {
   ctx.save();
   ctx.translate(cx, cy);
+  ctx.rotate((-12 * Math.PI) / 180); // 손으로 찍은 도장은 반듯할 수 없다 — 홈 관인과 같은 기울기
   ctx.globalAlpha = alpha;
   try {
     const img = await svgImage(SEAL_SHAPE_SVG);
@@ -174,7 +175,7 @@ function stampFrameSvg(w: number, h: number): string {
 async function drawGradeStamp(ctx: CanvasRenderingContext2D, cx: number, cy: number, text: string) {
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate((-2.5 * Math.PI) / 180);
+  ctx.rotate((-3.5 * Math.PI) / 180);
   ctx.globalAlpha = 0.92; // 꽉 찬 원색보다 살짝 눌린 인주 느낌
   ctx.font = font(700, 58);
   const tw = ctx.measureText(text).width;
