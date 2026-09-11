@@ -194,24 +194,40 @@ export default function AssemblePage() {
       ? Math.round(sessionTimes.current.reduce((a, b) => a + b, 0) / sessionTimes.current.length)
       : null;
 
-  function finishEndless() {
-    sfxResult();
-    setEXpRes(addXp(sHits * 8 + (sBest > startBest.current ? 30 : 0)));
-    setPhase("eresult");
-    setETop(null);
-    fetch("/api/endless/finish", {
+  /** 이번 판을 집계에 접수한다 (화면 전환 없음). keepalive는 이탈 중에도 요청을 살린다 */
+  function submitEndlessRun(keepalive = false): Promise<number | null> {
+    return fetch("/api/endless/finish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "assemble", best: sBest, hits: sHits, count: eCount, avgMs: sessionAvgMs() }),
+      keepalive,
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { top: number | null } | null) => setETop(d?.top ?? null))
-      .catch(() => undefined);
+      .then((d: { top: number | null } | null) => d?.top ?? null)
+      .catch(() => null);
+  }
+
+  const runXp = () => sHits * 8 + (sBest > startBest.current ? 30 : 0);
+
+  function finishEndless() {
+    sfxResult();
+    setEXpRes(addXp(runXp()));
+    setPhase("eresult");
+    setETop(null);
+    void submitEndlessRun().then(setETop);
+  }
+
+  /** 결과를 안 보고 떠나도 쌓은 것은 남긴다 */
+  function abandonEndless(keepalive = false) {
+    if (!endless || eCount === 0) return;
+    addXp(runXp());
+    void submitEndlessRun(keepalive);
   }
 
   /** 공식전(오늘의 10문제) 참가 */
   function startOfficial() {
     sfxTap();
+    abandonEndless(); // 공식전으로 갈아타도 여태 쌓은 판은 접수하고 간다
     setEndless(false);
     setIdx(0);
     setMarks([]);
@@ -424,7 +440,7 @@ export default function AssemblePage() {
 
       <main className="sheet">
         <header className="sheet-header">
-          <Link className="brand" href="/">
+          <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
               {endless ? "무한 조립 신청서" : "이름 조립 신청서"}
@@ -477,6 +493,12 @@ export default function AssemblePage() {
             ) : (
               <p className="qlabel mono">
                 {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+              </p>
+            )}
+            {/* 첫 판 첫 문제에만 규칙 한 줄 */}
+            {endless && eCount === 0 && eRec.best === 0 && (
+              <p className="rule-hint">
+                조각을 눌러 단지명을 완성하세요. <b>함정 조각이 섞여 있습니다.</b>
               </p>
             )}
             <div className="hintcard paper-in" key={endless ? `e${eCount}` : (puzzle as Puzzle).no}>

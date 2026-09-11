@@ -124,26 +124,43 @@ export default function PlayPage() {
       ? Math.round(sessionTimes.current.reduce((a, b) => a + b, 0) / sessionTimes.current.length)
       : null;
 
-  function finishEndless() {
-    sfxResult();
-    // 무한 정답 5점 + 신기록 보너스 30점
-    setEXpRes(addXp(sHits * 5 + (sBest > startBest.current ? 30 : 0)));
-    setPhase("eresult");
-    // 판 기록 접수: 최근 7일 다른 판들과 비교한 상위 % (익명 집계)
-    setETop(null);
-    fetch("/api/endless/finish", {
+  /** 이번 판을 집계에 접수한다. 화면을 바꾸지 않으므로 이탈 경로에서도 쓴다.
+   * keepalive: 페이지를 떠나는 중에도 요청이 살아남게 한다 */
+  function submitEndlessRun(keepalive = false): Promise<number | null> {
+    return fetch("/api/endless/finish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "ox", best: sBest, hits: sHits, count: eCount, avgMs: sessionAvgMs() }),
+      keepalive,
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { top: number | null } | null) => setETop(d?.top ?? null))
-      .catch(() => undefined);
+      .then((d: { top: number | null } | null) => d?.top ?? null)
+      .catch(() => null);
+  }
+
+  /** 무한 정답 5점 + 신기록 보너스 30점 */
+  const runXp = () => sHits * 5 + (sBest > startBest.current ? 30 : 0);
+
+  function finishEndless() {
+    sfxResult();
+    setEXpRes(addXp(runXp()));
+    setPhase("eresult");
+    // 판 기록 접수: 최근 7일 다른 판들과 비교한 상위 % (익명 집계)
+    setETop(null);
+    void submitEndlessRun().then(setETop);
+  }
+
+  /** 결과를 안 보고 떠나는 경우에도 쌓은 것은 남긴다 — 나가면 손해인 구조는 만들지 않는다 */
+  function abandonEndless(keepalive = false) {
+    if (!endless || eCount === 0) return;
+    addXp(runXp());
+    void submitEndlessRun(keepalive);
   }
 
   /** 공식전(오늘의 10문제) 참가 — 전국 동일 문제, 정답률·상위% 집계 */
   function startOfficial() {
     sfxTap();
+    abandonEndless(); // 공식전으로 갈아타도 여태 쌓은 판은 접수하고 간다
     setEndless(false);
     setIdx(0);
     setMarks([]);
@@ -366,7 +383,7 @@ export default function PlayPage() {
 
       <main className="sheet">
         <header className="sheet-header">
-          <Link className="brand" href="/">
+          <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
               {endless ? "무한 감별 접수증" : "진짜 단지명 판별 접수증"}
@@ -427,6 +444,12 @@ export default function PlayPage() {
                   {String(idx + 1).padStart(2, "0")} / 10
                 </p>
               </>
+            )}
+            {/* 첫 판 첫 문제에만 규칙 한 줄 — 기록이 쌓인 사람에게는 다시 보이지 않는다 */}
+            {endless && eCount === 0 && eRec.best === 0 && (
+              <p className="rule-hint">
+                이 이름, 실제로 있는 단지일까요? <b>틀리면 연속이 끊깁니다.</b>
+              </p>
             )}
             <div className="qname-wrap paper-in" key={`${endless ? "e" : "d"}-${endless ? eCount : idx}`}>
               <h2 className="qname">{currentName}</h2>
