@@ -68,7 +68,7 @@ export default function PlayPage() {
       .then((data: TodayResponse) => {
         setQuiz(data);
         const saved = loadResult(data.date);
-        if (saved) {
+        if (saved && saved.marks.length === data.items.length) {
           restore(saved, data.date);
         } else {
           setPhase("question");
