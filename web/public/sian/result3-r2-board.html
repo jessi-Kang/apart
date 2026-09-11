@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<title>결과 시안 R2 · 점수 전광판</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===== 결과 시안 R2 · 점수 전광판 =====
+     방향: 초대형 숫자 하나로 승부하는 포스터형 미니멀. 도장은 각인만.
+     다이얼: VARIANCE 6 / MOTION 4 / DENSITY 2 */
+  :root{ --paper:#f6f6f3; --sheet:#fdfdfb; --ink:#1b1b1e; --ink-soft:#5c5c62; --line:#d9d9d3; --stamp:#c73a2f; --radius:2px; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:light}
+  body{background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans KR",system-ui,sans-serif; -webkit-font-smoothing:antialiased; word-break:keep-all;}
+  button{appearance:none;-webkit-appearance:none;font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+  .mono{font-family:"IBM Plex Mono",monospace}
+  .frame{min-height:100dvh; display:flex; justify-content:center; padding:16px;}
+  .sheet{background:var(--sheet); border:1px solid var(--line); border-radius:var(--radius); width:100%; max-width:560px; display:flex; flex-direction:column;}
+  .head{display:flex; justify-content:space-between; align-items:baseline; padding:16px 20px; border-bottom:2px solid var(--ink);}
+  .head b{font-size:16px;} .head b small{display:block; font-weight:400; color:var(--ink-soft); font-size:12px; margin-top:2px;}
+  .head .no{font-size:12.5px; font-weight:600;}
+
+  .body{padding:8px 22px 30px; display:flex; flex-direction:column; flex:1;}
+  .label{margin-top:26px; font-size:12.5px; color:var(--ink-soft); letter-spacing:.22em;}
+  .score{display:flex; align-items:baseline; gap:10px; margin-top:-6px;}
+  .score b{font-size:clamp(120px,38vw,168px); font-weight:700; letter-spacing:-.06em; line-height:1.05;}
+  .score span{font-size:26px; color:var(--ink-soft); font-weight:700;}
+  .grid{display:flex; gap:6px; margin-top:2px;}
+  .grid i{width:26px; height:26px; border-radius:2px; background:var(--ink);}
+  .grid i.x{background:var(--sheet); border:1.8px solid var(--stamp);}
+  .verdict{margin-top:26px; font-size:17px; line-height:1.55;}
+  .verdict b{color:var(--stamp);}
+  .sub{margin-top:8px; color:var(--ink-soft); font-size:13px;}
+
+  .spacer{flex:1; min-height:26px;}
+  .actions{display:flex; flex-direction:column; gap:10px;}
+  .btn{font-size:15px; font-weight:700; padding:16px 12px; border-radius:var(--radius); text-align:center;}
+  .btn-next{background:var(--ink); color:var(--sheet);}
+  .btn-ghost{background:var(--sheet); color:var(--ink); border:1px solid var(--line); font-weight:500; font-size:14px; padding:13px 12px;}
+  /* 배경 각인: 등급명을 큰 워터마크 텍스트로 */
+  .etch{position:absolute; right:-8px; bottom:118px; font-size:64px; font-weight:700; letter-spacing:-.05em; color:var(--ink); opacity:.05; transform:rotate(-90deg); transform-origin:right bottom; pointer-events:none;}
+  .body{position:relative; isolation:isolate; overflow:hidden;}
+  @media (min-width:768px){ .frame{align-items:center} .sheet{max-width:640px} }
+  @media (prefers-reduced-motion:no-preference){
+    .score b{animation:pop .4s cubic-bezier(.22,1,.36,1) backwards;}
+    @keyframes pop{from{opacity:0; transform:translateY(18px)} to{opacity:1; transform:none}}
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <main class="sheet">
+    <div class="head">
+      <b>아파트 감별사<small>감별 결과 통지서</small></b>
+      <span class="no mono">#2 · 09.11</span>
+    </div>
+    <div class="body">
+      <span class="etch">부동산 카페 눈팅러</span>
+      <p class="label mono">감별 결과</p>
+      <p class="score"><b>7</b><span>/ 10</span></p>
+      <div class="grid"><i></i><i></i><i class="x"></i><i></i><i></i><i class="x"></i><i></i><i></i><i class="x"></i><i></i></div>
+      <p class="verdict">「<b>부동산 카페 눈팅러</b>」 판정.<br>AI에 3번 속았지만 감은 살아 있습니다.</p>
+      <p class="sub">전국 상위 23% · 4일 연속 · Lv.2 견습 감별사</p>
+      <div class="spacer"></div>
+      <div class="actions">
+        <button class="btn btn-next">통지서 이미지 공유</button>
+        <button class="btn btn-ghost">무한 감별 계속</button>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

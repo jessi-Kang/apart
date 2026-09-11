@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<title>공유 시안 S2 · 접수증</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===== 공유 시안 S2 · 접수증 영수증 (1080×1350 목업) =====
+     방향: 창구에서 뽑아준 영수증. mono 열거 + 절취 지그재그. 힙한 공유짤. */
+  :root{ --paper:#f6f6f3; --sheet:#fdfdfb; --ink:#1b1b1e; --ink-soft:#5c5c62; --line:#d9d9d3; --stamp:#c73a2f; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#e3e3df; font-family:"IBM Plex Mono",monospace; -webkit-font-smoothing:antialiased; display:grid; place-items:center; min-height:100dvh; padding:20px;}
+  .kr{font-family:"IBM Plex Sans KR",system-ui,sans-serif;}
+  .card{width:min(540px,92vw); aspect-ratio:1080/1350; background:var(--paper); display:grid; place-items:center; position:relative; overflow:hidden;}
+  /* 영수증 지폭: 카드 안 좁은 세로지 */
+  .tape{width:64%; background:var(--sheet); box-shadow:0 2px 14px rgba(27,27,30,.12); padding:26px 22px 20px; position:relative; transform:rotate(-1.2deg);}
+  .tape::before,.tape::after{content:""; position:absolute; left:0; right:0; height:10px; background:
+    linear-gradient(-45deg, transparent 7px, var(--sheet) 0) 0 0/20px 10px repeat-x,
+    linear-gradient(45deg, transparent 7px, var(--sheet) 0) 10px 0/20px 10px repeat-x;}
+  .tape::before{top:-9px;}
+  .tape::after{bottom:-9px; transform:scaleY(-1);}
+  h1{text-align:center; font-size:17px; letter-spacing:.12em; font-weight:700;}
+  .sub{text-align:center; font-size:10.5px; color:var(--ink-soft); margin-top:4px; letter-spacing:.06em;}
+  .rule{border-top:1.5px dashed var(--ink); margin:12px 0; opacity:.5;}
+  .row{display:flex; justify-content:space-between; font-size:12px; padding:3.5px 0; letter-spacing:.02em;}
+  .row.b{font-weight:700; font-size:14px;}
+  .row .rt{color:var(--ink-soft);}
+  .marks{display:flex; justify-content:center; gap:4px; margin:10px 0 2px; font-size:15px; letter-spacing:2px;}
+  .marks b{color:var(--ink)} .marks s{color:var(--stamp); text-decoration:none;}
+  .stamp{margin:14px auto 4px; width:fit-content; color:var(--stamp); border:3px solid currentColor; border-radius:3px; padding:8px 14px; font-weight:700; font-size:15px; transform:rotate(-4deg); letter-spacing:.04em;}
+  .stamp small{display:block; font-size:9px; letter-spacing:.35em; text-align:center; margin-top:2px;}
+  .barcode{margin:12px auto 0; height:34px; width:82%; background:repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 5px, var(--ink) 5px 6px, transparent 6px 11px);}
+  .url{text-align:center; font-size:11px; margin-top:8px; color:var(--stamp); font-weight:700; letter-spacing:.08em;}
+  /* 배경 도장 흔적 */
+  .ghost{position:absolute; bottom:34px; right:30px; width:150px; height:150px; border:6px solid var(--stamp); border-radius:50%; opacity:.1; transform:rotate(10deg);}
+</style>
+</head>
+<body>
+  <div class="card">
+    <span class="ghost"></span>
+    <div class="tape">
+      <h1 class="kr">아파트 감별사</h1>
+      <p class="sub kr">감별 민원 접수증 · 제2호 · 2026.09.11</p>
+      <div class="rule"></div>
+      <div class="row"><span>감별 O/X</span><span>10문</span></div>
+      <div class="marks"><b>■</b><b>■</b><s>✕</s><b>■</b><b>■</b><s>✕</s><b>■</b><b>■</b><s>✕</s><b>■</b></div>
+      <div class="rule"></div>
+      <div class="row b"><span class="kr">적중</span><span>7 / 10</span></div>
+      <div class="row"><span class="kr rt">전국 순위</span><span>상위 23%</span></div>
+      <div class="row"><span class="kr rt">연속 접수</span><span>4일</span></div>
+      <div class="row"><span class="kr rt">AI에 속음</span><span>3회</span></div>
+      <div class="row"><span class="kr rt">감별사 등급</span><span class="kr">Lv.2 견습 감별사</span></div>
+      <div class="stamp kr">부동산 카페 눈팅러<small>APPROVED</small></div>
+      <div class="rule"></div>
+      <div class="barcode"></div>
+      <p class="url">apt-gam.vercel.app</p>
+    </div>
+  </div>
+</body>
+</html>

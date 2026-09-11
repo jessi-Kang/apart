@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<title>공유 시안 S3 · 감별일보</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===== 공유 시안 S3 · 감별일보 (1080×1350 목업) =====
+     방향: 신문 1면 속보. 헤드라인 카피가 주인공, 수치는 기사 조판. */
+  :root{ --paper:#f6f6f3; --sheet:#fdfdfb; --ink:#1b1b1e; --ink-soft:#5c5c62; --line:#d9d9d3; --stamp:#c73a2f; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#e3e3df; font-family:"IBM Plex Sans KR",system-ui,sans-serif; -webkit-font-smoothing:antialiased; word-break:keep-all; display:grid; place-items:center; min-height:100dvh; padding:20px;}
+  .mono{font-family:"IBM Plex Mono",monospace}
+  .card{width:min(540px,92vw); aspect-ratio:1080/1350; background:var(--sheet); border:1px solid var(--line); padding:26px 28px; display:flex; flex-direction:column; position:relative; overflow:hidden;}
+
+  .masthead{text-align:center; border-bottom:3.5px solid var(--ink); padding-bottom:12px; position:relative;}
+  .masthead::after{content:""; position:absolute; left:0; right:0; bottom:-6px; border-bottom:1px solid var(--ink);}
+  .masthead h1{font-size:34px; letter-spacing:.34em; font-weight:700; text-indent:.34em;}
+  .masthead .dateline{display:flex; justify-content:space-between; font-size:10.5px; color:var(--ink-soft); margin-top:8px;}
+
+  .headline{margin-top:22px; font-size:33px; font-weight:700; letter-spacing:-.035em; line-height:1.32;}
+  .headline em{font-style:normal; color:var(--stamp);}
+  .deck{margin-top:10px; font-size:13px; color:var(--ink-soft); line-height:1.6;}
+
+  .photo{margin-top:18px; border:1px solid var(--ink); padding:14px; display:flex; flex-direction:column; gap:10px; align-items:center;}
+  .grid{display:flex; gap:6px;}
+  .grid i{width:28px; height:28px; border-radius:2px; background:var(--ink);}
+  .grid i.x{background:var(--sheet); border:2px solid var(--stamp);}
+  .caption{font-size:10.5px; color:var(--ink-soft);}
+
+  .cols{margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:0 18px; font-size:12px; line-height:1.7; color:var(--ink-soft); column-rule:1px solid var(--line);}
+  .cols .c{border-left:1px solid var(--line); padding-left:18px;}
+  .cols .c:first-child{border-left:none; padding-left:0;}
+  .cols b{color:var(--ink);}
+
+  .stamp{position:absolute; right:22px; top:210px; color:var(--stamp); border:4px solid currentColor; border-radius:3px; padding:10px 14px; font-weight:700; font-size:17px; transform:rotate(7deg); background:rgba(253,253,251,.82);}
+  .ft{margin-top:auto; border-top:2px solid var(--ink); padding-top:10px; display:flex; justify-content:space-between; font-size:11.5px; color:var(--ink-soft);}
+  .ft b{color:var(--stamp); font-weight:700;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="masthead">
+      <h1>감별일보</h1>
+      <div class="dateline mono"><span>제2호</span><span>2026년 9월 11일</span><span>무료</span></div>
+    </div>
+    <span class="stamp">단독</span>
+    <h2 class="headline">시민 J씨, AI 아파트에<br><em>세 번</em> 속았다</h2>
+    <p class="deck">10건의 감별 민원 중 7건 적중. 전국 상위 23%의 안목이지만 "델마레 2차"에 끝내 무릎 꿇어.</p>
+    <div class="photo">
+      <div class="grid"><i></i><i></i><i class="x"></i><i></i><i></i><i class="x"></i><i></i><i></i><i class="x"></i><i></i></div>
+      <span class="caption">사진 = 본지 감별 결과 판정 그리드</span>
+    </div>
+    <div class="cols">
+      <p class="c">감별 당국은 J씨에게 <b>「부동산 카페 눈팅러」</b> 등급을 발부했다. 4일 연속 접수 기록도 함께 갱신됐다.</p>
+      <p class="c">관계자는 "Lv.2 <b>견습 감별사</b>로 승급까지 60점 남았다"며 내일 회차 접수를 예고했다.</p>
+    </div>
+    <div class="ft"><span>진짜 아파트냐, AI가 지은 이름이냐</span><b class="mono">apt-gam.vercel.app</b></div>
+  </div>
+</body>
+</html>

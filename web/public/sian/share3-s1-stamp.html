@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<title>공유 시안 S1 · 도장 히어로</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===== 공유 시안 S1 · 도장 히어로 (1080×1350 → 540×675 목업) =====
+     방향: 등급 도장이 카드의 절반. 피드 썸네일에서 한 방에 읽힌다. */
+  :root{ --paper:#f6f6f3; --sheet:#fdfdfb; --ink:#1b1b1e; --ink-soft:#5c5c62; --line:#d9d9d3; --stamp:#c73a2f; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#e3e3df; font-family:"IBM Plex Sans KR",system-ui,sans-serif; -webkit-font-smoothing:antialiased; word-break:keep-all; display:grid; place-items:center; min-height:100dvh; padding:20px;}
+  .mono{font-family:"IBM Plex Mono",monospace}
+  .card{width:min(540px, 92vw); aspect-ratio:1080/1350; background:var(--paper); padding:16px; display:flex;}
+  .inner{flex:1; background:var(--sheet); border:1px solid var(--line); border-radius:2px; padding:26px 28px; display:flex; flex-direction:column; position:relative; overflow:hidden;}
+  .hd{display:flex; justify-content:space-between; align-items:baseline; padding-bottom:14px; border-bottom:3px solid var(--ink); position:relative;}
+  .hd::after{content:""; position:absolute; left:0; right:0; bottom:-6px; border-bottom:1px solid var(--ink);}
+  .hd b{font-size:19px; letter-spacing:-.02em;}
+  .hd b small{display:block; font-weight:400; font-size:12px; color:var(--ink-soft); margin-top:3px;}
+  .hd span{font-size:13px; color:var(--ink-soft);}
+
+  .score-line{margin-top:22px; display:flex; align-items:baseline; gap:8px;}
+  .score-line b{font-size:44px; font-weight:700; letter-spacing:-.04em;}
+  .score-line span{font-size:17px; color:var(--ink-soft); font-weight:700;}
+  .score-line em{font-style:normal; margin-left:auto; font-size:12.5px; color:var(--stamp); font-weight:700;}
+
+  /* 카드의 절반을 차지하는 초대형 도장 */
+  .hero{flex:1; display:grid; place-items:center; padding:10px 0;}
+  .bigstamp{position:relative; color:var(--stamp); transform:rotate(-5deg); text-align:center; padding:34px 30px; max-width:88%;}
+  .bigstamp i{position:absolute; inset:0; border:7px solid currentColor; border-radius:5px;}
+  .bigstamp i::after{content:""; position:absolute; inset:9px; border:2px solid currentColor;}
+  .bigstamp b{font-size:44px; font-weight:700; letter-spacing:-.03em; line-height:1.2; display:block;}
+  .bigstamp small{display:block; margin-top:8px; font-size:13px; font-weight:700; letter-spacing:.3em;}
+
+  .grid{display:flex; gap:6px; justify-content:center;}
+  .grid i{width:30px; height:30px; border-radius:3px; background:var(--ink);}
+  .grid i.x{background:var(--sheet); border:2px solid var(--stamp);}
+
+  .ft{margin-top:20px; padding-top:14px; border-top:2px dashed var(--line); display:flex; justify-content:space-between; align-items:baseline; font-size:12.5px; color:var(--ink-soft);}
+  .ft b{color:var(--stamp); font-weight:700;}
+  /* 배경 관인 */
+  .seal{position:absolute; top:64px; right:-38px; width:170px; height:170px; border:6px solid var(--stamp); border-radius:50%; opacity:.12; transform:rotate(-12deg);}
+  .seal::after{content:""; position:absolute; inset:8px; border:2px solid var(--stamp); border-radius:50%;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="inner">
+      <span class="seal"></span>
+      <div class="hd"><b>아파트 감별사<small>감별 결과 통지서</small></b><span class="mono">#2 · 09.11</span></div>
+      <div class="score-line"><b>7</b><span>/ 10</span><em>전국 상위 23%</em></div>
+      <div class="hero">
+        <span class="bigstamp"><i></i><b>부동산 카페<br>눈팅러</b><small>판정 확인</small></span>
+      </div>
+      <div class="grid"><i></i><i></i><i class="x"></i><i></i><i></i><i class="x"></i><i></i><i></i><i class="x"></i><i></i></div>
+      <div class="ft"><span>진짜 아파트냐, AI가 지은 이름이냐</span><b class="mono">apt-gam.vercel.app</b></div>
+    </div>
+  </div>
+</body>
+</html>
