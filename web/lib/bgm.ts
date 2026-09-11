@@ -40,7 +40,13 @@ export function onBgmChange(fn: () => void): () => void {
 function ensureContext(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    ctx ??= new AudioContext();
+    if (!ctx) {
+      ctx = new AudioContext();
+      // resume이 늦게 풀리는 기기(iOS)에서는 상태가 running으로 바뀔 때 다시 붙인다
+      ctx.onstatechange = () => {
+        if (ctx?.state === "running" && wanted && bgmEnabled()) void play();
+      };
+    }
     if (ctx.state === "suspended") void ctx.resume();
     gain ??= (() => {
       const g = ctx!.createGain();
@@ -125,8 +131,12 @@ export function armBgm(): () => void {
   if (typeof window !== "undefined" && !armed) {
     armed = true;
     const kick = () => void play();
-    window.addEventListener("pointerdown", kick);
-    window.addEventListener("keydown", kick);
+    // 창구에 새로고침으로 바로 들어오면 아직 제스처가 없어 AudioContext가 suspended다.
+    // 그때는 첫 탭에 음악이 붙도록 여러 제스처에 걸어 두고, resume이 늦게 풀리는
+    // 기기(iOS)를 위해 상태 변화에도 한 번 더 재생을 건다.
+    for (const ev of ["pointerdown", "touchend", "click", "keydown"]) {
+      window.addEventListener(ev, kick);
+    }
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) stop();
       else void play();

@@ -70,11 +70,12 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 /* 헤더가 baseline 정렬이라 그대로 두면 스피커가 닫기 버튼보다 위로 뜬다 */
 .head-tools { display: flex; align-items: center; align-self: center; gap: 6px; }
 .sound-btn {
-  background: none; border: 0; padding: 6px; cursor: pointer; color: var(--ink-soft);
+  background: none; border: 0; padding: 7px; margin: -7px 0; cursor: pointer; color: var(--ink);
   display: inline-flex; align-items: center; transition: color 0.12s ease;
 }
 .sound-btn:hover, .sound-btn:focus-visible { color: var(--stamp); }
-.sound-btn[aria-pressed="false"] { color: var(--line); }
+/* 꺼진 상태도 보여야 다시 켤 수 있다. --line(#d9d9d3)은 종이 위에서 거의 안 보였다 */
+.sound-btn[aria-pressed="false"] { color: var(--ink-soft); }
 @media (max-width: 479px) {
   .sheet-footer { flex-direction: column; gap: 3px; align-items: flex-start; }
   .sheet-footer span:last-child { white-space: normal; }
