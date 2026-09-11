@@ -20,18 +20,40 @@
  */
 
 import { createRequire } from "node:module";
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 const BASE = process.argv[2] ?? "http://localhost:3000";
 const WIDTHS = [390, 480, 768, 1024];
 
 const require = createRequire(import.meta.url);
 let chromium;
-try {
-  ({ chromium } = require("playwright"));
-} catch {
+// 전역 설치된 playwright는 이 파일 기준 require 경로에 안 잡히므로
+// npm root -g가 가리키는 자리까지 직접 찾아본다
+for (const spec of ["playwright", globalModulePath("playwright")]) {
+  if (!spec) continue;
+  try {
+    ({ chromium } = require(spec));
+    break;
+  } catch {
+    /* 다음 후보 */
+  }
+}
+if (!chromium) {
   console.error("playwright를 찾지 못해 레이아웃 검사를 건너뜁니다.");
   console.error("  npm i -g playwright && npx playwright install chromium");
   process.exit(0);
+}
+
+function globalModulePath(name) {
+  try {
+    const root = execFileSync("npm", ["root", "-g"], { encoding: "utf8" }).trim();
+    const p = join(root, name);
+    return existsSync(p) ? p : null;
+  } catch {
+    return null;
+  }
 }
 
 /** 화면 하나를 열고 손봐야 할 상태까지 몰고 가는 방법 */
