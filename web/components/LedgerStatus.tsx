@@ -31,7 +31,8 @@ export function DailyChop({ mode, date }: { mode: keyof typeof KEY_BY_MODE; date
     window.addEventListener(SYNC_EVENT, refresh);
     return () => window.removeEventListener(SYNC_EVENT, refresh);
   }, [mode, date]);
-  return <span className={done ? "chop done" : "chop"}>{done ? "완료" : "접수중"}</span>;
+  // 본편 완주는 "끝"이 아니라 무한 코스 개장 — 게임은 언제나 계속된다
+  return <span className={done ? "chop done" : "chop"}>{done ? "무한 개장" : "접수중"}</span>;
 }
 
 /** 본편 설명 꼬리: 연속 접수 일수 */

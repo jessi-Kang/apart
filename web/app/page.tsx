@@ -47,14 +47,14 @@ export default function HomePage() {
 
         <section className="screen home">
           <div className="home-seal" aria-hidden="true">
-            <Seal size={124} />
+            <Seal size={216} />
           </div>
           <h1>
             오늘 처리할
             <br />
             감별 민원을 <em>선택</em>하세요
           </h1>
-          <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 데일리 게임</p>
+          <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 데일리{" "}게임</p>
           <p className="home-level">
             <LevelChip />
           </p>
