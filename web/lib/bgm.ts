@@ -11,8 +11,9 @@
 
 const SRC = "/bgm/game-loop.mp3";
 const KEY = "aptgam:bgm";
-const VOLUME = 0.12;
-const DUCKED = 0.035; // 효과음이 울리는 동안 낮추는 높이
+// 배경음은 "있는 줄도 모를 만큼"이 맞다. 0.12는 게임 중에 귀에 걸린다는 지적을 받고 낮췄다
+const VOLUME = 0.06;
+const DUCKED = 0.018; // 효과음이 울리는 동안 낮추는 높이
 const FADE = 0.9; // 초
 
 let ctx: AudioContext | null = null;

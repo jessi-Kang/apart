@@ -31,8 +31,9 @@ export function DailyChop({ mode, date }: { mode: keyof typeof KEY_BY_MODE; date
     window.addEventListener(SYNC_EVENT, refresh);
     return () => window.removeEventListener(SYNC_EVENT, refresh);
   }, [mode, date]);
-  // 무한이 본편 — 도장은 오늘의 공식전(랭킹전) 출전 여부만 알린다
-  return <span className={done ? "chop done" : "chop"}>{done ? "출전 완료" : "공식전"}</span>;
+  // 열 이름이 이미 "공식전"이라 도장까지 같은 말을 쓰면 상태 표시로만 읽힌다.
+  // 여기는 누르는 자리이므로 할 일을 쓴다: 아직이면 출전, 치렀으면 성적표
+  return <span className={done ? "chop done" : "chop"}>{done ? "성적표" : "출전"}</span>;
 }
 
 /** 무한 기록 꼬리: 최고 연속 (없으면 도전 문구) */
