@@ -321,6 +321,19 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   opacity: 0.07; transform: rotate(-14deg); pointer-events: none;
 }
 
+/* ---- 감별사 레벨 ---- */
+.home-level { margin-top: 10px; min-height: 18px; }
+.levelbar { margin-top: 22px; width: 100%; max-width: 340px; }
+.lv-head { font-size: 13.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lv-head b { color: var(--ink); }
+.lv-gain { color: var(--stamp); font-weight: 700; font-size: 13px; }
+.lv-up {
+  display: inline-block; font-size: 11px; font-weight: 700; color: var(--stamp);
+  border: 1.5px solid currentColor; border-radius: var(--radius); padding: 2px 7px;
+  transform: rotate(-2deg);
+}
+.levelbar .ladder-note { display: block; margin-top: 8px; }
+
 /* ---- 게임 닫기 / 헤더 우측 묶음 ---- */
 .head-right { display: flex; align-items: center; gap: 12px; }
 .close-x {

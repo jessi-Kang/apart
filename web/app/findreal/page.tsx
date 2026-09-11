@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
 import { CountUp, GradeLadder, RecordGauge } from "@/components/ResultExtras";
+import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
 import { TimerBar } from "@/components/TimerBar";
 import { findGradeFor, FIND_GRADES } from "@/lib/grades";
 import { applyComboPick, comboState, type ComboState } from "@/lib/local";
+import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxCombo, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
@@ -49,6 +51,8 @@ export default function FindRealPage() {
   const [combo, setCombo] = useState<ComboState>({ current: 0, best: 0 });
   const [busy, setBusy] = useState(false);
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
+  const [xpRes, setXpRes] = useState<XpResult | null>(null);
+  const [eXpRes, setEXpRes] = useState<XpResult | null>(null);
 
   // 무한 라운드 (콤보는 데일리·무한 공통으로 이어진다)
   const [endless, setEndless] = useState(false);
@@ -196,6 +200,7 @@ export default function FindRealPage() {
     } catch {
       /* 무시 */
     }
+    setXpRes(addXp(marks.filter(Boolean).length * 10 + 20));
     setPhase("done");
   }
 
@@ -208,6 +213,7 @@ export default function FindRealPage() {
 
   function finishEndless() {
     sfxResult();
+    setEXpRes(addXp(sHits * 5 + (sMaxCombo > startBest.current ? 30 : 0)));
     setPhase("eresult");
   }
 
@@ -393,6 +399,7 @@ export default function FindRealPage() {
                   : "콤보가 끊긴 채 마감. 다음 세션에서 다시 쌓으세요."}
             </p>
             <RecordGauge session={sMaxCombo} best={startBest.current} unit="콤보" />
+            <LevelBar result={eXpRes} />
             <ul className="review">
               <li>
                 <span className="nm">세션 중 최고 콤보</span>
@@ -440,6 +447,7 @@ export default function FindRealPage() {
             </div>
             <p className="grade-desc">{dGrade.desc}</p>
             <GradeLadder grades={FIND_GRADES} score={hits} unit="라운드" />
+            <LevelBar result={xpRes} />
             <p className="top-note">
               {combo.current > 0
                 ? `연속 ${combo.current}개 적중 중 · 역대 최고 ${combo.best}`

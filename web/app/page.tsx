@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { ComboStatus, HomeStatus } from "@/components/HomeStatus";
+import { LevelChip } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +53,9 @@ export default function HomePage() {
             감별 민원을 <em>선택</em>하세요
           </h1>
           <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 데일리 게임. 본편은 하루 한 번입니다.</p>
+          <p className="home-level">
+            <LevelChip />
+          </p>
 
           <nav className="modes" aria-label="게임 목록">
             <Link className="mode" href="/play">

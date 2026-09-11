@@ -109,6 +109,18 @@ export function sfxCombo() {
   });
 }
 
+/** 레벨 업: 도장 쾅 + 밝은 상승 4음 */
+export function sfxLevelUp() {
+  withAudio((ac, t) => {
+    tone(ac, t, 160, 60, 0.16, 0.45);
+    noiseBurst(ac, t, 0.07, 0.25, 1800);
+    tone(ac, t + 0.15, 523, 523, 0.09, 0.09, "triangle");
+    tone(ac, t + 0.24, 659, 659, 0.09, 0.09, "triangle");
+    tone(ac, t + 0.33, 784, 784, 0.09, 0.09, "triangle");
+    tone(ac, t + 0.42, 1047, 1047, 0.2, 0.1, "triangle");
+  });
+}
+
 /** 결과 등급 도장: 쾅 + 상승 3음 */
 export function sfxResult() {
   withAudio((ac, t) => {
