@@ -57,7 +57,7 @@ export default async function ResultPage({ params }: Props) {
             아파트 감별사<small>감별 결과 통지서</small>
           </Link>
           <div className="issue mono">
-            제{ep}호
+            #{ep}
             <br />
             {mm}.{dd}
           </div>
