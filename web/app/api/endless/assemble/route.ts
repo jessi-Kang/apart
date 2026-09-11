@@ -3,9 +3,10 @@ import { randomAssemble, judgeAssemble } from "@/lib/endless";
 
 export const dynamic = "force-dynamic";
 
-/** 무한 이름 조립: GET = 랜덤 퍼즐, POST = 판정 */
-export function GET() {
-  return NextResponse.json(randomAssemble());
+/** 무한 이름 조립: GET = 랜덤 퍼즐(?area=면 그 시·도만), POST = 판정 */
+export function GET(req: Request) {
+  const area = new URL(req.url).searchParams.get("area");
+  return NextResponse.json(randomAssemble(area));
 }
 
 export async function POST(req: Request) {

@@ -1,4 +1,4 @@
-import { apartments, fakeNames, poolOf, type Apartment } from "./data";
+import { apartments, assemblePoolOf, fakeNames, poolOf, type Apartment } from "./data";
 import { choseongHint } from "./hangul";
 
 /**
@@ -89,19 +89,19 @@ export function judgeFind(
 
 /* ---------- 이름 조립 ---------- */
 
-const multiToken = apartments.filter((a) => a.name.split(" ").length >= 2);
-const DECOY_POOL = [...new Set(fakeNames.flatMap((f) => f.name.split(" ")))];
-
-export function randomAssemble(): {
+export function randomAssemble(area?: string | null): {
   id: string;
   pieces: string[];
   answerLen: number;
   hint: { location: string; builtYear: number; households: number };
+  /** 실제로 좁힌 범위. 자치구를 골라도 조립은 그 시·도로 넓히므로 화면이 이 값을 쓴다 */
+  sido: string | null;
 } {
-  const apt = pick(multiToken);
+  const pool = assemblePoolOf(area);
+  const apt = pick(pool.reals);
   const answer = apt.name.split(" ");
   const decoys: string[] = [];
-  const cand = DECOY_POOL.filter((t) => !answer.includes(t));
+  const cand = [...new Set(pool.fakes.flatMap((f) => f.name.split(" ")))].filter((t) => !answer.includes(t));
   while (decoys.length < (answer.length >= 3 ? 2 : 3) && cand.length) {
     const t = cand.splice(Math.floor(Math.random() * cand.length), 1)[0];
     decoys.push(t);
@@ -111,7 +111,7 @@ export function randomAssemble(): {
     const j = Math.floor(Math.random() * (i + 1));
     [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
   }
-  return { id: apt.id, pieces, answerLen: answer.length, hint: metaOf(apt) };
+  return { id: apt.id, pieces, answerLen: answer.length, hint: metaOf(apt), sido: pool.sido };
 }
 
 const realById = new Map(apartments.map((a) => [a.id, a]));
