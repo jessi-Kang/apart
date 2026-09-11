@@ -38,6 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script id="bip-capture" strategy="beforeInteractive">
           {`window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__aptgamBIP=e;try{window.dispatchEvent(new Event('aptgam:bip'))}catch(_){}});`}
         </Script>
+        {/* 매니페스트 링크는 직접 head에 둔다 — force-dynamic 페이지에서 Next가
+            메타데이터를 body로 스트리밍하면 크롬이 매니페스트를 못 찾아 설치가 막힌다 */}
+        <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
