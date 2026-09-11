@@ -352,7 +352,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
     draw: (y) => {
       ctx.fillStyle = INK_SOFT;
       ctx.font = font(400, 21);
-      fillTracked(ctx, `감별 민원 접수증 · ${issued}`, TAPE_X + TAPE_W / 2, y + 21, 1.3, "center");
+      fillTracked(ctx, `감별 민원 통지서 · ${issued}`, TAPE_X + TAPE_W / 2, y + 21, 1.3, "center");
     },
   });
   rule();

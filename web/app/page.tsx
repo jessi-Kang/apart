@@ -24,9 +24,9 @@ export default function HomePage() {
           제{ep}호 / {Number(mm)}월 {Number(dd)}일
         </p>
         <p className="note">
-          실존 단지명은 공공데이터(K-apt) 기준.
+          진짜는 실존하는 단지,
           <br />
-          가짜 이름은 AI가 지었습니다.
+          가짜는 AI가 지은 이름입니다.
         </p>
       </aside>
 

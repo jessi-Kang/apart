@@ -6,13 +6,14 @@ import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 import { DocTitle, MiniGrid, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { CloseX } from "@/components/CloseX";
+import { SoundToggle } from "@/components/SoundToggle";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { findGradeFor } from "@/lib/grades";
 import { applyComboPick, comboState, type ComboState } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
-import { sfxCombo, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
+import { sfxCombo, sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
 interface Round {
   no: number;
@@ -59,8 +60,8 @@ export default function FindRealPage() {
   const [eOptions, setEOptions] = useState<string[] | null>(null);
   const [eCount, setECount] = useState(0);
   const [sHits, setSHits] = useState(0);
-  const [sMaxCombo, setSMaxCombo] = useState(0); // 세션 중 도달한 최고 콤보
-  const [sMarks, setSMarks] = useState<boolean[]>([]); // 세션 라운드별 판정 (공유 카드 그리드)
+  const [sMaxCombo, setSMaxCombo] = useState(0); // 판에서 도달한 최고 연속
+  const [sMarks, setSMarks] = useState<boolean[]>([]); // 판의 문제별 판정 (공유 카드 그리드)
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const sessionTimes = useRef<number[]>([]);
@@ -73,7 +74,7 @@ export default function FindRealPage() {
       .then((r) => r.json())
       .then((data: TodayResponse) => {
         setQuiz(data);
-        // 무한이 본편 — 공식전(오늘의 10라운드)은 선택 참가
+        // 무한이 본편 — 공식전(오늘의 10문제)은 선택 참가
         try {
           const saved = JSON.parse(localStorage.getItem(RESULT_KEY) ?? "null") as {
             date: string;
@@ -230,7 +231,8 @@ export default function FindRealPage() {
   const runXp = () => sHits * 5 + (sMaxCombo > startBest.current ? 30 : 0);
 
   function finishEndless() {
-    sfxResult();
+    if (sMaxCombo > startBest.current) sfxRecord();
+    else sfxResult();
     setEXpRes(addXp(runXp()));
     setPhase("eresult");
     setETop(null);
@@ -244,7 +246,7 @@ export default function FindRealPage() {
     void submitEndlessRun(keepalive);
   }
 
-  /** 공식전(오늘의 10라운드) 참가 */
+  /** 공식전(오늘의 10문제) 참가 */
   function startOfficial() {
     sfxTap();
     abandonEndless(); // 공식전으로 갈아타도 여태 쌓은 판은 접수하고 간다
@@ -294,8 +296,8 @@ export default function FindRealPage() {
         marks,
         gradeName: dGrade.name,
         stats: [
-          { value: `${combo.current}`, label: "유지 중인 콤보", accent: combo.current > 0 },
-          { value: `${combo.best}`, label: "역대 최고 콤보" },
+          { value: `${combo.current}`, label: "이어지는 연속", accent: combo.current > 0 },
+          { value: `${combo.best}`, label: "역대 최고 연속" },
           { value: `${total - hits}번`, label: "AI에 속은 횟수" },
           { value: fmtSec(combo.bestAvgMs) ?? "-", label: "최고 기록 평균 판단" },
         ],
@@ -321,13 +323,13 @@ export default function FindRealPage() {
         headerRight: `무한 감정 · ${mm}.${dd}`,
         score: sMaxCombo,
         total: eCount,
-        totalText: "콤보",
+        totalText: "연속",
         marks: sMarks.slice(-10),
         gradeName: eGradeName,
         stats: [
-          { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
+          { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
           { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 판단 시간" },
-          { value: `${Math.max(combo.best, sMaxCombo)}`, label: "역대 최고 콤보", accent: sMaxCombo > startBest.current },
+          { value: `${Math.max(combo.best, sMaxCombo)}`, label: "역대 최고 연속", accent: sMaxCombo > startBest.current },
           eTop !== null
             ? { value: `상위 ${eTop}%`, label: "최근 7일 판 순위", accent: true }
             : { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
@@ -355,9 +357,9 @@ export default function FindRealPage() {
         <p className="note">
           나머지 셋은 AI 작품입니다.
           <br />
-          연속 적중 콤보는 내일로 이어집니다.
+          연속은 내일로 이어집니다.
           <br />
-          오판하면 콤보가 끊깁니다.
+          오판하면 연속이 끊깁니다.
         </p>
       </aside>
 
@@ -370,10 +372,13 @@ export default function FindRealPage() {
               {quiz && ` · 제${ep}호 ${mm}.${dd}`}
             </small>
           </Link>
-          <CloseX
+          <span className="head-tools">
+            <SoundToggle />
+            <CloseX
               inProgress={!endless && (phase === "solve" || phase === "reveal")}
               onClose={endless && (phase === "solve" || phase === "reveal") && eCount > 0 ? finishEndless : undefined}
             />
+            </span>
         </header>
 
         {phase === "loading" && (
@@ -401,7 +406,7 @@ export default function FindRealPage() {
           <section className="screen">
             {endless ? (
               <p className="qlabel mono qlabel-row">
-                무한 {eCount + (phase === "solve" ? 1 : 0)}라운드 · 연속 {combo.current} · 최고 {combo.best}
+                무한 {eCount + (phase === "solve" ? 1 : 0)}문제 · 연속 {combo.current} · 최고 {combo.best}
                 {quiz && (
                   <button
                     type="button"
@@ -466,14 +471,14 @@ export default function FindRealPage() {
                     </>
                   ) : (
                     <>
-                      콤보가 끊겼습니다 · 최고 {combo.best}
+                      연속이 끊겼습니다 · 최고 {combo.best}
                       {fmtSec(combo.bestAvgMs) ? ` (평균 ${fmtSec(combo.bestAvgMs)})` : ""}
                     </>
                   )}
                 </p>
                 <div className="choices">
                   <button className="btn btn-next full" onClick={next} disabled={busy}>
-                    {!endless && idx + 1 === total ? "결과 보기" : "다음 라운드"}
+                    {!endless && idx + 1 === total ? "결과 보기" : "다음 문제"}
                   </button>
                 </div>
               </>
@@ -486,19 +491,19 @@ export default function FindRealPage() {
             <div className="result-seal" aria-hidden="true">
               <Seal size={140} />
             </div>
-            <DocTitle eyebrow="감정결과통지" title="무한 감정 세션 결과" />
+            <DocTitle eyebrow="감정결과통지" title="무한 찾기 결과" />
             <StampHero name={eGradeName} />
             <p className="stamp-sub">
-              {eCount}라운드 중 {sHits}라운드 적중 · 최고 콤보 {sMaxCombo}
+              {eCount}문제 중 {sHits}문제 적중 · 최고 연속 {sMaxCombo}
             </p>
             <VForm>
               <VRow label="판정">
-                <MiniGrid marks={sMarks.slice(-10)} label={`${eCount}라운드 중 ${sHits}라운드 적중`} />
+                <MiniGrid marks={sMarks.slice(-10)} label={`${eCount}문제 중 ${sHits}문제 적중`} />
               </VRow>
-              <VRow label="세션 기록">
-                콤보 {sMaxCombo} <small>평균 {fmtSec(sessionAvgMs()) ?? "-"}</small>
+              <VRow label="이번 판">
+                연속 {sMaxCombo} <small>평균 {fmtSec(sessionAvgMs()) ?? "-"}</small>
               </VRow>
-              <VRow label="역대 콤보">
+              <VRow label="역대 최고">
                 {Math.max(combo.best, sMaxCombo)}
                 {sMaxCombo > startBest.current && <span className="accent">신기록</span>}
               </VRow>
@@ -513,7 +518,7 @@ export default function FindRealPage() {
                   </>
                 )}
               </VRow>
-              <VRow label="감별사 등급">
+              <VRow label="직급">
                 <LevelBar result={eXpRes} />
               </VRow>
             </VForm>
@@ -548,21 +553,21 @@ export default function FindRealPage() {
             <DocTitle eyebrow="감정결과통지" title={`제${ep}호 감정 결과`} />
             <StampHero name={dGrade.name} />
             <p className="stamp-sub">
-              {total}라운드 중 {hits}라운드 적중 · AI에 {total - hits}번 속았습니다
+              {total}문제 중 {hits}문제 적중 · AI에 {total - hits}번 속았습니다
             </p>
             <VForm>
               <VRow label="판정">
-                <MiniGrid marks={marks} label={`${total}라운드 중 ${hits}라운드 적중`} />
+                <MiniGrid marks={marks} label={`${total}문제 중 ${hits}문제 적중`} />
               </VRow>
-              <VRow label="유지 콤보">
+              <VRow label="이어지는 연속">
                 {combo.current}
                 {runAvg && <small>평균 {runAvg}</small>}
               </VRow>
-              <VRow label="역대 콤보">
+              <VRow label="역대 최고">
                 {combo.best}
                 {fmtSec(combo.bestAvgMs) && <small>평균 {fmtSec(combo.bestAvgMs)}</small>}
               </VRow>
-              <VRow label="감별사 등급">
+              <VRow label="직급">
                 <LevelBar result={xpRes} />
               </VRow>
             </VForm>

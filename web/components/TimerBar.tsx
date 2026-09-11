@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { sfxTimeout, sfxUrgent } from "@/lib/sound";
 
 /** 문제 제한시간 바. active 동안 줄어들고 0이 되면 onExpire를 정확히 한 번 호출한다. */
 export function TimerBar({
@@ -23,6 +24,7 @@ export function TimerBar({
     setRemain(seconds);
     const t0 = Date.now();
     let fired = false;
+    let ticked = Infinity; // 마지막으로 초침을 울린 초
     const iv = setInterval(() => {
       const left = seconds - (Date.now() - t0) / 1000;
       if (left <= 0) {
@@ -30,10 +32,17 @@ export function TimerBar({
         clearInterval(iv);
         if (!fired) {
           fired = true;
+          sfxTimeout();
           expireRef.current();
         }
       } else {
         setRemain(left);
+        // 마지막 3초는 초마다 한 번씩 초침이 울린다
+        const sec = Math.ceil(left);
+        if (sec <= 3 && sec < ticked) {
+          ticked = sec;
+          sfxUrgent();
+        }
       }
     }, 100);
     return () => clearInterval(iv);

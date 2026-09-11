@@ -18,7 +18,7 @@ export function CloseX({ inProgress, onClose }: { inProgress: boolean; onClose?:
   }
 
   // 무한 세션에서는 닫기가 곧 "여기까지" — 결과로 이어진다는 걸 라벨이 말해 준다
-  const label = onClose ? "세션 끝내고 결과 보기" : "게임 닫고 창구로 돌아가기";
+  const label = onClose ? "이 판 끝내고 결과 보기" : "게임 닫고 창구로 돌아가기";
 
   return (
     <button type="button" className="close-x" onClick={close} aria-label={label} title={label}>

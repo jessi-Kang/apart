@@ -7,7 +7,7 @@ import { comboState, endlessRecord } from "@/lib/local";
 /**
  * 접수 대장(홈)의 살아있는 칸들.
  * - DailyChop: 창구별 현황 도장 — 오늘 완주 전 "접수중"(인주색), 완주 후 "완료"(잉크색)
- * - OxTail / FindTail: 창구 설명 뒤에 붙는 개인 기록(연속 접수, 최고 콤보)
+ * - OxTail / FindTail: 창구 설명 뒤에 붙는 개인 기록(연속 접수, 최고 연속)
  * 모두 localStorage 기반이라 클라이언트 전용이고, 계정 동기화(SYNC_EVENT) 후 갱신된다.
  */
 
@@ -50,13 +50,13 @@ export function RecTail({ mode }: { mode: "ox" | "assemble" }) {
   return <>{tail}</>;
 }
 
-/** 진짜 찾기 설명 꼬리: 최고 콤보 */
+/** 진짜 찾기 설명 꼬리: 최고 연속 */
 export function FindTail() {
-  const [tail, setTail] = useState(" · 콤보 기록 도전");
+  const [tail, setTail] = useState(" · 연속 기록 도전");
   useEffect(() => {
     const refresh = () => {
       const { best } = comboState();
-      if (best > 0) setTail(` · 최고 콤보 ${best}`);
+      if (best > 0) setTail(` · 최고 연속 ${best}`);
     };
     refresh();
     window.addEventListener(SYNC_EVENT, refresh);
