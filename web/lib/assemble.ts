@@ -1,4 +1,5 @@
 import { apartments, fakeNames, type Apartment } from "./data";
+import { choseongMask } from "./hangul";
 import { seededShuffle, rngForDate as rngForDateWithOffset } from "./seeded";
 
 /**
@@ -50,6 +51,13 @@ export function assembleForDate(date: string): AssemblePuzzle[] {
       },
     };
   });
+}
+
+/** 시간 경과 초성 힌트: tier(1~3)만큼 앞 글자의 초성을 공개한다 */
+export function assembleHint(date: string, no: number, tier: number): { mask: string } | null {
+  const target = answersForDate(date)[no - 1];
+  if (!target || !Number.isInteger(tier) || tier < 1) return null;
+  return { mask: choseongMask(target.name, Math.min(tier, 3)) };
 }
 
 /** 서버 판정: 조립 결과 대조. 오답이어도 정답과 메타를 공개한다 (열람 학습 루프) */

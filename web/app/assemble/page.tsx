@@ -60,8 +60,16 @@ export default function AssemblePage() {
   const [marks, setMarks] = useState<boolean[]>([]);
   const [busy, setBusy] = useState(false);
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
+  const [eImgState, setEImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
   const [xpRes, setXpRes] = useState<XpResult | null>(null);
   const [eXpRes, setEXpRes] = useState<XpResult | null>(null);
+
+  // 초성 힌트 (시간이 지나면 자동 공개, 본편에선 본 만큼 감점)
+  const [hintMask, setHintMask] = useState<string | null>(null);
+  const [hintTier, setHintTier] = useState(0);
+  // 속도 점수 (본편): 빨리 맞출수록 높고, 힌트를 본 만큼 깎인다
+  const [points, setPoints] = useState(0);
+  const [lastPts, setLastPts] = useState(0);
 
   // 무한 조립
   const [endless, setEndless] = useState(false);
@@ -71,6 +79,7 @@ export default function AssemblePage() {
   const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
   const [sHits, setSHits] = useState(0);
   const [sBest, setSBest] = useState(0);
+  const [sMarks, setSMarks] = useState<boolean[]>([]); // 세션 라운드별 판정 (공유 카드 그리드)
   const runTimes = useRef<number[]>([]);
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
@@ -86,10 +95,12 @@ export default function AssemblePage() {
           const saved = JSON.parse(localStorage.getItem(RESULT_KEY) ?? "null") as {
             date: string;
             marks: boolean[];
+            points?: number;
           } | null;
           // 문제 수가 바뀐 날의 옛 저장본(3문제 시절 등)은 버리고 새로 풀게 한다
           if (saved && saved.date === data.date && saved.marks.length === data.items.length) {
             setMarks(saved.marks);
+            setPoints(saved.points ?? 0);
             setPhase("done");
             return;
           }
@@ -107,6 +118,31 @@ export default function AssemblePage() {
 
   const puzzle: Puzzle | EndlessPuzzle | undefined = endless ? (epz ?? undefined) : quiz?.items[idx];
 
+  // 초성 힌트 자동 공개: 15초 → 1글자, 25초 → 2글자, 33초 → 3글자
+  useEffect(() => {
+    setHintMask(null);
+    setHintTier(0);
+    if (phase !== "solve" || !puzzle) return;
+    const timers = [15_000, 25_000, 33_000].map((delay, i) =>
+      setTimeout(async () => {
+        try {
+          const url = endless
+            ? `/api/endless/assemble/hint?id=${encodeURIComponent((puzzle as EndlessPuzzle).id)}&tier=${i + 1}`
+            : `/api/assemble/hint?no=${(puzzle as Puzzle).no}&tier=${i + 1}`;
+          const res = await fetch(url);
+          if (!res.ok) return;
+          const { mask } = (await res.json()) as { mask: string };
+          setHintMask(mask);
+          setHintTier(i + 1);
+        } catch {
+          /* 힌트 실패는 게임 진행에 영향 없음 */
+        }
+      }, delay),
+    );
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, idx, eCount, endless]);
+
   async function fetchEndless() {
     const res = await fetch("/api/endless/assemble");
     if (!res.ok) throw new Error("endless_failed");
@@ -123,6 +159,8 @@ export default function AssemblePage() {
       setECount(0);
       setSHits(0);
       setSBest(0);
+      setSMarks([]);
+      setEImgState("idle");
       runTimes.current = [];
       sessionTimes.current = [];
       startBest.current = endlessRecord("assemble").best;
@@ -187,6 +225,7 @@ export default function AssemblePage() {
       setTimedOut(fromTimeout && !data.correct);
       if (endless) {
         setECount((c) => c + 1);
+        setSMarks((m) => [...m, data.correct]);
         sessionTimes.current.push(dt);
         if (data.correct) {
           runTimes.current.push(dt);
@@ -203,6 +242,11 @@ export default function AssemblePage() {
         }
       } else {
         setMarks((m) => [...m, data.correct]);
+        // 속도 점수: 기본 10 + 남은 시간 보너스(4초당 1, 최대 10) − 힌트 감점(개당 4)
+        const remainSec = Math.max(0, TIME_LIMIT - dt / 1000);
+        const pts = data.correct ? Math.max(2, 10 + Math.round(remainSec / 4) - hintTier * 4) : 0;
+        setLastPts(pts);
+        setPoints((p) => p + pts);
         if (data.correct) sfxStampRight();
         else sfxStampWrong();
       }
@@ -240,11 +284,11 @@ export default function AssemblePage() {
     }
     sfxResult();
     try {
-      localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks }));
+      localStorage.setItem(RESULT_KEY, JSON.stringify({ date: quiz.date, marks, points }));
     } catch {
       /* 무시 */
     }
-    setXpRes(addXp(marks.filter(Boolean).length * 15 + 20)); // 조립은 어려워서 15점 + 완주 20점
+    setXpRes(addXp(points + 20)); // 속도·힌트가 반영된 조립 점수 + 완주 20점
     setPhase("done");
   }
 
@@ -266,11 +310,13 @@ export default function AssemblePage() {
         marks,
         gradeName: dGrade.name,
         stats: [
-          { value: `${total - success}번`, label: "함정에 속은 횟수", accent: total - success > 0 },
+          { value: `${points}점`, label: "조립 점수 (속도·힌트 반영)", accent: true },
+          { value: `${total - success}번`, label: "함정에 속은 횟수" },
           {
             value: `${eRec.best}`,
             label: `무한 조립 최고 연속${fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}`,
           },
+          { value: `+${xpRes?.gained ?? 0}점`, label: "오늘 획득 경험치" },
         ],
       });
       setImgState(result);
@@ -281,6 +327,35 @@ export default function AssemblePage() {
 
   const ep = quiz?.episode ?? "";
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
+
+  async function shareEndlessImage() {
+    if (!quiz || eImgState === "busy") return;
+    sfxTap();
+    setEImgState("busy");
+    try {
+      const rate = eCount > 0 ? sHits / eCount : 0;
+      const result = await shareCardImage({
+        episode: quiz.episode,
+        date: quiz.date,
+        subtitle: "무한 조립 통지서",
+        headerRight: `무한 조립 · ${mm}.${dd}`,
+        score: sBest,
+        total: eCount,
+        totalText: "연속",
+        marks: sMarks.slice(-10),
+        gradeName: sBest > startBest.current ? "신기록 갱신" : rate >= 0.7 ? "조립 숙련" : "조립 수련",
+        stats: [
+          { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
+          { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 조립 시간" },
+          { value: `${Math.max(eRec.best, sBest)}`, label: "역대 최고 연속", accent: sBest > startBest.current },
+          { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
+        ],
+      });
+      setEImgState(result);
+    } catch {
+      setEImgState("failed");
+    }
+  }
 
   return (
     <div className="frame">
@@ -354,6 +429,13 @@ export default function AssemblePage() {
               onExpire={() => check(true)}
             />
 
+            {phase === "solve" && hintMask && (
+              <p className="choseong">
+                <span className="mono">{hintMask}</span>
+                {!endless && <small>힌트 공개마다 −4점</small>}
+              </p>
+            )}
+
             <div className="slots">
               {Array.from({ length: puzzle.answerLen }, (_, k) => {
                 const p = picked[k];
@@ -380,7 +462,9 @@ export default function AssemblePage() {
             {phase === "reveal" && reveal && (
               <>
                 <div className={`verdict ${reveal.correct ? "right" : "wrong"}`}>
-                  <span className="mark">{timedOut ? "시간 초과" : reveal.correct ? "정답" : "오답"}</span>
+                  <span className="mark">
+                    {timedOut ? "시간 초과" : reveal.correct ? (endless ? "정답" : `정답 +${lastPts}점`) : "오답"}
+                  </span>
                   <h3>{reveal.answer}</h3>
                   <p className="meta">
                     {reveal.meta.location}
@@ -466,6 +550,17 @@ export default function AssemblePage() {
               </li>
             </ul>
             <div className="result-actions">
+              <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
+                {eImgState === "busy"
+                  ? "통지서를 발급하는 중"
+                  : eImgState === "shared"
+                    ? "공유 완료. 한 장 더 발급됩니다"
+                    : eImgState === "downloaded"
+                      ? "저장 완료. 갤러리에서 확인하세요"
+                      : eImgState === "failed"
+                        ? "발급 실패. 다시 시도해 주세요"
+                        : "세션 결과 이미지로 자랑하기"}
+              </button>
               <button className="btn btn-next" onClick={startEndless} disabled={busy}>
                 다시 무한 조립 — 기록 깨러 가기
               </button>
@@ -497,7 +592,7 @@ export default function AssemblePage() {
               ))}
             </div>
             <p className="top-note">
-              무한 조립 최고 연속 {eRec.best}
+              이번 판 <b>{points}점</b> (속도·힌트 반영) · 무한 조립 최고 연속 {eRec.best}
               {fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}
             </p>
             <div className="result-actions">

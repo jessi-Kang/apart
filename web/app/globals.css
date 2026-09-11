@@ -71,11 +71,11 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 
 /* ---- 홈 (확정 시안 home2-a: 접수 대장) ---- */
-.home { position: relative; isolation: isolate; }
-/* 관인: 타이틀 우측 배경에 연하게 날인 (서류에 겹쳐 찍힌 도장) */
+.home { position: relative; isolation: isolate; overflow: hidden; }
+/* 관인: 크게, 종이 모서리 밖으로 살짝 잘려 나가게 — 서류에 눌러 찍힌 인장 */
 .home-seal {
-  position: absolute; top: 14px; right: 16px; transform: rotate(-12deg);
-  opacity: 0.16; pointer-events: none; z-index: -1; mix-blend-mode: multiply;
+  position: absolute; top: -26px; right: -44px; transform: rotate(-14deg);
+  opacity: 0.13; pointer-events: none; z-index: -1; mix-blend-mode: multiply;
 }
 /* 서식 머리: 문서번호 칸이 있는 표두 */
 .form-head { display: grid; grid-template-columns: 1fr auto; border-bottom: 2px solid var(--ink); }
@@ -135,6 +135,13 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 @media (hover: hover) {
   .ledger .row:not(.off):hover { background: var(--paper); }
 }
+
+/* ---- 조립 초성 힌트 ---- */
+.choseong {
+  margin-top: 12px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  font-size: 15.5px; font-weight: 500; letter-spacing: 0.08em; color: var(--ink);
+}
+.choseong small { font-size: 11.5px; font-weight: 500; letter-spacing: 0; color: var(--stamp); }
 
 /* ---- 계정 상태 한 줄 (홈) ---- */
 .account-line { margin-top: 6px; font-size: 12.5px; color: var(--ink-soft); }
