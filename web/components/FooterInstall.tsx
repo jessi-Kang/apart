@@ -9,11 +9,12 @@ import { installReady, isIos, isStandalone, onInstallReady, promptInstall } from
  * 못 잡은 환경(iOS, 이미 뜬 배너를 닫은 경우 등)은 수동 경로를 안내한다.
  */
 export function FooterInstall() {
-  const [shown, setShown] = useState(false);
+  // 기본 노출(SSR에도 나가게) — 이미 앱으로 실행 중일 때만 숨긴다
+  const [shown, setShown] = useState(true);
   const [tip, setTip] = useState<string | null>(null);
 
   useEffect(() => {
-    setShown(!isStandalone());
+    if (isStandalone()) setShown(false);
   }, []);
 
   if (!shown) return null;
