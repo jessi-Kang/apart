@@ -6,13 +6,14 @@ import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 import { DocTitle, MiniGrid, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { CloseX } from "@/components/CloseX";
+import { SoundToggle } from "@/components/SoundToggle";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { gradeFor } from "@/lib/grades";
 import { bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
-import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
+import { sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
 interface TodayResponse {
   date: string;
@@ -50,7 +51,7 @@ export default function PlayPage() {
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
   const [eImgState, setEImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
   const [xpRes, setXpRes] = useState<XpResult | null>(null); // 이번 완주 획득 점수
-  const [eXpRes, setEXpRes] = useState<XpResult | null>(null); // 무한 세션 획득 점수
+  const [eXpRes, setEXpRes] = useState<XpResult | null>(null); // 무한 판 획득 점수
 
   // 무한 감별 (데일리 완주 후 랜덤 새 문제 연속 — 집계 미반영)
   const [endless, setEndless] = useState(false);
@@ -58,15 +59,15 @@ export default function PlayPage() {
   const [run, setRun] = useState(0);
   const [eCount, setECount] = useState(0);
   const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
-  const [sHits, setSHits] = useState(0); // 이번 세션 적중 수
-  const [sBest, setSBest] = useState(0); // 이번 세션 최고 연속
-  const [sMarks, setSMarks] = useState<boolean[]>([]); // 세션 라운드별 판정 (공유 카드 그리드)
+  const [sHits, setSHits] = useState(0); // 이번 판 적중 수
+  const [sBest, setSBest] = useState(0); // 이번 판 최고 연속
+  const [sMarks, setSMarks] = useState<boolean[]>([]); // 판의 문제별 판정 (공유 카드 그리드)
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const qStart = useRef(0);
   const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
-  const sessionTimes = useRef<number[]>([]); // 이번 세션 전체 풀이 시간(ms)
-  const startBest = useRef(0); // 세션 시작 시점의 역대 최고 (신기록 판정용)
+  const sessionTimes = useRef<number[]>([]); // 이번 판 전체 풀이 시간(ms)
+  const startBest = useRef(0); // 판 시작 시점의 역대 최고 (신기록 판정용)
 
   useEffect(() => {
     setERec(endlessRecord("ox"));
@@ -142,7 +143,8 @@ export default function PlayPage() {
   const runXp = () => sHits * 5 + (sBest > startBest.current ? 30 : 0);
 
   function finishEndless() {
-    sfxResult();
+    if (sBest > startBest.current) sfxRecord();
+    else sfxResult();
     setEXpRes(addXp(runXp()));
     setPhase("eresult");
     // 판 기록 접수: 최근 7일 다른 판들과 비교한 상위 % (익명 집계)
@@ -318,7 +320,7 @@ export default function PlayPage() {
           },
           { value: `${Math.max(streak, 1)}일`, label: "연속 감별" },
           { value: `${10 - score}번`, label: "AI에 속은 횟수" },
-          { value: `${comboState().best}`, label: "진짜 찾기 최고 콤보" },
+          { value: `${comboState().best}`, label: "진짜 찾기 최고 연속" },
         ],
       });
       setImgState(result);
@@ -347,7 +349,7 @@ export default function PlayPage() {
         marks: sMarks.slice(-10),
         gradeName: eGradeName,
         stats: [
-          { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
+          { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
           { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 풀이 시간" },
           { value: `${Math.max(eRec.best, sBest)}`, label: "역대 최고 연속", accent: sBest > startBest.current },
           eTop !== null
@@ -380,7 +382,7 @@ export default function PlayPage() {
         <p className="note">
           정답마다 실제 위치와 준공년도가 공개됩니다.
           <br />
-          10문제가 끝나면 감별 등급이 발급됩니다.
+          판을 끝내면 통지서가 발급됩니다.
         </p>
       </aside>
 
@@ -389,14 +391,17 @@ export default function PlayPage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? "무한 감별 접수증" : "진짜 단지명 판별 접수증"}
+              {endless ? "무한 감별 신청서" : "감별 신청서"}
               {quiz && ` · 제${ep}호 ${mm}.${dd}`}
             </small>
           </Link>
-          <CloseX
+          <span className="head-tools">
+            <SoundToggle />
+            <CloseX
               inProgress={!endless && (phase === "question" || phase === "reveal") && marks.length < 10}
               onClose={endless && (phase === "question" || phase === "reveal") && eCount > 0 ? finishEndless : undefined}
             />
+            </span>
         </header>
 
         {phase === "loading" && (
@@ -516,7 +521,7 @@ export default function PlayPage() {
             <div className="result-seal" aria-hidden="true">
               <Seal size={140} />
             </div>
-            <DocTitle eyebrow="감별결과통지" title="무한 감별 세션 결과" />
+            <DocTitle eyebrow="감별결과통지" title="무한 감별 결과" />
             <StampHero name={eGradeName} />
             <p className="stamp-sub">
               {eCount}문제 중 {sHits}문제 적중 · 최고 연속 {sBest}
@@ -525,7 +530,7 @@ export default function PlayPage() {
               <VRow label="판정">
                 <MiniGrid marks={sMarks.slice(-10)} label={`${eCount}문제 중 ${sHits}문제 적중`} />
               </VRow>
-              <VRow label="세션 기록">
+              <VRow label="이번 판">
                 연속 {sBest} <small>평균 {fmtSec(sessionAvgMs()) ?? "-"}</small>
               </VRow>
               <VRow label="역대 기록">
@@ -543,7 +548,7 @@ export default function PlayPage() {
                   </>
                 )}
               </VRow>
-              <VRow label="감별사 등급">
+              <VRow label="직급">
                 <LevelBar result={eXpRes} />
               </VRow>
             </VForm>
@@ -596,7 +601,7 @@ export default function PlayPage() {
                 )}
               </VRow>
               <VRow label="연속 출전">{Math.max(streak, 1)}일째</VRow>
-              <VRow label="감별사 등급">
+              <VRow label="직급">
                 <LevelBar result={xpRes} />
               </VRow>
             </VForm>

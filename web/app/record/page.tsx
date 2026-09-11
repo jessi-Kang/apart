@@ -120,7 +120,7 @@ export default function RecordPage() {
               <span className="vr-rank">{rankCell(ranks?.endless.assemble, asm.best)}</span>
             </VRow>
             <VRow label="진짜 찾기">
-              최고 콤보 {combo.best}
+              최고 연속 {combo.best}
               {fmtSec(combo.bestAvgMs) && <small>평균 {fmtSec(combo.bestAvgMs)}</small>}
               <span className="vr-rank">{rankCell(ranks?.endless.findreal, combo.best)}</span>
             </VRow>
@@ -151,7 +151,7 @@ export default function RecordPage() {
                 )}
               </VRow>
             )}
-            <VRow label="감별사 등급">
+            <VRow label="직급">
               <LevelBar />
             </VRow>
           </VForm>

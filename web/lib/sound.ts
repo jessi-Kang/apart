@@ -2,10 +2,14 @@
 
 /**
  * 효과음 (Web Audio 합성, 오디오 파일·의존성 0)
- * 접수처 세계관의 물성음: 도장 쾅, 종이 탁, 콤보 딩.
+ * 접수처 세계관의 물성음: 도장 쾅, 종이 탁, 연속 딩.
  * - AudioContext는 첫 사용자 제스처(클릭 핸들러 안 호출)에서 lazy 생성
  * - 항상 켜져 있다 (토글은 쓰임이 없다는 피드백으로 제거)
+ * - 소리가 날 때마다 배경음을 잠깐 낮춘다. 게임 중에는 도장 소리가
+ *   배경음보다 잘 들려야 한다.
  */
+
+import { duckBgm } from "./bgm";
 
 let ctx: AudioContext | null = null;
 
@@ -58,10 +62,11 @@ function tone(
   o.stop(t0 + dur + 0.02);
 }
 
-function withAudio(fn: (ac: AudioContext, t0: number) => void) {
+function withAudio(fn: (ac: AudioContext, t0: number) => void, duckMs = 380) {
   const ac = audio();
   if (!ac) return;
   try {
+    duckBgm(duckMs);
     fn(ac, ac.currentTime);
   } catch {
     /* 사운드 실패는 게임을 막지 않는다 */
@@ -71,26 +76,26 @@ function withAudio(fn: (ac: AudioContext, t0: number) => void) {
 /** 조각·선택지 탭: 종이 위 손끝 */
 export function sfxTap() {
   withAudio((ac, t) => {
-    noiseBurst(ac, t, 0.04, 0.12, 2600);
-    tone(ac, t, 880, 660, 0.05, 0.05, "triangle");
+    noiseBurst(ac, t, 0.04, 0.16, 2600);
+    tone(ac, t, 880, 660, 0.05, 0.07, "triangle");
   });
 }
 
 /** 정답 도장: 묵직한 쾅 + 종이 스냅 */
 export function sfxStampRight() {
   withAudio((ac, t) => {
-    tone(ac, t, 150, 55, 0.16, 0.5);
-    noiseBurst(ac, t, 0.07, 0.3, 1800);
-    tone(ac, t + 0.09, 660, 990, 0.09, 0.08, "triangle"); // 살짝 밝은 여운
+    tone(ac, t, 150, 55, 0.18, 0.62);
+    noiseBurst(ac, t, 0.07, 0.38, 1800);
+    tone(ac, t + 0.09, 660, 990, 0.09, 0.11, "triangle"); // 살짝 밝은 여운
   });
 }
 
 /** 오답 도장: 더 낮고 둔한 이중 노크 */
 export function sfxStampWrong() {
   withAudio((ac, t) => {
-    tone(ac, t, 110, 45, 0.15, 0.5);
-    noiseBurst(ac, t, 0.06, 0.25, 1000);
-    tone(ac, t + 0.12, 92, 40, 0.16, 0.4);
+    tone(ac, t, 110, 45, 0.17, 0.62);
+    noiseBurst(ac, t, 0.06, 0.32, 1000);
+    tone(ac, t + 0.12, 92, 40, 0.18, 0.5);
   });
 }
 
@@ -104,8 +109,8 @@ export function sfxTick() {
 /** 콤보 상승: 가벼운 2음 딩 */
 export function sfxCombo() {
   withAudio((ac, t) => {
-    tone(ac, t, 660, 660, 0.07, 0.09, "triangle");
-    tone(ac, t + 0.08, 880, 880, 0.11, 0.09, "triangle");
+    tone(ac, t, 660, 660, 0.07, 0.12, "triangle");
+    tone(ac, t + 0.08, 880, 880, 0.11, 0.12, "triangle");
   });
 }
 
@@ -130,4 +135,39 @@ export function sfxResult() {
     tone(ac, t + 0.26, 659, 659, 0.09, 0.08, "triangle");
     tone(ac, t + 0.36, 784, 784, 0.16, 0.09, "triangle");
   });
+}
+
+/** 제한시간 임박: 마지막 3초마다 한 번씩 찍히는 초침 */
+export function sfxUrgent() {
+  withAudio((ac, t) => {
+    tone(ac, t, 1180, 900, 0.05, 0.11, "square");
+  }, 200);
+}
+
+/** 시간 초과: 접수 마감 부저 */
+export function sfxTimeout() {
+  withAudio((ac, t) => {
+    tone(ac, t, 220, 190, 0.18, 0.3, "sawtooth");
+    tone(ac, t + 0.16, 165, 130, 0.24, 0.28, "sawtooth");
+    noiseBurst(ac, t, 0.05, 0.18, 900);
+  }, 600);
+}
+
+/** 힌트 공개: 서류 한 장 넘기는 소리 */
+export function sfxHint() {
+  withAudio((ac, t) => {
+    noiseBurst(ac, t, 0.12, 0.14, 4200);
+    tone(ac, t + 0.04, 1320, 1600, 0.08, 0.05, "triangle");
+  }, 300);
+}
+
+/** 신기록: 도장 위에 얹는 짧은 팡파르 (레벨 업보다 가볍게) */
+export function sfxRecord() {
+  withAudio((ac, t) => {
+    tone(ac, t, 170, 60, 0.16, 0.5);
+    noiseBurst(ac, t, 0.07, 0.3, 1900);
+    tone(ac, t + 0.12, 784, 784, 0.08, 0.12, "triangle");
+    tone(ac, t + 0.2, 988, 988, 0.08, 0.12, "triangle");
+    tone(ac, t + 0.28, 1319, 1319, 0.22, 0.13, "triangle");
+  }, 900);
 }

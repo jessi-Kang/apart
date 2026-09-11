@@ -65,6 +65,15 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .foot-install:hover,
 .foot-install:focus-visible { color: var(--stamp); }
 .install-tip { display: block; margin-top: 6px; color: var(--stamp); }
+
+/* 게임 헤더 우측 도구: 배경음 · 닫기 */
+.head-tools { display: flex; align-items: center; gap: 6px; }
+.sound-btn {
+  background: none; border: 0; padding: 6px; cursor: pointer; color: var(--ink-soft);
+  display: inline-flex; align-items: center; transition: color 0.12s ease;
+}
+.sound-btn:hover, .sound-btn:focus-visible { color: var(--stamp); }
+.sound-btn[aria-pressed="false"] { color: var(--line); }
 @media (max-width: 479px) {
   .sheet-footer { flex-direction: column; gap: 3px; align-items: flex-start; }
   .sheet-footer span:last-child { white-space: normal; }

@@ -6,13 +6,14 @@ import { LevelBar } from "@/components/LevelBar";
 import { Seal } from "@/components/Seal";
 import { DocTitle, MiniGrid, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { CloseX } from "@/components/CloseX";
+import { SoundToggle } from "@/components/SoundToggle";
 import { SheetFooter } from "@/components/SheetFooter";
 import { TimerBar } from "@/components/TimerBar";
 import { assembleGradeFor } from "@/lib/grades";
 import { bumpEndlessRecord, endlessRecord, type EndlessRecord } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { shareCardImage } from "@/lib/sharecard";
-import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
+import { sfxHint, sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
 interface Puzzle {
   no: number;
@@ -83,7 +84,7 @@ export default function AssemblePage() {
   const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
   const [sHits, setSHits] = useState(0);
   const [sBest, setSBest] = useState(0);
-  const [sMarks, setSMarks] = useState<boolean[]>([]); // 세션 라운드별 판정 (공유 카드 그리드)
+  const [sMarks, setSMarks] = useState<boolean[]>([]); // 판의 문제별 판정 (공유 카드 그리드)
   const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const runTimes = useRef<number[]>([]);
@@ -136,6 +137,7 @@ export default function AssemblePage() {
           const { mask } = (await res.json()) as { mask: string };
           setHintMask(mask);
           setHintTier(i + 1);
+          sfxHint();
         } catch {
           /* 힌트 실패는 게임 진행에 영향 없음 */
         }
@@ -210,7 +212,8 @@ export default function AssemblePage() {
   const runXp = () => sHits * 8 + (sBest > startBest.current ? 30 : 0);
 
   function finishEndless() {
-    sfxResult();
+    if (sBest > startBest.current) sfxRecord();
+    else sfxResult();
     setEXpRes(addXp(runXp()));
     setPhase("eresult");
     setETop(null);
@@ -408,7 +411,7 @@ export default function AssemblePage() {
         marks: sMarks.slice(-10),
         gradeName: eGradeName,
         stats: [
-          { value: `${sHits}/${eCount}`, label: "이번 세션 적중" },
+          { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
           { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 조립 시간" },
           { value: `${Math.max(eRec.best, sBest)}`, label: "역대 최고 연속", accent: sBest > startBest.current },
           eTop !== null
@@ -447,10 +450,13 @@ export default function AssemblePage() {
               {quiz && ` · 제${ep}호 ${mm}.${dd}`}
             </small>
           </Link>
-          <CloseX
+          <span className="head-tools">
+            <SoundToggle />
+            <CloseX
               inProgress={!endless && (phase === "solve" || phase === "reveal")}
               onClose={endless && (phase === "solve" || phase === "reveal") && eCount > 0 ? finishEndless : undefined}
             />
+            </span>
         </header>
 
         {phase === "loading" && (
@@ -608,7 +614,7 @@ export default function AssemblePage() {
             <div className="result-seal" aria-hidden="true">
               <Seal size={140} />
             </div>
-            <DocTitle eyebrow="조립결과통지" title="무한 조립 세션 결과" />
+            <DocTitle eyebrow="조립결과통지" title="무한 조립 결과" />
             <StampHero name={eGradeName} />
             <p className="stamp-sub">
               {eCount}문제 중 {sHits}문제 조립 · 최고 연속 {sBest}
@@ -617,7 +623,7 @@ export default function AssemblePage() {
               <VRow label="판정">
                 <MiniGrid marks={sMarks.slice(-10)} label={`${eCount}문제 중 ${sHits}문제 조립 성공`} />
               </VRow>
-              <VRow label="세션 기록">
+              <VRow label="이번 판">
                 연속 {sBest} <small>평균 {fmtSec(sessionAvgMs()) ?? "-"}</small>
               </VRow>
               <VRow label="역대 기록">
@@ -635,7 +641,7 @@ export default function AssemblePage() {
                   </>
                 )}
               </VRow>
-              <VRow label="감별사 등급">
+              <VRow label="직급">
                 <LevelBar result={eXpRes} />
               </VRow>
             </VForm>
@@ -683,7 +689,7 @@ export default function AssemblePage() {
                 최고 연속 {eRec.best}
                 {fmtSec(eRec.avgMs) && <small>평균 {fmtSec(eRec.avgMs)}</small>}
               </VRow>
-              <VRow label="감별사 등급">
+              <VRow label="직급">
                 <LevelBar result={xpRes} />
               </VRow>
             </VForm>
