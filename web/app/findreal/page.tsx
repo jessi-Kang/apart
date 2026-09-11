@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
+import { CountUp, GradeLadder, RecordGauge } from "@/components/ResultExtras";
+import { Seal } from "@/components/Seal";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
 import { TimerBar } from "@/components/TimerBar";
-import { findGradeFor } from "@/lib/grades";
+import { findGradeFor, FIND_GRADES } from "@/lib/grades";
 import { applyComboPick, comboState, type ComboState } from "@/lib/local";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxCombo, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -375,9 +377,12 @@ export default function FindRealPage() {
 
         {phase === "eresult" && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={230} />
+            </div>
             <p className="score-label mono">무한 진짜 찾기 세션 결과</p>
             <p className="big">
-              {sHits} / {eCount}
+              <CountUp value={sHits} /> / {eCount}
             </p>
             <p className="grade-desc">
               {sMaxCombo > startBest.current
@@ -386,6 +391,7 @@ export default function FindRealPage() {
                   ? `콤보 ${combo.current} 유지 중 — 다음 세션에서 이어집니다.`
                   : "콤보가 끊긴 채 마감. 다음 세션에서 다시 쌓으세요."}
             </p>
+            <RecordGauge session={sMaxCombo} best={startBest.current} unit="콤보" />
             <ul className="review">
               <li>
                 <span className="nm">세션 중 최고 콤보</span>
@@ -416,9 +422,12 @@ export default function FindRealPage() {
 
         {phase === "done" && quiz && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={230} />
+            </div>
             <p className="score-label mono">진짜 찾기 감정 결과</p>
             <p className="big">
-              {hits} / {total}
+              <CountUp value={hits} /> / {total}
             </p>
             <Stamp>{dGrade.name}</Stamp>
             <div className="grid-line" role="img" aria-label={`${total}라운드 중 ${hits}라운드 적중`}>
@@ -429,6 +438,7 @@ export default function FindRealPage() {
               ))}
             </div>
             <p className="grade-desc">{dGrade.desc}</p>
+            <GradeLadder grades={FIND_GRADES} score={hits} unit="라운드" />
             <p className="top-note">
               {combo.current > 0
                 ? `연속 ${combo.current}개 적중 중 · 역대 최고 ${combo.best}`

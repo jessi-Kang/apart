@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { GridTile } from "@/components/GridTile";
+import { CountUp, GradeLadder, RecordGauge } from "@/components/ResultExtras";
+import { Seal } from "@/components/Seal";
 import { Stamp } from "@/components/Stamp";
 import { CloseX } from "@/components/CloseX";
 import { TimerBar } from "@/components/TimerBar";
-import { assembleGradeFor } from "@/lib/grades";
+import { assembleGradeFor, ASSEMBLE_GRADES } from "@/lib/grades";
 import { bumpEndlessRecord, endlessRecord, type EndlessRecord } from "@/lib/local";
 import { shareCardImage } from "@/lib/sharecard";
 import { sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -426,9 +428,12 @@ export default function AssemblePage() {
 
         {phase === "eresult" && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={230} />
+            </div>
             <p className="score-label mono">무한 조립 세션 결과</p>
             <p className="big">
-              {sHits} / {eCount}
+              <CountUp value={sHits} /> / {eCount}
             </p>
             <p className="grade-desc">
               {sBest > startBest.current
@@ -437,6 +442,7 @@ export default function AssemblePage() {
                   ? "함정 조각이 안 통하는 수준입니다."
                   : "함정 조각의 승리. 다음 세션에서 설욕을."}
             </p>
+            <RecordGauge session={sBest} best={startBest.current} />
             <ul className="review">
               <li>
                 <span className="nm">이번 세션 최고 연속</span>
@@ -467,12 +473,16 @@ export default function AssemblePage() {
 
         {phase === "done" && quiz && (
           <section className="screen result">
+            <div className="result-seal" aria-hidden="true">
+              <Seal size={230} />
+            </div>
             <p className="score-label mono">이름 조립 결과</p>
             <p className="big">
-              {success} / {total}
+              <CountUp value={success} /> / {total}
             </p>
             <Stamp>{dGrade.name}</Stamp>
             <p className="grade-desc">{dGrade.desc}</p>
+            <GradeLadder grades={ASSEMBLE_GRADES} score={success} />
             <div className="grid-line" role="img" aria-label={`${total}문제 중 ${success}문제 조립 성공`}>
               {marks.map((m, k) => (
                 <span key={k} className="tile-in" style={{ animationDelay: `${k * 55}ms` }}>
