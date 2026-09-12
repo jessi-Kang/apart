@@ -181,7 +181,12 @@ async function behavior() {
     });
     await audio.goto(LOCAL, { waitUntil: "load" });
     await audio.click('a[href="/play"]');
-    await audio.waitForTimeout(3500);
+    // 고정 대기로 재면 안 된다. 서버가 막 떴을 때는 첫 /api/quiz/today가
+    // 7,532건짜리 출제 풀을 처음 읽느라 몇 초씩 걸려서, 소리가 나기도 전에
+    // 시간이 끝나 "배경음 안 나옴"으로 잘못 보고한다(실제로 한 번 속았다).
+    // 창구가 실제로 열린 것을 보고 나서 잰다.
+    await audio.waitForSelector(".qname", { timeout: 30_000 }).catch(() => null);
+    await audio.waitForTimeout(2000);
     const gains = await audio.evaluate(() => window.__gains ?? []);
     const loud = gains.filter((g) => g > 0);
     if (loud.length) ok("배경음", `게임 진입 후 볼륨 ${Math.max(...loud)}로 재생`);

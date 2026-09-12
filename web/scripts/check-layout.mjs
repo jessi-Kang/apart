@@ -78,6 +78,35 @@ const SCREENS = [
 ];
 
 const findOrphans = () => {
+  /**
+   * 사각형들을 실제 줄로 묶는다. 같은 줄인지를 top이 같은가로 보면 안 된다 —
+   * 테두리 있는 칩처럼 높이가 다른 요소는 같은 줄에 나란히 있어도 top이 몇 px
+   * 어긋나고, 그러면 한 줄짜리가 두 줄로 세어져 "덜 찬 문단"이 거짓으로 뜬다.
+   * 세로로 겹치는 높이가 둘 중 작은 쪽의 절반을 넘으면 같은 줄로 본다.
+   *
+   * 바깥으로 빼지 않는 이유: page.evaluate는 넘긴 함수 하나만 직렬화해서
+   * 브라우저에서 실행한다. 모듈 스코프에 두면 groupLines is not defined로 죽는다.
+   */
+  const groupLines = (rects) => {
+    const rows = [];
+    for (const r of rects) {
+      const row = rows.find(
+        (q) =>
+          Math.min(q.bottom, r.bottom) - Math.max(q.top, r.top) >
+          Math.min(q.bottom - q.top, r.height) * 0.5,
+      );
+      if (row) {
+        row.top = Math.min(row.top, r.top);
+        row.bottom = Math.max(row.bottom, r.bottom);
+        row.left = Math.min(row.left, r.left);
+        row.right = Math.max(row.right, r.right);
+        row.w += r.width;
+      } else {
+        rows.push({ top: r.top, bottom: r.bottom, left: r.left, right: r.right, w: r.width });
+      }
+    }
+    return rows;
+  };
   const out = [];
   const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   const seen = new Set();
@@ -96,13 +125,7 @@ const findOrphans = () => {
     if (el.querySelector("br")) continue;
     const range = document.createRange();
     range.selectNodeContents(el);
-    const rects = [...range.getClientRects()].filter((r) => r.width > 1 && r.height > 1);
-    const rows = [];
-    for (const r of rects) {
-      const row = rows.find((q) => Math.abs(q.top - r.top) < 3);
-      if (row) row.w += r.width;
-      else rows.push({ top: r.top, w: r.width });
-    }
+    const rows = groupLines([...range.getClientRects()].filter((r) => r.width > 1 && r.height > 1));
     if (rows.length < 2) continue;
     const last = rows[rows.length - 1].w;
     const widest = Math.max(...rows.map((r) => r.w));
@@ -119,6 +142,35 @@ const findOrphans = () => {
 };
 
 const findUnderfilled = () => {
+  /**
+   * 사각형들을 실제 줄로 묶는다. 같은 줄인지를 top이 같은가로 보면 안 된다 —
+   * 테두리 있는 칩처럼 높이가 다른 요소는 같은 줄에 나란히 있어도 top이 몇 px
+   * 어긋나고, 그러면 한 줄짜리가 두 줄로 세어져 "덜 찬 문단"이 거짓으로 뜬다.
+   * 세로로 겹치는 높이가 둘 중 작은 쪽의 절반을 넘으면 같은 줄로 본다.
+   *
+   * 바깥으로 빼지 않는 이유: page.evaluate는 넘긴 함수 하나만 직렬화해서
+   * 브라우저에서 실행한다. 모듈 스코프에 두면 groupLines is not defined로 죽는다.
+   */
+  const groupLines = (rects) => {
+    const rows = [];
+    for (const r of rects) {
+      const row = rows.find(
+        (q) =>
+          Math.min(q.bottom, r.bottom) - Math.max(q.top, r.top) >
+          Math.min(q.bottom - q.top, r.height) * 0.5,
+      );
+      if (row) {
+        row.top = Math.min(row.top, r.top);
+        row.bottom = Math.max(row.bottom, r.bottom);
+        row.left = Math.min(row.left, r.left);
+        row.right = Math.max(row.right, r.right);
+        row.w += r.width;
+      } else {
+        rows.push({ top: r.top, bottom: r.bottom, left: r.left, right: r.right, w: r.width });
+      }
+    }
+    return rows;
+  };
   const out = [];
   for (const el of document.querySelectorAll("p, li, .dd, .area-note, .install-tip, .rule-hint, .pick-tip")) {
     const style = getComputedStyle(el);
@@ -131,12 +183,7 @@ const findUnderfilled = () => {
     if (inner < 80) continue;
     const range = document.createRange();
     range.selectNodeContents(el);
-    const rows = [];
-    for (const r of [...range.getClientRects()].filter((x) => x.width > 1 && x.height > 1)) {
-      const row = rows.find((q) => Math.abs(q.top - r.top) < 3);
-      if (row) row.right = Math.max(row.right, r.right);
-      else rows.push({ top: r.top, left: r.left, right: r.right });
-    }
+    const rows = groupLines([...range.getClientRects()].filter((x) => x.width > 1 && x.height > 1));
     if (rows.length < 2) continue;
     const widest = Math.max(...rows.map((r) => r.right - r.left));
     // 좁은 칸일수록 어절 하나가 차지하는 비율이 커서 들쭉날쭉이 크게 보인다.
