@@ -12,6 +12,7 @@ import { TimerBar } from "@/components/TimerBar";
 import { assembleGradeFor } from "@/lib/grades";
 import { areaPref, bumpEndlessRecord, endlessRecord, firstVisit, type EndlessRecord } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
+import { mergeMask } from "@/lib/hintmask";
 import { FINISH_BONUS, RECORD_BONUS, questionScore } from "@/lib/scoring";
 import { shareCardImage, type ShareCardData } from "@/lib/sharecard";
 import { ShareLink } from "@/components/ShareLink";
@@ -164,11 +165,10 @@ export default function AssemblePage() {
       setTimeout(async () => {
         try {
           // 조각은 왼쪽부터 채워지므로 채운 칸은 늘 앞쪽 연속이다.
-          // 그 칸들을 알려 주고 빈 칸부터 열게 한다 — 이미 푼 칸을 여는 건
-          // 힌트가 아니라 아무 일도 안 일어난 것으로 보인다.
-          // 다 채웠으면 열 자리가 없으니 이번 차례는 건너뛴다(감점도 없다).
+          // 그 칸들을 알려 주면 서버가 빈 칸을 앞세워 연다 — 이미 푼 칸을
+          // 여는 건 힌트가 아니라 아무 일도 안 일어난 것으로 보인다.
+          // 다만 수는 tier개 그대로라, 시간이 가면 채운 칸도 결국 열린다.
           const done = pickedRef.current;
-          if (done >= (puzzle as { answerLen: number }).answerLen) return;
           const q = done > 0 ? `&filled=${Array.from({ length: done }, (_, i) => i).join(",")}` : "";
           const url = endless
             ? `/api/endless/assemble/hint?id=${encodeURIComponent((puzzle as EndlessPuzzle).id)}&tier=${i + 1}${q}`
@@ -176,7 +176,10 @@ export default function AssemblePage() {
           const res = await fetch(url);
           if (!res.ok) return;
           const { mask } = (await res.json()) as { mask: string };
-          setHintMask(mask);
+          // 덮지 않고 더한다. 조각을 비웠다 채웠다 하면 여는 자리가 달라지는데,
+          // 덮어쓰면 방금까지 보이던 초성이 사라진다 — 이미 받은 힌트를 도로
+          // 가져가는 셈이다
+          setHintMask((prev) => mergeMask(prev, mask));
           setHintTier(i + 1);
           sfxHint();
         } catch {
