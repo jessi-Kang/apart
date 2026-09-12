@@ -267,6 +267,72 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
    남아 있는 사각형은 "골랐다"가 아니라 "뭔가 걸렸다"로 읽힌다 */
 .area-sel:focus,
 .area-sel:focus-visible { outline: none; }
+/* ---- 구역 명부 (같은 구역 감별사 순위) ---- */
+/* 담당 구역 칸에서 바로 넘어가는 자리. 구역을 고르는 곳과 그 구역의 명부는
+   같은 줄에 있어야 "이 구역의" 명부라는 게 설명 없이 읽힌다 */
+.area-rank {
+  display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;
+  font-size: 11.5px; font-weight: 700; color: var(--ink-soft);
+  text-decoration: none; white-space: nowrap;
+  padding-left: 10px; border-left: 1px solid var(--line); transition: color 0.12s ease;
+}
+.area-rank:focus-visible { color: var(--stamp); }
+
+/* 내 자리 카드: 명부를 여는 이유가 이것이라 맨 위에 크게 박는다 */
+.mycard {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin-top: 18px; padding: 14px 16px;
+  border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper);
+}
+.myk {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 0.06em; color: var(--ink-soft);
+}
+.myrank { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.myrank i { font-style: normal; font-size: 14px; font-weight: 700; margin-left: 2px; }
+.myrank-off { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink-soft); }
+.mymeta { font-size: 12.5px; color: var(--ink-soft); }
+.myjump {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 5px;
+  font: inherit; font-size: 12px; font-weight: 700; color: var(--stamp);
+  background: none; border: 1.5px solid currentColor; border-radius: var(--radius);
+  padding: 5px 10px; cursor: pointer; text-decoration: none; white-space: nowrap;
+}
+
+/* 명부 본체: 홈 대장과 같은 괘선 서식 */
+.roster-head {
+  display: grid; grid-template-columns: 46px 1fr auto; gap: 10px;
+  margin-top: 18px; padding: 8px 12px; background: var(--paper);
+  border: 1px solid var(--ink); border-bottom: 0;
+  font-size: 11.5px; color: var(--ink-soft);
+}
+.roster-head span:last-child { text-align: right; }
+.roster { list-style: none; border: 1px solid var(--ink); border-radius: 0 0 var(--radius) var(--radius); }
+.roster li {
+  display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center;
+  padding: 11px 12px; border-bottom: 1px solid var(--line);
+}
+.roster li:last-child { border-bottom: 0; }
+.rk { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.roster li:nth-child(-n + 3) .rk { color: var(--stamp); }
+.who { font-size: 14.5px; font-weight: 700; letter-spacing: -0.02em; min-width: 0; overflow-wrap: anywhere; }
+.who em {
+  font-style: normal; margin-left: 6px; padding: 1px 5px;
+  font-size: 10.5px; font-weight: 700; color: var(--sheet); background: var(--ink);
+  border-radius: var(--radius); vertical-align: 2px;
+}
+.lv { font-size: 13px; font-weight: 700; text-align: right; white-space: nowrap; }
+.lv small { display: block; font-size: 11px; font-weight: 500; color: var(--ink-soft); letter-spacing: -0.01em; }
+/* 내 줄은 인주색 괘선으로 도드라지게 — 명부에서 눈이 먼저 갈 곳 */
+.roster li.me { background: var(--stamp-soft); }
+.roster li.me .rk { color: var(--stamp); }
+/* 첫 장 밖의 내 줄. 사이가 끊겼다는 것을 점선으로 말한다 */
+.roster.tail { margin-top: 0; border-top: 0; }
+.roster.tail::before {
+  content: ""; display: block; border-top: 1px dashed var(--line); margin: 0 12px;
+}
+.roster-note { margin-top: 10px; font-size: 11.5px; line-height: 1.6; color: var(--ink-soft); }
+
 /* 대장 아래 한 줄: 같은 행에 목적지가 둘이라는 것을 화면이 직접 말한다 */
 .ledger-note { margin-top: 10px; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
 .ledger-note b { color: var(--ink); font-weight: 700; }
@@ -618,6 +684,80 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 
 /* ---- 사이드 레일 ---- */
 .rail { display: none; }
+
+/* ============ 작은 폰 ≤379 ============
+   기준은 390px인데, 갤럭시 A·S 일부와 아이폰 SE는 360·320px로 들어온다.
+   그 폭에서 실측하니 직급 이름이 제 칸을 넘었다("견습 감별사" 68px가 22px 칸에).
+   폭이 좁으면 글자가 작아져야지, 칸이 터지면 안 된다. 줄일 것은 글자와 여백뿐이고
+   구조(열 수·순서)는 건드리지 않는다 — 좁다고 다른 화면이 되면 안 된다 */
+@media (max-width: 379px) {
+  .frame { padding: 12px; }
+  .screen { padding: 20px 14px; }
+  .sheet-header { padding: 15px 14px; }
+  .sheet-footer { padding: 12px 14px; font-size: 11px; }
+  .form-title { padding: 15px 14px; }
+  .form-title b { font-size: 15.5px; }
+  .form-title small { font-size: 11px; }
+  .form-no { min-width: 72px; }
+  .form-no > span { padding: 5px 10px; font-size: 11.5px; }
+
+  .home h1 { font-size: 23px; }
+  .home .sub { font-size: 13.5px; }
+
+  /* 신분증: 직급 이름이 잘리던 자리 */
+  .idbadge { padding: 8px 11px; }
+  .idb-lv { font-size: 10.5px; }
+  .idb-name { font-size: 12.5px; }
+  .idb-title, .idb-go, .idb-auth { font-size: 11px; }
+  .idb-auth { padding-left: 7px; }
+  .area-k { font-size: 10px; }
+  .area-sel { font-size: 12px; }
+  .area-rank { font-size: 10.5px; padding-left: 7px; }
+
+  .ledger-head { font-size: 10.5px; }
+  .ledger-head span { padding: 7px 8px; }
+  .ledger-head span:nth-child(2) { padding-inline: 11px; }
+  .ledger .cell { padding: 12px 11px; padding-right: 20px; }
+  .ledger .no { font-size: 13px; }
+  .ledger .tt { font-size: 14px; }
+  .ledger .dd { font-size: 11.5px; }
+  .chop { font-size: 9.5px; padding: 4px 6px; }
+  .chop.done { padding: 4px 7px; }
+  .chop-go { font-size: 10px; }
+  .ledger-note { font-size: 11px; }
+
+  .qname { font-size: 27px; }
+  .qlabel { font-size: 11px; }
+  .mode-chip { font-size: 10px; padding: 2px 6px; }
+  .hintcard { font-size: 13px; }
+  .tile { font-size: 15px; padding: 11px 13px; }
+  .slot { height: 46px; font-size: 15px; }
+  .btn { font-size: 15px; padding: 14px 10px; }
+  .btn-ghost { font-size: 13.5px; padding: 12px 10px; }
+  .btn-real, .btn-fake { font-size: 15.5px; padding: 15px 10px; }
+
+  /* 서식표: "Lv.1 견습 감별사"가 값 칸을 넘던 자리 */
+  .vrow { grid-template-columns: 66px 1fr; }
+  .vk { font-size: 11px; }
+  .vv { font-size: 13px; }
+  .vv small { font-size: 11px; }
+  .stamp-text { font-size: 17px; padding: 12px 17px; }
+  .stamp-sub { font-size: 12.5px; }
+
+  /* 구역 명부 */
+  .mycard { padding: 11px 12px; gap: 6px; }
+  .myrank { font-size: 22px; }
+  .mymeta { font-size: 11.5px; }
+  .myjump { font-size: 11px; padding: 4px 8px; }
+  .roster-head { grid-template-columns: 34px 1fr auto; padding: 7px 10px; font-size: 10.5px; }
+  .roster li { grid-template-columns: 34px 1fr auto; padding: 9px 10px; gap: 7px; }
+  .rk { font-size: 12.5px; }
+  .who { font-size: 13px; }
+  .who em { font-size: 9.5px; padding: 1px 4px; }
+  .lv { font-size: 11.5px; }
+  .lv small { font-size: 10px; }
+  .roster-note { font-size: 10.5px; }
+}
 
 /* ============ 큰 폰 ≥430 ============
    갤럭시 울트라·아이폰 프로맥스 계열. 타블렛 전까지 390px 기준 스케일을

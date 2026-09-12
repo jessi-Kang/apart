@@ -55,7 +55,7 @@ export default function HomePage() {
             <br />
             감별 민원을 <em>선택</em>하세요
           </h1>
-          <p className="sub">진짜 아파트와 AI가 지은 이름을 가려내는 게임</p>
+          <p className="sub">진짜 아파트와 AI가 지은 이름 가려내기</p>
           <IdBadge regions={regions} />
 
           <nav className="ledger" aria-label="게임 목록">

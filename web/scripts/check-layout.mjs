@@ -25,7 +25,9 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 const BASE = process.argv[2] ?? "http://localhost:3000";
-const WIDTHS = [390, 480, 768, 1024];
+// 320·360은 갤럭시 A·아이폰 SE 계열. 기준(390)보다 좁은 폭에서
+// 칸이 터지는지 보려면 실제로 그 폭으로 열어 보는 수밖에 없다
+const WIDTHS = [320, 360, 390, 480, 768, 1024];
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -201,6 +203,56 @@ const findUnderfilled = () => {
   return out;
 };
 
+const findOverflow = () => {
+  const out = [];
+  const vw = window.innerWidth;
+  /**
+   * 잘라 내는 조상이 있으면 넘침이 아니다.
+   * 관인 워터마크(.home-seal)는 일부러 모서리 밖으로 걸쳐 놓고 부모가 잘라 낸다 —
+   * 이걸 안 빼면 모든 화면에서 같은 거짓 경보가 뜨고, 그러면 아무도 안 본다.
+   */
+  const clipped = (el) => {
+    for (let n = el.parentElement; n; n = n.parentElement) {
+      const o = getComputedStyle(n);
+      if (o.overflow !== "visible" || o.overflowX !== "visible") return true;
+    }
+    return false;
+  };
+  if (document.documentElement.scrollWidth > vw + 1) {
+    out.push({
+      kind: "가로 스크롤",
+      where: "html",
+      detail: `문서 폭 ${document.documentElement.scrollWidth}px > 화면 ${vw}px`,
+      text: "",
+    });
+  }
+  for (const el of document.querySelectorAll("body *")) {
+    if (!el.offsetParent && getComputedStyle(el).position !== "fixed") continue;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    if (clipped(el)) continue;
+    if (r.right > vw + 1 || r.left < -1) {
+      out.push({
+        kind: "화면 밖으로 넘침",
+        where: el.className || el.tagName,
+        detail: `오른쪽 끝 ${Math.round(r.right)}px (화면 ${vw}px)`,
+        text: (el.textContent || "").trim().slice(0, 32),
+      });
+      continue;
+    }
+    if (el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0 && getComputedStyle(el).overflowX === "visible") {
+      out.push({
+        kind: "칸보다 넓은 내용",
+        where: el.className || el.tagName,
+        detail: `내용 ${el.scrollWidth}px > 칸 ${el.clientWidth}px`,
+        text: (el.textContent || "").trim().slice(0, 32),
+      });
+    }
+  }
+  // 같은 결함이 조상·자손으로 겹쳐 잡히므로 한 번씩만 보고한다
+  return [...new Map(out.map((x) => [x.kind + x.where + x.detail, x])).values()];
+};
+
 const findMisaligned = () => {
   const out = [];
   for (const el of document.querySelectorAll("a,button,.btn,.chop,.tile,.slot,.st")) {
@@ -240,6 +292,7 @@ for (const width of WIDTHS) {
         ...(await page.evaluate(findOrphans)),
         ...(await page.evaluate(findUnderfilled)),
         ...(await page.evaluate(findMisaligned)),
+        ...(await page.evaluate(findOverflow)),
       ];
       if (found.length) {
         failures += found.length;
