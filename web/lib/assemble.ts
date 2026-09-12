@@ -56,10 +56,16 @@ export function assembleForDate(date: string, area?: string | null): AssemblePuz
 }
 
 /** 시간 경과 초성 힌트: tier가 오를 때마다 조각 하나당 랜덤 한 글자씩 연다 */
-export function assembleHint(date: string, no: number, tier: number, area?: string | null): { mask: string } | null {
+export function assembleHint(
+  date: string,
+  no: number,
+  tier: number,
+  area?: string | null,
+  filled: number[] = [],
+): { mask: string } | null {
   const target = answersForDate(date, area)[no - 1];
   if (!target || !Number.isInteger(tier) || tier < 1) return null;
-  return { mask: choseongHint(target.name, Math.min(tier, 3), `${date}#${no}`) };
+  return { mask: choseongHint(target.name, Math.min(tier, 3), `${date}#${no}`, filled) };
 }
 
 /** 서버 판정: 조립 결과 대조. 오답이어도 정답과 메타를 공개한다 (열람 학습 루프) */
