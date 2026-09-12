@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { regions } from "@/lib/data";
-import { visibleGames, viewerIsOwner } from "@/lib/release";
+import { visibleGames, hiddenGames, viewerIsOwner } from "@/lib/release";
 import { DailyChop } from "@/components/LedgerStatus";
 import { IdBadge } from "@/components/IdBadge";
 import { Seal } from "@/components/Seal";
@@ -16,6 +16,7 @@ export default async function HomePage() {
   const ep = episodeNumber(date);
   // 전개 전 창구는 운영자에게만 실린다 (lib/release.ts)
   const games = await visibleGames();
+  const hidden = await hiddenGames();
   // 내부 화면은 주소를 알아도 운영자만 열리지만, 들어갈 길이 아예 없어서
   // 주소를 외워 치고 있었다. 대장 아래에 내부용 한 줄을 둔다. 문은 하나만
   // 둔다 — 운영 현황에서 감별 리포트로 건너간다
@@ -96,18 +97,22 @@ export default async function HomePage() {
                 </Link>
               </div>
             ))}
-            <div className="row off">
-              <span className="rmain">
-                <span className="no mono">{games.length + 1}</span>
-                <span className="cell">
-                  <span className="tt">작명소</span>
-                  <span className="dd">2단계 개설 예정 창구</span>
+            {/* 아직 안 열린 창구는 미개설 줄로만 비춘다. 손으로 박아 두면
+                전개하는 날 진짜 줄과 미개설 줄이 함께 뜬다 */}
+            {hidden.map((g, i) => (
+              <div className="row off" key={g.key}>
+                <span className="rmain">
+                  <span className="no mono">{games.length + i + 1}</span>
+                  <span className="cell">
+                    <span className="tt">{g.label}</span>
+                    <span className="dd">{g.desc}</span>
+                  </span>
                 </span>
-              </span>
-              <span className="st">
-                <span className="chop off">미개설</span>
-              </span>
-            </div>
+                <span className="st">
+                  <span className="chop off">미개설</span>
+                </span>
+              </div>
+            ))}
           </nav>
           <p className="ledger-note">
             창구 이름을 누르면 <b>무한</b>, 오른쪽 <b>출전하기</b>를 누르면 같은 구역끼리 겨루는{" "}

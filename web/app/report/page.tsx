@@ -18,6 +18,14 @@ interface Report {
   ready: { real: number; fake: number };
   minShown: number;
 }
+interface Coined {
+  id: number;
+  name: string;
+  area: string;
+  user_id: number | null;
+  created_at: string;
+  approved: boolean;
+}
 interface Bug {
   id: number;
   body: string;
@@ -42,6 +50,7 @@ const pct = (r: number) => `${Math.round(r * 100)}%`;
 export default function ReportPage() {
   const [data, setData] = useState<Report | null>(null);
   const [bugs, setBugs] = useState<Bug[] | null>(null);
+  const [coined, setCoined] = useState<Coined[] | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -53,6 +62,10 @@ export default function ReportPage() {
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no"))))
       .then((d: { bugs: Bug[] }) => setBugs(d.bugs))
       .catch(() => setBugs([]));
+    fetch("/api/coined")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no"))))
+      .then((d: { coined: Coined[] }) => setCoined(d.coined))
+      .catch(() => setCoined([]));
   }, []);
 
   const table = (title: string, note: string, rows: NameRow[]) => (
@@ -128,6 +141,31 @@ export default function ReportPage() {
               {table("진짜인데 AI라고 속은 이름", "사람이 지었는데 AI처럼 보인 쪽", data.real)}
               {table("AI인데 진짜라고 속은 이름", "AI가 지었는데 진짜처럼 보인 쪽", data.fake)}
             </>
+          )}
+
+          {/* 사람이 지은 이름. 승인해야 출제 풀에 오르므로 여기서 훑는다 */}
+          <div className="rep-head">
+            <b>접수된 작명</b>
+            <small>승인해야 출제됩니다</small>
+          </div>
+          {coined === null ? (
+            <p className="center-note">작명함을 여는 중입니다</p>
+          ) : coined.length === 0 ? (
+            <p className="center-note">아직 접수된 작명이 없습니다</p>
+          ) : (
+            <ul className="bug-list">
+              {coined.map((c) => (
+                <li key={c.id}>
+                  <div className="bmeta">
+                    <span className="bwhere">{c.area || "전국"}</span>
+                    <span>{new Date(c.created_at).toLocaleString("ko-KR")}</span>
+                    <span>{c.user_id ? `계정 ${c.user_id}` : "비회원"}</span>
+                    <span>{c.approved ? "승인됨" : "대기"}</span>
+                  </div>
+                  <div className="btext">{c.name}</div>
+                </li>
+              ))}
+            </ul>
           )}
 
           {/* 들어온 제보. 리포트에서 같이 봐야 따로 열어 볼 일이 없다 */}
