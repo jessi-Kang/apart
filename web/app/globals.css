@@ -545,11 +545,19 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
    감별 7px · 조립 145px · 찾기 347px 잘림). 덮개는 닫혀 있는 동안
    화면 구조를 건드리지 않으므로, 안내를 넣기 전과 같은 화면이 된다 */
 .rule-btn {
-  background: none; border: 0; padding: 7px; margin: -7px 0; cursor: pointer; color: var(--ink);
-  display: inline-flex; align-items: center; transition: color 0.12s ease;
+  background: none; border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 4px 8px; cursor: pointer; color: var(--ink-soft);
+  font: inherit; font-size: 11px; font-family: "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: 0.06em; transition: color 0.12s ease, border-color 0.12s ease;
 }
-.rule-btn:focus-visible { color: var(--stamp); }
-.rule-btn:active { color: var(--stamp); }
+/* 이 화면에서 지금 무엇을 하는지 한 줄. 덮개는 한 번 읽고 닫히므로,
+   화면에 남아 있는 말이 하나는 있어야 한다 */
+.task-line {
+  margin-top: 12px; font-size: 13px; line-height: 1.6; color: var(--ink-soft);
+}
+.task-line b { color: var(--ink); font-weight: 700; }
+.rule-btn:focus-visible { color: var(--stamp); border-color: var(--stamp); }
+.rule-btn:active { color: var(--stamp); border-color: var(--stamp); }
 .rule-veil {
   position: fixed; inset: 0; z-index: 40;
   display: flex; align-items: center; justify-content: center;

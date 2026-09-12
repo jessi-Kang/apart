@@ -477,6 +477,7 @@ export default function PlayPage() {
                 </p>
               </>
             )}
+            <p className="task-line">이 단지, <b>진짜</b>일까 <b>가짜</b>일까?</p>
             <div className="qname-wrap paper-in" key={`${endless ? "e" : "d"}-${endless ? eCount : idx}`}>
               <h2 className="qname">{currentName}</h2>
             </div>

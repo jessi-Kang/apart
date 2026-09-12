@@ -387,9 +387,13 @@ async function live() {
  *  예산은 지금 값이다. 뭔가를 더해 넘치면 실패다 — 넣으려면 무엇을 뺄지
  *  같이 정하고 이 숫자를 손으로 고쳐라. 저절로 늘어나면 예산이 아니다. */
 const SCREENS = [
-  { name: "감별 O/X", path: "/o", act: ".btn-real, .btn-fake", blocks: 4 },
-  { name: "이름 조립", path: "/a", act: ".tile", blocks: 7 },
-  { name: "진짜 찾기", path: "/f", act: ".pick", blocks: 3 },
+  // 2026-09-13: 창구마다 "지금 무엇을 하는가" 한 줄(.task-line)을 더하면서
+  // 셋 다 예산을 하나씩 올렸다. 이용 안내 덮개는 한 번 읽고 닫히는데 그 뒤로
+  // 화면에 남는 말이 없어서, 무엇을 하는 화면인지 알 방법이 없었다.
+  // 조립에서는 카드 안의 옛 라벨("이 단지를 조립하세요")을 빼서 갚았다.
+  { name: "감별 O/X", path: "/o", act: ".btn-real, .btn-fake", blocks: 5 },
+  { name: "이름 조립", path: "/a", act: ".tile", blocks: 8 },
+  { name: "진짜 찾기", path: "/f", act: ".pick", blocks: 4 },
 ];
 /** 작은 폰과 보통 폰. 큰 화면에서는 웬만해선 안 밀린다 */
 const FOLDS = [

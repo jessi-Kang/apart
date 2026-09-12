@@ -481,6 +481,7 @@ export default function FindRealPage() {
               </p>
             )}
 
+            <p className="task-line">넷 중 <b>진짜 있는 단지</b>를 고르세요.</p>
             <TimerBar
               seconds={TIME_LIMIT}
               active={phase === "solve" && !guide.open}
