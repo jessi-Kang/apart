@@ -293,6 +293,38 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 .area-rank:focus-visible { color: var(--stamp); }
 
+/* ---- 버그 제보 ---- */
+.bug-k {
+  display: block; margin-top: 18px; margin-bottom: 6px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 0.06em; color: var(--ink-soft);
+}
+.bug-sel, .bug-body, .bug-answer {
+  font: inherit; width: 100%; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px;
+}
+.bug-sel { font-size: 14px; appearance: none; cursor: pointer; }
+.bug-body { font-size: 14.5px; line-height: 1.65; resize: vertical; min-height: 120px; }
+.bug-answer { font-size: 15px; width: 96px; font-variant-numeric: tabular-nums; }
+.bug-sel:focus-visible, .bug-body:focus-visible, .bug-answer:focus-visible {
+  outline: none; border-color: var(--ink);
+}
+.bug-error { margin-top: 10px; font-size: 12.5px; font-weight: 700; color: var(--stamp); }
+.bug-note { margin-top: 12px; font-size: 12px; line-height: 1.65; color: var(--ink-soft); }
+.bug-login { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); font-weight: 700; text-decoration: none; }
+/* 허니팟: 사람에게도 화면 낭독기에도 잡히지 않게 완전히 걷어낸다 */
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+/* 제보함 (운영자 리포트) */
+.bug-list { list-style: none; margin-top: 12px; border: 1px solid var(--ink); border-radius: var(--radius); }
+.bug-list li { padding: 12px; border-bottom: 1px solid var(--line); }
+.bug-list li:last-child { border-bottom: 0; }
+.bug-list .bmeta {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline;
+  font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+.bug-list .bwhere { font-weight: 700; color: var(--ink); }
+.bug-list .btext { margin-top: 5px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+
 /* ---- 감별 리포트 ---- */
 .rep-intro { margin-top: 16px; font-size: 12.5px; line-height: 1.65; color: var(--ink-soft); }
 .rep-head { margin-top: 22px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
@@ -817,6 +849,8 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .roster-note { font-size: 10.5px; }
   .rep-intro { font-size: 11.5px; }
   .rep-head b { font-size: 13.5px; }
+  .bug-body { font-size: 13.5px; }
+  .bug-sel { font-size: 13px; }
   .share-link { font-size: 11px; padding: 5px 8px; margin-top: 14px; }
   .area-tab { font-size: 11px; padding: 4px 8px; }
   .locked { padding: 13px; }

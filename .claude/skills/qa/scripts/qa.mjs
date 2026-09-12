@@ -277,6 +277,25 @@ function copy() {
     });
   if (emoji.length) bad("그래픽", `이모지 사용 (판정·그리드는 SVG로) ${emoji.join(", ")}`);
   else ok("그래픽", "이모지 없음");
+
+  /**
+   * 나가는 문이 둘인가.
+   * 머리글 X와 "창구로 돌아가기" 버튼은 같은 일을 한다. 한 화면에 둘 다 두면
+   * 어느 쪽이 무엇인지 잠깐 생각하게 된다. 사람이 눈으로 잡던 항목인데,
+   * 새 화면을 만들 때마다 똑같이 둘 다 넣어서 자동 검사로 옮긴다.
+   * 게임 화면의 X는 "판 끝내기"라 뜻이 달라 조건부로 들어간다(핸들러가 붙는다).
+   */
+  const twoDoors = [];
+  for (const f of files.filter((x) => x.endsWith("page.tsx"))) {
+    const src = stripComments(read(f));
+    const hasX = /className="close-x"/.test(src);
+    // onClose 같은 핸들러가 붙은 X는 나가는 문이 아니라 다른 동작이다
+    const plainX = hasX && !/<CloseX/.test(src);
+    const hasBack = /창구로 돌아가기\s*\n?\s*<\/(Link|button)>/.test(src);
+    if (plainX && hasBack) twoDoors.push(f);
+  }
+  if (twoDoors.length) bad("나가는 문", `머리글 X와 '창구로 돌아가기'가 함께 있음: ${twoDoors.join(", ")}`);
+  else ok("나가는 문", "한 화면에 나가는 문이 하나씩");
 }
 
 /* ---------- 4. 데이터 ---------- */

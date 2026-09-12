@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { FooterInstall } from "./FooterInstall";
 
 /** 전 페이지 공용 푸터 — 출처와 저작자 표기만 남긴다.
@@ -10,7 +11,10 @@ export function SheetFooter() {
         © 2026 <a href="mailto:jihyun.kang@me.com">Jessi</a> ·{" "}
         <a href="https://vibelog-orcin.vercel.app/log" target="_blank" rel="noopener noreferrer">
           개발 일지
-        </a>
+        </a>{" "}
+        ·{" "}
+        {/* 버그를 만난 자리에서 바로 갈 수 있어야 한다. 찾아 헤매야 하면 그냥 나간다 */}
+        <Link href="/bug">버그 제보</Link>
         <FooterInstall />
       </span>
     </footer>
