@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { StampFilter } from "./StampFilter";
 
 /**
  * 등급 도장 프레임. CSS 직선 테두리 대신 feTurbulence 변위로 테두리를 미세하게
@@ -16,12 +17,7 @@ import type { ReactNode } from "react";
 export function Stamp({ children }: { children: ReactNode }) {
   return (
     <span className="stamp">
-      <svg className="stamp-filter" width="0" height="0" aria-hidden="true" focusable="false">
-        <filter id="stamp-rough" x="-12%" y="-20%" width="124%" height="140%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.05 0.07" numOctaves="2" seed="7" result="n" />
-          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" />
-        </filter>
-      </svg>
+      <StampFilter />
       <span className="stamp-frame" aria-hidden="true" />
       <span className="stamp-text">{children}</span>
     </span>
