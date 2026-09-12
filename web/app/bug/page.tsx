@@ -175,7 +175,9 @@ export default function BugPage() {
                     value={where}
                     onChange={(e) => setWhere(e.target.value)}
                   >
-                    <option value="">고르지 않음</option>
+                    {/* "고르지 않음"은 고르지 말라는 말로 읽힌다. 기본값이
+                        권유여야 눌러 본다 */}
+                    <option value="">선택하기</option>
                     {WHERE.map((w) => (
                       <option key={w} value={w}>
                         {w}
