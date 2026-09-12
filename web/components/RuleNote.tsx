@@ -52,21 +52,16 @@ export function useGuide(game: GameKey): { open: boolean; auto: boolean; setOpen
   };
 }
 
-/** 머리글의 작은 안내 단추 (배경음 토글 옆) */
+/**
+ * 머리글의 안내 단추 (배경음 토글 옆).
+ *
+ * 처음에는 물음표 아이콘만 뒀는데, 덮개를 한 번 닫고 나면 다시 여는 길을
+ * 아무도 못 찾았다. 아이콘 하나로는 "안내"라고 읽히지 않는다. 글자를 쓴다.
+ */
 export function RuleButton({ onOpen }: { onOpen: () => void }) {
   return (
-    <button type="button" className="rule-btn" aria-label="이용 안내" onClick={onOpen}>
-      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" strokeWidth="1.4" />
-        <path
-          d="M6.3 6.1a1.75 1.75 0 1 1 2.2 1.7c-.4.12-.5.4-.5.7v.4"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-        />
-        <circle cx="8" cy="11.4" r="0.85" fill="currentColor" />
-      </svg>
+    <button type="button" className="rule-btn" onClick={onOpen}>
+      안내
     </button>
   );
 }

@@ -577,10 +577,10 @@ export default function AssemblePage() {
                 {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
               </p>
             )}
+            <p className="task-line">아래 주소의 <b>단지 이름</b>을 조립하세요.</p>
             <div className="hintcard paper-in" key={endless ? `e${eCount}` : (puzzle as Puzzle).no}>
               {/* 주소는 제 줄을 준다. 앞 문구에 이어 붙이면 "서울특별시 / 구로구 개봉동"처럼
                   주소 한가운데서 줄이 꺾인다 */}
-              <span className="hk">이 단지를 조립하세요</span>
               <b>{puzzle.hint.location}</b>
               <span className="hm">
                 {puzzle.hint.builtYear}년 준공 · {puzzle.hint.households.toLocaleString()}세대
