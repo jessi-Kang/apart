@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { regions } from "@/lib/data";
+import { visibleGames } from "@/lib/release";
 import { DailyChop } from "@/components/LedgerStatus";
 import { IdBadge } from "@/components/IdBadge";
 import { Seal } from "@/components/Seal";
@@ -10,9 +11,11 @@ import { StampFilter } from "@/components/StampFilter";
 export const dynamic = "force-dynamic";
 
 /** 홈 = 접수 대장 (확정 시안 home2-a: 순번·창구·현황 3열 서식 + 현황 도장) */
-export default function HomePage() {
+export default async function HomePage() {
   const date = kstDateString();
   const ep = episodeNumber(date);
+  // 전개 전 창구는 운영자에게만 실린다 (lib/release.ts)
+  const games = await visibleGames();
   const [, mm, dd] = date.split("-");
 
   return (
@@ -64,66 +67,34 @@ export default function HomePage() {
               <span>창구</span>
               <span>공식전</span>
             </div>
-            <div className="row">
-              <Link className="rmain" href="/play">
-                <span className="no mono">1</span>
-                <span className="cell">
-                  <span className="tt">감별 O/X</span>
-                  <span className="dd">이름 하나를 보고 진짜/가짜</span>
-                  <span className="cell-go" aria-hidden="true">
-                    <svg width="11" height="11" viewBox="0 0 11 11">
-                      <path d="M3.4 1.6L7.2 5.5 3.4 9.4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+            {games.map((g, i) => (
+              <div className="row" key={g.key}>
+                <Link className="rmain" href={g.href}>
+                  <span className="no mono">{i + 1}</span>
+                  <span className="cell">
+                    <span className="tt">
+                      {g.label}
+                      {/* 전개 전 창구는 운영자에게만 보인다. 보이는 김에 그 사실도 함께 */}
+                      {!g.released && <em className="unreleased">비공개</em>}
+                    </span>
+                    <span className="dd">{g.desc}</span>
+                    <span className="cell-go" aria-hidden="true">
+                      <svg width="11" height="11" viewBox="0 0 11 11">
+                        <path d="M3.4 1.6L7.2 5.5 3.4 9.4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
                   </span>
-                </span>
-              </Link>
-              {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
-                  아무도 공식전을 찾지 못했다 */}
-              <Link className="st" href="/play?official=1">
-                <DailyChop mode="ox" date={date} />
-              </Link>
-            </div>
-            <div className="row">
-              <Link className="rmain" href="/assemble">
-                <span className="no mono">2</span>
-                <span className="cell">
-                  <span className="tt">이름 조립</span>
-                  <span className="dd">힌트로 단지명 조립</span>
-                  <span className="cell-go" aria-hidden="true">
-                    <svg width="11" height="11" viewBox="0 0 11 11">
-                      <path d="M3.4 1.6L7.2 5.5 3.4 9.4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                </span>
-              </Link>
-              {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
-                  아무도 공식전을 찾지 못했다 */}
-              <Link className="st" href="/assemble?official=1">
-                <DailyChop mode="assemble" date={date} />
-              </Link>
-            </div>
-            <div className="row">
-              <Link className="rmain" href="/findreal">
-                <span className="no mono">3</span>
-                <span className="cell">
-                  <span className="tt">진짜 찾기</span>
-                  <span className="dd">넷 중 진짜는 하나</span>
-                  <span className="cell-go" aria-hidden="true">
-                    <svg width="11" height="11" viewBox="0 0 11 11">
-                      <path d="M3.4 1.6L7.2 5.5 3.4 9.4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                </span>
-              </Link>
-              {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
-                  아무도 공식전을 찾지 못했다 */}
-              <Link className="st" href="/findreal?official=1">
-                <DailyChop mode="findreal" date={date} />
-              </Link>
-            </div>
+                </Link>
+                {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
+                    아무도 공식전을 찾지 못했다 */}
+                <Link className="st" href={`${g.href}?official=1`}>
+                  <DailyChop mode={g.key as "ox" | "assemble" | "findreal"} date={date} />
+                </Link>
+              </div>
+            ))}
             <div className="row off">
               <span className="rmain">
-                <span className="no mono">4</span>
+                <span className="no mono">{games.length + 1}</span>
                 <span className="cell">
                   <span className="tt">작명소</span>
                   <span className="dd">2단계 개설 예정 창구</span>

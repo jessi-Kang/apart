@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { blockIfUnreleased } from "@/lib/guard";
 import { randomAssemble, judgeAssemble } from "@/lib/endless";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,9 @@ export function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  // 전개 전 창구는 API로도 안 열린다 (lib/release.ts)
+  const blocked = await blockIfUnreleased("assemble");
+  if (blocked) return blocked;
   let body: { id?: unknown; guess?: unknown };
   try {
     body = (await req.json()) as typeof body;

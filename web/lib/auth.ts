@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 
 /**
  * 구글 로그인 세션 (서버 전용, 의존성 0).
- * - HMAC-SHA256 서명 쿠키에 {uid, name, exp}만 담는다. 이메일 등 PII는
- *   쿠키에 넣지 않는다.
+ * - HMAC-SHA256 서명 쿠키에 {uid, name, exp, own}만 담는다. 이메일 등 PII는
+ *   쿠키에 넣지 않는다 — 운영자 여부도 이메일이 아니라 참/거짓 한 칸으로만 남긴다.
  * - 필요한 환경변수: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / AUTH_SECRET.
  *   셋 중 하나라도 없으면 로그인 기능 전체가 조용히 꺼진다(비회원만 동작).
  */
@@ -17,6 +17,19 @@ export interface Session {
   uid: number;
   name: string;
   exp: number; // epoch seconds
+  /** 운영자인가 (비공개 전개 중인 창구를 볼 수 있다). 로그인 시점에 정해진다 */
+  own?: boolean;
+}
+
+/**
+ * 이 계정이 운영자인가. OWNER_EMAIL과 맞춰 본다.
+ * 값이 비어 있으면 아무도 운영자가 아니다 — 환경변수를 깜빡했을 때
+ * 전원에게 비공개 창구가 열리는 쪽으로 기울면 안 된다.
+ */
+export function isOwnerEmail(email: string | null | undefined): boolean {
+  const owner = (process.env.OWNER_EMAIL ?? "").trim().toLowerCase();
+  if (!owner || !email) return false;
+  return email.trim().toLowerCase() === owner;
 }
 
 export function authConfigured(): boolean {
@@ -29,9 +42,9 @@ function hmac(data: string): string {
   return b64url(createHmac("sha256", process.env.AUTH_SECRET!).update(data).digest());
 }
 
-export function signSession(uid: number, name: string): { token: string; maxAge: number } {
+export function signSession(uid: number, name: string, own = false): { token: string; maxAge: number } {
   const exp = Math.floor(Date.now() / 1000) + SESSION_DAYS * 86400;
-  const payload = b64url(Buffer.from(JSON.stringify({ uid, name, exp } satisfies Session)));
+  const payload = b64url(Buffer.from(JSON.stringify({ uid, name, exp, ...(own && { own: true }) } satisfies Session)));
   return { token: `${payload}.${hmac(payload)}`, maxAge: SESSION_DAYS * 86400 };
 }
 
