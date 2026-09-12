@@ -63,7 +63,6 @@ export default function PlayPage() {
   const [eRec, setERec] = useState<EndlessRecord>({ best: 0, avgMs: null });
   const [sHits, setSHits] = useState(0); // 이번 판 적중 수
   const [sBest, setSBest] = useState(0); // 이번 판 최고 연속
-  const [officialDone, setOfficialDone] = useState(false); // 오늘 공식전 출전 여부
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const [firstTime, setFirstTime] = useState(false); // 이 창구 첫 방문인가
   const [area, setArea] = useState(""); // 담당 구역 (빈 값이면 서울 전체)
@@ -87,7 +86,6 @@ export default function PlayPage() {
         // 무한이 본편 — 창구에 들어오면 바로 시작한다. 공식전(오늘의 10문제)은 선택 참가
         const saved = loadResult(data.date);
         const done = Boolean(saved && saved.marks.length === data.items.length);
-        setOfficialDone(done);
         if (wantOfficial && done && saved) {
           openSavedOfficial(data.date, saved);
         } else if (wantOfficial) {
@@ -187,15 +185,6 @@ export default function PlayPage() {
     setPhase("question");
   }
 
-  /** 오늘 이미 치른 공식전 성적표 다시 열기 (접수한 서류는 다시 떼어볼 수 있어야 한다) */
-  function replayOfficial() {
-    if (!quiz) return;
-    const saved = loadResult(quiz.date);
-    if (!saved) return;
-    sfxTap();
-    openSavedOfficial(quiz.date, saved);
-  }
-
   /** 저장된 공식전 성적표를 화면에 올린다. quiz 상태가 아직 없는 마운트 시점에도 쓴다 */
   function openSavedOfficial(date: string, saved: SavedResult) {
     setEndless(false);
@@ -292,7 +281,6 @@ export default function PlayPage() {
     sfxResult();
     const score = marks.filter(Boolean).length;
     saveResult({ date: quiz.date, marks, review });
-    setOfficialDone(true);
     setStreak(bumpStreak(quiz.date));
     setXpRes(addXp(score * 10 + 20)); // 정답 10점 + 완주 20점
     setPhase("result");
@@ -457,16 +445,6 @@ export default function PlayPage() {
               <p className="qlabel mono qlabel-row">
                 <span className="mode-chip">무한</span>
                 {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
-                {quiz && (
-                  <button
-                    type="button"
-                    className="official-chip"
-                    onClick={officialDone ? replayOfficial : startOfficial}
-                    disabled={busy}
-                  >
-                    {officialDone ? "성적표 보기" : "공식전 출전"}
-                  </button>
-                )}
               </p>
             ) : (
               <>
