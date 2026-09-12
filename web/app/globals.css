@@ -285,6 +285,26 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 .area-rank:focus-visible { color: var(--stamp); }
 
+/* 내가 기록을 가진 구역들. 구역은 딸린 값이 아니라 오가는 범위라 탭으로 둔다 */
+.area-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+.area-tab {
+  font: inherit; font-size: 12px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--ink-soft); background: none;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 5px 10px; cursor: pointer; white-space: nowrap;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.area-tab.on { color: var(--sheet); background: var(--ink); border-color: var(--ink); }
+.area-tab:focus-visible { color: var(--stamp); border-color: var(--stamp); }
+
+/* 사람이 문턱에 못 미쳐 아직 안 연 명부 */
+.locked {
+  margin-top: 16px; padding: 16px;
+  border: 1px dashed var(--line); border-radius: var(--radius); background: var(--paper);
+}
+.locked b { display: block; font-size: 14.5px; letter-spacing: -0.02em; }
+.locked p { margin-top: 6px; font-size: 12.5px; line-height: 1.65; color: var(--ink-soft); }
+
 /* 내 자리 카드: 명부를 여는 이유가 이것이라 맨 위에 크게 박는다 */
 .mycard {
   display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
@@ -781,6 +801,10 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .lv small { font-size: 10px; }
   .roster-note { font-size: 10.5px; }
   .share-link { font-size: 11px; padding: 5px 8px; margin-top: 14px; }
+  .area-tab { font-size: 11px; padding: 4px 8px; }
+  .locked { padding: 13px; }
+  .locked b { font-size: 13px; }
+  .locked p { font-size: 11.5px; }
 }
 
 /* ============ 큰 폰 ≥430 ============
@@ -864,6 +888,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .sound-btn:hover,
   .idb-main:hover .idb-go,
   .share-link:hover { color: var(--ink); border-color: var(--ink-soft); }
+  .area-tab:not(.on):hover { color: var(--ink); border-color: var(--ink-soft); }
   .idb-auth:hover,
   .acct-line a:hover,
   .acct-line button:hover,
@@ -875,6 +900,6 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
    키보드 포커스 표시는 마우스·키보드 기기에 그대로 남는다 */
 @media (pointer: coarse) {
   /* 길게 눌렀을 때 버튼·도장·조각에 글자 선택 영역이 잡히지 않게 */
-  .btn, .tile, .slot, .chop, .mode-chip, .share-link, .ledger .tt, .ledger .dd,
+  .btn, .tile, .slot, .chop, .mode-chip, .share-link, .area-tab, .ledger .tt, .ledger .dd,
   .ledger-head, .area-k, .idb-lv, .sound-btn, .foot-install { user-select: none; -webkit-user-select: none; }
 }

@@ -6,8 +6,8 @@ import { DocTitle } from "@/components/VerdictForm";
 import { GoogleMark } from "@/components/GoogleMark";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
-import { areaPref, AREA_EVENT } from "@/lib/local";
-import { titleFor, levelFromXp } from "@/lib/level";
+import { areaPref } from "@/lib/local";
+import { areaXp, levelFromXp, playedAreas, titleFor } from "@/lib/level";
 
 interface Row {
   rank: number;
@@ -20,50 +20,61 @@ interface Board {
   rows: Row[];
   total: number;
   mine: Row | null;
+  locked: boolean;
+  minPlayers: number;
   signedIn: boolean;
 }
 
 const shortArea = (a: string) => a.replace(/특별자치시$|특별자치도$|특별시$|광역시$/, "") || "전국";
 
 /**
- * 구역 명부: 같은 담당 구역 감별사들의 직급 순위.
+ * 구역 명부: 그 구역에서 친 기록이 있는 사람들의 순위.
+ *
+ * 구역은 사람에게 딸린 값이 아니라 그때그때 고르는 출제 범위다. 그래서
+ * 내가 친 구역이 여럿이면 그 구역 명부를 모두 볼 수 있어야 한다 — 위쪽
+ * 칸에 내가 기록을 가진 구역을 늘어놓고 눌러서 옮겨 다닌다.
  *
  * 남이 몇 점인지보다 "내가 어디쯤인가"가 먼저다. 그래서 내 줄은 두 번 나온다 —
  * 위쪽 요약에 한 번, 명부 안 제자리에 한 번. 첫 장(50명) 밖이면 아래에 따로
  * 붙여서, 순위가 한참 밑이어도 스크롤 없이 보인다.
- *
- * 구역끼리 비교하는 화면은 만들지 않는다. 같은 구역 안에서만 줄을 세운다.
  */
 export default function RankingPage() {
-  const [area, setArea] = useState<string | null>(null);
+  const [areas, setAreas] = useState<string[] | null>(null);
+  const [area, setArea] = useState("");
   const [board, setBoard] = useState<Board | null>(null);
   const [failed, setFailed] = useState(false);
+  const [localXp, setLocalXp] = useState(0);
   const meRow = useRef<HTMLLIElement | null>(null);
 
   useEffect(() => {
-    const refresh = () => setArea(areaPref());
-    refresh();
-    window.addEventListener(AREA_EVENT, refresh);
-    return () => window.removeEventListener(AREA_EVENT, refresh);
+    // 기록이 있는 구역 + 지금 고른 구역을 함께 늘어놓는다.
+    // 아직 한 판도 안 친 구역이라도 지금 맡은 곳이면 명부를 볼 수 있어야 한다
+    const played = playedAreas();
+    const now = areaPref();
+    const list = [...new Set([now, ...played])];
+    setAreas(list);
+    setArea(now);
   }, []);
 
   useEffect(() => {
-    if (area === null) return;
+    if (areas === null) return;
     setBoard(null);
     setFailed(false);
+    setLocalXp(areaXp(area));
     fetch(`/api/ranking${area ? `?area=${encodeURIComponent(area)}` : ""}`)
       .then((r) => r.json())
       .then((b: Board) => setBoard(b))
       .catch(() => setFailed(true));
-  }, [area]);
+  }, [area, areas]);
 
   const jumpToMe = useCallback(() => {
     meRow.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
 
-  const label = shortArea(area ?? "");
+  const label = shortArea(area);
   const mine = board?.mine ?? null;
   const inFirstPage = Boolean(mine && board?.rows.some((r) => r.me));
+  const lv = (xp: number) => levelFromXp(xp).level;
 
   return (
     <div className="frame">
@@ -74,7 +85,7 @@ export default function RankingPage() {
           감별사 <em>명부</em>입니다
         </h2>
         <p className="note">
-          담당 구역이 같은 사람끼리 직급 순으로 실립니다. 이름은 일부만 보이고,
+          그 구역에서 친 기록이 있으면 이름이 오릅니다. 이름은 일부만 보이고,
           구역끼리 견주는 표는 만들지 않습니다.
         </p>
       </aside>
@@ -97,9 +108,40 @@ export default function RankingPage() {
           </div>
           <DocTitle eyebrow="구역명부" title={`${label} 감별사 순위`} />
 
+          {/* 내가 친 구역이 여럿이면 골라서 옮겨 다닌다 */}
+          {areas && areas.length > 1 && (
+            <div className="area-tabs" role="tablist" aria-label="구역 고르기">
+              {areas.map((a) => (
+                <button
+                  key={a || "전국"}
+                  type="button"
+                  role="tab"
+                  aria-selected={a === area}
+                  className={`area-tab ${a === area ? "on" : ""}`}
+                  onClick={() => setArea(a)}
+                >
+                  {shortArea(a)}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* 내 자리를 맨 위에 한 번 더 박아 둔다 — 명부를 여는 이유가 이것이다 */}
           <div className="mycard">
-            {mine ? (
+            {mine && board!.locked ? (
+              /* 명부가 잠겨 있으면 순위를 말하지 않는다. "4명 중 2위"도 순위다 —
+                 몇 명이 나보다 아래인지 알려 주는 셈이라 숨기기로 한 것에 어긋난다 */
+              <>
+                <span className="myk">내 기록</span>
+                <b className="myrank mono">
+                  {mine.xp}
+                  <i>점</i>
+                </b>
+                <span className="mymeta">
+                  Lv.{lv(mine.xp)} {titleFor(lv(mine.xp))} · {label}
+                </span>
+              </>
+            ) : mine ? (
               <>
                 <span className="myk">내 순위</span>
                 <b className="myrank mono">
@@ -107,7 +149,7 @@ export default function RankingPage() {
                   <i>위</i>
                 </b>
                 <span className="mymeta">
-                  {board!.total}명 중 · Lv.{levelFromXp(mine.xp).level} {titleFor(levelFromXp(mine.xp).level)}
+                  {board!.total}명 중 · Lv.{lv(mine.xp)} {titleFor(lv(mine.xp))}
                 </span>
                 {!inFirstPage && (
                   <button type="button" className="myjump" onClick={jumpToMe}>
@@ -117,9 +159,12 @@ export default function RankingPage() {
               </>
             ) : board && !board.signedIn ? (
               <>
-                <span className="myk">내 순위</span>
-                <b className="myrank-off">명부에 없음</b>
-                <span className="mymeta">기록을 계정에 보관하면 이름이 오릅니다</span>
+                <span className="myk">내 기록</span>
+                <b className="myrank mono">
+                  {localXp}
+                  <i>점</i>
+                </b>
+                <span className="mymeta">이 기기에만 있습니다. 보관하면 명부에 오릅니다</span>
                 <a className="myjump" href="/api/auth/login">
                   <GoogleMark size={13} />
                   기록 보관
@@ -134,7 +179,7 @@ export default function RankingPage() {
               <>
                 <span className="myk">내 순위</span>
                 <b className="myrank-off">아직 없음</b>
-                <span className="mymeta">한 판이라도 치르면 명부에 오릅니다</span>
+                <span className="mymeta">{label}에서 한 판이라도 치르면 이름이 오릅니다</span>
               </>
             )}
           </div>
@@ -142,13 +187,18 @@ export default function RankingPage() {
           {failed && <p className="center-note">명부를 불러오지 못했습니다</p>}
           {!failed && !board && <p className="center-note">명부를 펼치는 중입니다</p>}
 
-          {board && board.rows.length === 0 && (
-            <p className="center-note">
-              {label} 구역은 아직 첫 줄이 비어 있습니다. 먼저 이름을 올려 보세요.
-            </p>
+          {/* 사람이 적을 때는 명부를 열지 않는다. 셋뿐인 순위표는 순위가 아니라 명단이다 */}
+          {board?.locked && (
+            <div className="locked">
+              <b>아직 명부를 펼치지 않았습니다</b>
+              <p>
+                {label} 구역에서 지금까지 {board.total}명이 기록을 남겼습니다. {board.minPlayers}명이
+                모이면 순위가 열립니다.
+              </p>
+            </div>
           )}
 
-          {board && board.rows.length > 0 && (
+          {board && !board.locked && board.rows.length > 0 && (
             <>
               <div className="roster-head">
                 <span>순위</span>
@@ -156,22 +206,19 @@ export default function RankingPage() {
                 <span>직급</span>
               </div>
               <ol className="roster">
-                {board.rows.map((r) => {
-                  const lv = levelFromXp(r.xp).level;
-                  return (
-                    <li key={`${r.rank}-${r.name}`} className={r.me ? "me" : undefined} ref={r.me ? meRow : undefined}>
-                      <span className="rk mono">{r.rank}</span>
-                      <span className="who">
-                        {r.name}
-                        {r.me && <em>나</em>}
-                      </span>
-                      <span className="lv mono">
-                        Lv.{lv}
-                        <small>{titleFor(lv)}</small>
-                      </span>
-                    </li>
-                  );
-                })}
+                {board.rows.map((r) => (
+                  <li key={`${r.rank}-${r.name}`} className={r.me ? "me" : undefined} ref={r.me ? meRow : undefined}>
+                    <span className="rk mono">{r.rank}</span>
+                    <span className="who">
+                      {r.name}
+                      {r.me && <em>나</em>}
+                    </span>
+                    <span className="lv mono">
+                      Lv.{lv(r.xp)}
+                      <small>{titleFor(lv(r.xp))}</small>
+                    </span>
+                  </li>
+                ))}
               </ol>
               {/* 첫 장 밖이면 내 줄을 끝에 이어 붙인다. 순위가 한참 밑이어도
                   스크롤로 찾아 헤매지 않게 */}
@@ -184,8 +231,8 @@ export default function RankingPage() {
                       <em>나</em>
                     </span>
                     <span className="lv mono">
-                      Lv.{levelFromXp(mine.xp).level}
-                      <small>{titleFor(levelFromXp(mine.xp).level)}</small>
+                      Lv.{lv(mine.xp)}
+                      <small>{titleFor(lv(mine.xp))}</small>
                     </span>
                   </li>
                 </ol>
