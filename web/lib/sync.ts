@@ -27,6 +27,8 @@ export interface SyncDaily {
 export interface SyncState {
   v: 1;
   xp?: number;
+  /** 담당 구역 (시·도 이름). 구역 명부를 이 값으로 묶는다. 빈 값이면 전국 */
+  area?: string;
   streak?: { lastDate: string; count: number };
   combo?: SyncCombo;
   endless?: { ox?: SyncEndless; assemble?: SyncEndless };
@@ -63,6 +65,10 @@ export function sanitizeState(x: unknown): SyncState {
 
   const xp = num(s.xp);
   if (xp !== null) out.xp = xp;
+
+  // 구역은 값 자체를 믿지 않는다. 길이만 자르고, 아는 구역인지는
+  // 서버가 lib/areaparam.ts로 한 번 더 거른다(모르는 값은 전국으로 떨어진다)
+  if (typeof s.area === "string" && s.area.length <= 32) out.area = s.area.trim();
 
   if (s.streak && typeof s.streak === "object") {
     const { lastDate, count } = s.streak as { lastDate?: unknown; count?: unknown };
@@ -125,6 +131,11 @@ export function mergeStates(a: SyncState, b: SyncState): SyncState {
 
   const xp = Math.max(a.xp ?? 0, b.xp ?? 0);
   if (xp > 0) out.xp = xp;
+
+  // 구역만은 "큰 쪽"이 아니라 "나중 쪽"이다. 방금 다른 구역으로 옮긴 사람을
+  // 옛 구역에 붙들어 두면 명부가 남의 동네를 보여준다. b가 들어온 쪽이다
+  const area = b.area !== undefined ? b.area : a.area;
+  if (area) out.area = area;
 
   if (a.streak || b.streak) {
     const sa = a.streak;

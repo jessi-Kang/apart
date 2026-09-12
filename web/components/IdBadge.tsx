@@ -88,6 +88,12 @@ export function IdBadge({ regions }: { regions: RegionGroup[] }) {
             </option>
           ))}
         </select>
+        <Link className="area-rank" href="/ranking">
+          명부
+          <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden="true">
+            <path d="M2.6 1.2L6 4.5 2.6 7.8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
       </div>
     </div>
   );

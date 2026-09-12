@@ -191,6 +191,8 @@ export function setAreaPref(area: string) {
     /* 저장 실패는 이번 판에만 적용 */
   }
   window.dispatchEvent(new Event(AREA_EVENT));
+  // 구역이 바뀌면 서버에도 알린다 — 구역 명부가 옛 구역에 나를 남겨 두면 안 된다
+  schedulePush();
 }
 
 /**
