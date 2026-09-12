@@ -155,10 +155,9 @@ export default function ReportPage() {
           )}
 
           <div className="result-actions">
-            <Link className="btn btn-ghost" href="/me">
-              기록 열람실
+            <Link className="btn btn-ghost" href="/ops">
+              운영 현황
             </Link>
-
           </div>
         </section>
 

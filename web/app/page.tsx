@@ -16,8 +16,9 @@ export default async function HomePage() {
   const ep = episodeNumber(date);
   // 전개 전 창구는 운영자에게만 실린다 (lib/release.ts)
   const games = await visibleGames();
-  // 리포트는 주소를 알아도 운영자만 열리지만(app/report/layout.tsx), 들어갈
-  // 길이 아예 없어서 주소를 외워 치고 있었다. 대장 아래에 내부용 한 줄을 둔다
+  // 내부 화면은 주소를 알아도 운영자만 열리지만, 들어갈 길이 아예 없어서
+  // 주소를 외워 치고 있었다. 대장 아래에 내부용 한 줄을 둔다. 문은 하나만
+  // 둔다 — 운영 현황에서 감별 리포트로 건너간다
   const owner = await viewerIsOwner();
   const [, mm, dd] = date.split("-");
 
@@ -115,7 +116,7 @@ export default async function HomePage() {
           {owner && (
             <p className="inhouse">
               <span className="inhouse-k mono">내부</span>
-              <Link href="/report">감별 리포트 · 제보함 열람</Link>
+              <Link href="/ops">운영 현황 열람</Link>
             </p>
           )}
         </section>
