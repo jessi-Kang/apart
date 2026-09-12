@@ -1554,6 +1554,1590 @@
       "name": "청파모란맨션",
       "hint": "옛 표기를 빌려 연식을 위장했습니다",
       "difficulty": "mid"
+    },
+    {
+      "id": "f280",
+      "name": "힐스테이트 센트럴포레",
+      "hint": "쓰이는 낱말만 모았지만 이 조합의 단지는 없습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f281",
+      "name": "푸르지오 파크하이츠",
+      "hint": "흔한 펫네임 둘을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f282",
+      "name": "래미안 에듀센트럴",
+      "hint": "학군과 중심을 한 이름에 담았습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f283",
+      "name": "자이 더 파크뷰",
+      "hint": "자이가 쓰지 않은 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f284",
+      "name": "더샵 리버카운티",
+      "hint": "강변과 단지촌을 함께 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f285",
+      "name": "아이파크 그랑시티",
+      "hint": "격과 규모를 한꺼번에 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f286",
+      "name": "e편한세상 포레시티",
+      "hint": "숲과 도시를 한 이름에 넣었습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f287",
+      "name": "센트레빌 파크에듀",
+      "hint": "공원과 학군을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f288",
+      "name": "해링턴플레이스 리버뷰",
+      "hint": "브랜드에 조망을 얹었습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f289",
+      "name": "데시앙 그랑파크",
+      "hint": "실제로 없는 펫네임 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f290",
+      "name": "포레나 레이크파크",
+      "hint": "호수와 공원을 함께 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f291",
+      "name": "어울림 에듀하이츠",
+      "hint": "학군과 고지대를 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f292",
+      "name": "리슈빌 더 센트럴",
+      "hint": "브랜드에 중심을 얹었습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f293",
+      "name": "힐스테이트 레이크뷰",
+      "hint": "호수 조망을 이름으로만 해결했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f294",
+      "name": "푸르지오 에듀파크",
+      "hint": "학군과 공원을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f295",
+      "name": "래미안 리버하이츠",
+      "hint": "강변과 고지대를 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f296",
+      "name": "자이 더 그랑센트럴",
+      "hint": "수식어를 둘이나 얹었습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f297",
+      "name": "더샵 스카이하이츠",
+      "hint": "하늘과 고지대는 같은 말입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f298",
+      "name": "아이파크 파크프라임",
+      "hint": "공원을 두 번 말한 셈입니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f299",
+      "name": "e편한세상 센트럴뷰",
+      "hint": "중심과 조망을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f300",
+      "name": "위브 더 레이크",
+      "hint": "호수를 이름으로만 끌어왔습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f301",
+      "name": "센트레빌 그랑하이츠",
+      "hint": "격과 고지대를 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f302",
+      "name": "데시앙 리버프라임",
+      "hint": "강변과 으뜸을 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f303",
+      "name": "블루밍 센트럴포레",
+      "hint": "중심과 숲을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f304",
+      "name": "스타힐스 레이크에듀",
+      "hint": "호수와 학군을 함께 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f305",
+      "name": "포레나 더 하이츠",
+      "hint": "브랜드에 고지대를 얹었습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f306",
+      "name": "어울림 파크프라임",
+      "hint": "공원과 으뜸을 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f307",
+      "name": "리슈빌 레이크포레",
+      "hint": "호수와 숲을 함께 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f308",
+      "name": "트루엘 그랑뷰",
+      "hint": "격과 조망을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f309",
+      "name": "우미린 더 파크",
+      "hint": "브랜드에 공원을 얹었습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f310",
+      "name": "호반써밋 에듀시티",
+      "hint": "학군과 도시를 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f311",
+      "name": "힐스테이트 프라임뷰",
+      "hint": "으뜸과 조망을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f312",
+      "name": "푸르지오 더 클래스",
+      "hint": "브랜드에 격만 얹었습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f313",
+      "name": "자이 리버센트럴",
+      "hint": "강변과 중심을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f314",
+      "name": "더샵 에듀하이츠",
+      "hint": "학군과 고지대를 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f315",
+      "name": "아이파크 레이크포레",
+      "hint": "호수와 숲을 함께 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f316",
+      "name": "롯데캐슬 파크프라임",
+      "hint": "공원과 으뜸을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f317",
+      "name": "e편한세상 그랑뷰",
+      "hint": "격과 조망을 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f318",
+      "name": "위브 에듀포레",
+      "hint": "학군과 숲을 함께 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f319",
+      "name": "센트레빌 리버시티",
+      "hint": "강변과 도시를 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f320",
+      "name": "데시앙 센트럴시티",
+      "hint": "중심과 도시는 같은 말입니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f321",
+      "name": "블루밍 파크하이츠",
+      "hint": "공원과 고지대를 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f322",
+      "name": "스타힐스 그랑포레",
+      "hint": "격과 숲을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f323",
+      "name": "포레나 에듀프라임",
+      "hint": "학군과 으뜸을 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f324",
+      "name": "어울림 리버뷰",
+      "hint": "강변 조망을 이름으로만 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f325",
+      "name": "리슈빌 파크시티",
+      "hint": "공원과 도시를 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f326",
+      "name": "트루엘 센트럴포레",
+      "hint": "중심과 숲을 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f327",
+      "name": "우미린 레이크하이츠",
+      "hint": "호수와 고지대를 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f328",
+      "name": "호반써밋 그랑프라임",
+      "hint": "수식어를 둘이나 얹었습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f329",
+      "name": "반도유보라 에듀포레",
+      "hint": "학군과 숲을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f330",
+      "name": "쌍용예가 리버하이츠",
+      "hint": "강변과 고지대를 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f331",
+      "name": "중흥에스클래스 파크뷰",
+      "hint": "공원 조망을 이름으로 해결했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f332",
+      "name": "예미지 센트럴포레",
+      "hint": "중심과 숲을 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f333",
+      "name": "로얄듀크 파크프라임",
+      "hint": "공원과 으뜸을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f334",
+      "name": "파밀리에 에듀시티",
+      "hint": "학군과 도시를 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f335",
+      "name": "비발디 레이크포레",
+      "hint": "호수와 숲을 함께 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f336",
+      "name": "한내들 센트럴뷰",
+      "hint": "중심과 조망을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f337",
+      "name": "라온프라이빗 파크포레",
+      "hint": "공원과 숲은 같은 말입니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f338",
+      "name": "이다음 그랑시티",
+      "hint": "격과 도시를 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f339",
+      "name": "휴포레 리버프라임",
+      "hint": "강변과 으뜸을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f340",
+      "name": "파크드림 센트럴에듀",
+      "hint": "중심과 학군을 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f341",
+      "name": "금강펜테리움 레이크뷰",
+      "hint": "호수 조망을 이름으로만 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f342",
+      "name": "서희스타힐스 더 포레",
+      "hint": "브랜드에 숲을 얹었습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f343",
+      "name": "동원로얄듀크 파크뷰",
+      "hint": "공원 조망을 이름으로 해결했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f344",
+      "name": "삼정그린코아 리버뷰",
+      "hint": "강변 조망을 이름으로만 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f345",
+      "name": "벽산블루밍 에듀파크",
+      "hint": "학군과 공원을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f346",
+      "name": "태영데시앙 레이크",
+      "hint": "호수를 이름으로만 끌어왔습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f347",
+      "name": "두산위브 그랑포레",
+      "hint": "격과 숲을 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f348",
+      "name": "금호어울림 파크시티",
+      "hint": "공원과 도시를 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f349",
+      "name": "동부센트레빌 에듀뷰",
+      "hint": "학군과 조망을 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f350",
+      "name": "코오롱하늘채 파크포레",
+      "hint": "공원과 숲은 같은 말입니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f351",
+      "name": "한화포레나 센트럴힐",
+      "hint": "중심과 언덕을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f352",
+      "name": "계룡리슈빌 더 클래스",
+      "hint": "브랜드에 격만 얹었습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f353",
+      "name": "일성트루엘 리버파크",
+      "hint": "강변과 공원을 함께 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f354",
+      "name": "경남아너스빌 포레뷰",
+      "hint": "숲 조망을 이름으로만 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f355",
+      "name": "유승한내들 에듀포레",
+      "hint": "학군과 숲을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f356",
+      "name": "서한이다음 파크뷰",
+      "hint": "공원 조망을 이름으로 해결했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f357",
+      "name": "협성휴포레 레이크시티",
+      "hint": "호수와 도시를 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f358",
+      "name": "화성파크드림 그랑뷰",
+      "hint": "격과 조망을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f359",
+      "name": "대방엘리움 센트럴포레",
+      "hint": "중심과 숲을 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f360",
+      "name": "엘리움 에듀하이츠",
+      "hint": "학군과 고지대를 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f361",
+      "name": "하늘채 리버센트럴",
+      "hint": "강변과 중심을 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f362",
+      "name": "아너스빌 그랑파크",
+      "hint": "격과 공원을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f363",
+      "name": "펜테리움 센트럴에듀",
+      "hint": "중심과 학군을 함께 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f364",
+      "name": "스타클래스 파크프라임",
+      "hint": "공원과 으뜸을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f365",
+      "name": "그린코아 레이크포레",
+      "hint": "호수와 숲을 함께 약속했습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f366",
+      "name": "엘크루 센트럴시티",
+      "hint": "중심과 도시는 같은 말입니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f367",
+      "name": "베스트빌 파크에듀",
+      "hint": "공원과 학군을 이어 붙였습니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "f368",
+      "name": "리버파크 프라임",
+      "hint": "브랜드 없이 수식어만 남았습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f369",
+      "name": "에듀파크 클래스",
+      "hint": "브랜드 자리가 비었습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f370",
+      "name": "레이크힐스 프라임",
+      "hint": "호수와 언덕과 으뜸을 다 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f371",
+      "name": "스카이포레 클래스",
+      "hint": "하늘과 숲은 잘 어울리지 않습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f372",
+      "name": "에코리버 하이츠",
+      "hint": "친환경과 강변을 이어 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f373",
+      "name": "프라임에듀 카운티",
+      "hint": "으뜸 학군을 이름으로만 약속했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f374",
+      "name": "노블파크 센트럴",
+      "hint": "품격과 공원과 중심을 다 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f375",
+      "name": "그린포레 카운티",
+      "hint": "초록과 숲은 같은 말입니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f376",
+      "name": "블루레이크 하이츠",
+      "hint": "푸른 호수를 이름으로만 끌어왔습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f377",
+      "name": "로얄에듀 팰리스",
+      "hint": "왕실과 학군을 함께 약속했습니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "f378",
+      "name": "프레스티지 스카이돔",
+      "hint": "품격과 지붕을 이어 붙였습니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "f379",
+      "name": "임페리얼 에듀타운",
+      "hint": "제국과 학군은 잘 어울리지 않습니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "f380",
+      "name": "플래티넘 레이크팰리스",
+      "hint": "금속과 호수와 궁전을 다 붙였습니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "f381",
+      "name": "다이아몬드 포레시티",
+      "hint": "보석과 숲을 이어 붙였습니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "f382",
+      "name": "골든리버 프레스티지",
+      "hint": "황금 강변을 이름으로만 약속했습니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "f383",
+      "name": "크리스탈 파크타워",
+      "hint": "수정과 공원과 탑을 다 붙였습니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "f384",
+      "name": "에메랄드 하이츠파크",
+      "hint": "보석 이름을 그대로 가져왔습니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "f385",
+      "name": "루체하임 센트럴",
+      "hint": "외국어 두 개를 이어 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f386",
+      "name": "비스타리움 포레",
+      "hint": "없는 낱말을 만들어 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f387",
+      "name": "아르테온 레이크뷰",
+      "hint": "예술을 뜻하는 말을 빌려 왔습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f388",
+      "name": "메종드 파크힐",
+      "hint": "프랑스어와 영어를 섞었습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f389",
+      "name": "라비앙 에듀포레",
+      "hint": "프랑스어에 학군을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f390",
+      "name": "센토피아 리버파크",
+      "hint": "없는 낱말로 도시를 흉내 냈습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f391",
+      "name": "베르디움 그랑뷰",
+      "hint": "초록을 뜻하는 말을 빌려 왔습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f392",
+      "name": "에듀센트로 하이츠",
+      "hint": "학군에 라틴어 어미를 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f393",
+      "name": "파크리움 클래스",
+      "hint": "공원에 라틴어 어미를 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f394",
+      "name": "리버시아 프라임",
+      "hint": "강변에 지명 어미를 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f395",
+      "name": "파장한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f396",
+      "name": "율전푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f397",
+      "name": "천천해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f398",
+      "name": "조원늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f399",
+      "name": "연무무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f400",
+      "name": "고색햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f401",
+      "name": "서둔청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f402",
+      "name": "구운백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f403",
+      "name": "호매실목련",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f404",
+      "name": "권선개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f405",
+      "name": "화서무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f406",
+      "name": "만석한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f407",
+      "name": "화수푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f408",
+      "name": "송림해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f409",
+      "name": "북성늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f410",
+      "name": "송월무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f411",
+      "name": "중산햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f412",
+      "name": "운남청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f413",
+      "name": "운서백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f414",
+      "name": "학익개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f415",
+      "name": "도화진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f416",
+      "name": "관교무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f417",
+      "name": "선학한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f418",
+      "name": "동춘푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f419",
+      "name": "영주해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f420",
+      "name": "대청늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f421",
+      "name": "보수무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f422",
+      "name": "부용햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f423",
+      "name": "부민청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f424",
+      "name": "토성백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f425",
+      "name": "암남개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f426",
+      "name": "초량진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f427",
+      "name": "좌천무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f428",
+      "name": "대평한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f429",
+      "name": "남항푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f430",
+      "name": "영선해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f431",
+      "name": "동삼늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f432",
+      "name": "동인무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f433",
+      "name": "삼덕햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f434",
+      "name": "봉산청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f435",
+      "name": "수창백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f436",
+      "name": "대봉진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f437",
+      "name": "신암무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f438",
+      "name": "효목한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f439",
+      "name": "봉무푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f440",
+      "name": "불로해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f441",
+      "name": "방촌늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f442",
+      "name": "율하무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f443",
+      "name": "용계햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f444",
+      "name": "가오청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f445",
+      "name": "판암백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f446",
+      "name": "자양개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f447",
+      "name": "가양진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f448",
+      "name": "용전무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f449",
+      "name": "홍도한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f450",
+      "name": "낭월푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f451",
+      "name": "선화해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f452",
+      "name": "대사늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f453",
+      "name": "부사무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f454",
+      "name": "유천햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f455",
+      "name": "학성청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f456",
+      "name": "복산백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f457",
+      "name": "우정개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f458",
+      "name": "성안진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f459",
+      "name": "유곡무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f460",
+      "name": "다운한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f461",
+      "name": "남외푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f462",
+      "name": "장현해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f463",
+      "name": "두왕늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f464",
+      "name": "야음무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f465",
+      "name": "선암햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f466",
+      "name": "매암청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f467",
+      "name": "방어백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f468",
+      "name": "반곡한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f469",
+      "name": "소담푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f470",
+      "name": "보람해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f471",
+      "name": "새롬늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f472",
+      "name": "다정무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f473",
+      "name": "어진햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f474",
+      "name": "산울개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f475",
+      "name": "해밀진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f476",
+      "name": "집현무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f477",
+      "name": "건입한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f478",
+      "name": "봉개푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f479",
+      "name": "노형해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f480",
+      "name": "월평늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f481",
+      "name": "영평무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f482",
+      "name": "해안햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f483",
+      "name": "서상청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f484",
+      "name": "소답백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f485",
+      "name": "봉림진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f486",
+      "name": "명곡무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f487",
+      "name": "봉곡한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f488",
+      "name": "팔용푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f489",
+      "name": "가음정해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f490",
+      "name": "반지늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f491",
+      "name": "성주무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f492",
+      "name": "청림햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f493",
+      "name": "일월청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f494",
+      "name": "인덕백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f495",
+      "name": "대잠개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f496",
+      "name": "학잠진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f497",
+      "name": "용흥무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f498",
+      "name": "창포한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f499",
+      "name": "두호푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f500",
+      "name": "양덕해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f501",
+      "name": "영성늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f502",
+      "name": "원성무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f503",
+      "name": "청수햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f504",
+      "name": "삼룡청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f505",
+      "name": "청당백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f506",
+      "name": "용곡개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f507",
+      "name": "신방진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f508",
+      "name": "안서무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f509",
+      "name": "와촌한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f510",
+      "name": "성성푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f511",
+      "name": "차암해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f512",
+      "name": "영운늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f513",
+      "name": "금천무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f514",
+      "name": "용정햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f515",
+      "name": "방서청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f516",
+      "name": "모충백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f517",
+      "name": "수곡개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f518",
+      "name": "성화진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f519",
+      "name": "개신무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f520",
+      "name": "운천한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f521",
+      "name": "신봉푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f522",
+      "name": "문암해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f523",
+      "name": "동서학늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f524",
+      "name": "진북햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f525",
+      "name": "인후청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f526",
+      "name": "금암백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f527",
+      "name": "우아개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f528",
+      "name": "호성진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f529",
+      "name": "고랑무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f530",
+      "name": "만성한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f531",
+      "name": "해망푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f532",
+      "name": "월명해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f533",
+      "name": "조양늘푸른",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f534",
+      "name": "근화무지개",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f535",
+      "name": "우두햇살타운",
+      "hint": "지역명에 한글 이름과 타운을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f536",
+      "name": "사농청솔맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f537",
+      "name": "후평백합맨션",
+      "hint": "옛 표기를 빌려 연식을 위장했습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f538",
+      "name": "퇴계개나리",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f539",
+      "name": "석사진달래",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f540",
+      "name": "칠전무궁화",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f541",
+      "name": "개운한마음",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f542",
+      "name": "단구푸른숲",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "f543",
+      "name": "단계해오름",
+      "hint": "지역명에 흔한 한글 이름을 붙였습니다",
+      "difficulty": "mid"
     }
   ]
 }
