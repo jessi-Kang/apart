@@ -155,6 +155,19 @@ export const areaLabel = (area: string) => (isArea(area) ? shortSido(area) : are
 const MIN_ASSEMBLE = 20; // 이보다 얇으면 같은 퍼즐이 바로 되풀이된다
 
 /**
+ * 조각이 말이 되는 이름인가.
+ * 공백으로 쪼갠 조각 중에 글자가 하나도 없는 것("1," "24" "2.0" 같은 것)이
+ * 섞이면 조립 문제로 쓸 수 없다. "현대하이페리온 1, 2단지"를 내면 화면에
+ * "1,"이라는 조각이 놓이고 그걸 집어야 정답이 되는데, 그건 추리가 아니라
+ * 찍기다. 단지 번호가 붙은 이름 자체는 O/X와 진짜 찾기에서 그대로 쓴다 —
+ * 거기서는 이름을 통째로 보여주니 문제가 없다.
+ */
+const assemblable = (name: string) => {
+  const parts = name.split(" ").filter(Boolean);
+  return parts.length >= 2 && parts.every((p) => /[가-힣A-Za-z]/.test(p));
+};
+
+/**
  * 조립 퍼즐은 이름에 공백이 있어야 조각으로 쪼개진다. 그런 단지가 전국에 677곳뿐이라
  * 다른 창구보다 풀이 훨씬 얇다. 시·도 단위로는 세종 31곳 ~ 서울 259곳이라 쓸 만하고,
  * 그보다 얇은 시·도가 생기면 전국으로 되돌린다.
@@ -164,7 +177,7 @@ export function assemblePoolOf(area?: string | null): {
   fakes: FakeName[];
   sido: string | null;
 } {
-  const all = apartments.filter((a) => a.name.split(" ").length >= 2);
+  const all = apartments.filter((a) => assemblable(a.name));
   if (!area || !isArea(area)) return { reals: all, fakes: fakeNames, sido: null };
   const reals = all.filter((a) => a.sido === area);
   if (reals.length < MIN_ASSEMBLE) return { reals: all, fakes: fakeNames, sido: null };

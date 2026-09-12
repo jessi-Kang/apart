@@ -296,12 +296,23 @@ function data() {
     if (thin.length) bad("구역 풀", `문턱(20건) 미달: ${thin.join(", ")}`);
     else ok("구역 풀", `시·도 ${Object.keys(bySido).length}곳 전부 20건 이상 (출제 ${clean.length}건)`);
 
-    const asm = clean.filter((a) => a.name.split(" ").length >= 2);
+    // lib/data.ts의 assemblable과 같은 규칙이다. 한쪽만 고치면 개수가 어긋난다
+    const assemblable = (name) => {
+      const parts = name.split(" ").filter(Boolean);
+      return parts.length >= 2 && parts.every((p) => /[가-힣A-Za-z]/.test(p));
+    };
+    const asm = clean.filter((a) => assemblable(a.name));
     const asmThin = Object.entries(bySido)
-      .map(([s, l]) => [s, l.filter((a) => a.name.split(" ").length >= 2).length])
+      .map(([s, l]) => [s, l.filter((a) => assemblable(a.name)).length])
       .filter(([, n]) => n < 20);
     if (asmThin.length) bad("조립 퍼즐", `시·도별 20개 미달(전국으로 되돌아감): ${asmThin.map(([s, n]) => `${s} ${n}`).join(", ")}`);
     else ok("조립 퍼즐", `전국 ${asm.length}개, 시·도별 모두 20개 이상`);
+
+    // 조각이 말이 되는가 — "1," "24" 같은 조각이 생기는 이름은 조립에 못 쓴다
+    const junk = clean.filter((a) => a.name.split(" ").filter(Boolean).length >= 2 && !assemblable(a.name));
+    if (junk.length && clean.filter((a) => assemblable(a.name)).some((a) => junk.includes(a)))
+      bad("조립 조각", `글자 없는 조각이 생기는 이름이 조립 풀에 남음: ${junk.slice(0, 3).map((a) => a.name).join(", ")}`);
+    else ok("조립 조각", `글자 없는 조각(\"1,\" \"24\" 등)이 생기는 이름 ${junk.length}건 전부 조립에서 제외`);
   } catch (e) {
     const out = String(e.stderr ?? e.stdout ?? e.message);
     const fails = out.split("\n").filter((l) => l.startsWith("실패:")).slice(0, 8);
