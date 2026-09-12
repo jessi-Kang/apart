@@ -72,6 +72,31 @@ export const MIN_PLAYERS = 10;
  * @param area 담당 구역 (빈 문자열이면 구역을 안 고른 사람들끼리)
  * @param uid  보는 사람 (없으면 mine은 null)
  */
+/**
+ * 이 구역들 중 명부가 열린 곳만 골라 돌려준다.
+ *
+ * 홈에서 명부 입구를 보일지 말지 정하는 데 쓴다. 잠긴 명부로 가는 링크를
+ * 두면 눌러 보고 나서야 볼 게 없다는 걸 알게 된다 — 볼 것이 없으면
+ * 들어가는 문도 없어야 한다.
+ */
+export async function openAreas(areas: string[]): Promise<string[]> {
+  if (!sql || !areas.length) return [];
+  try {
+    const uniq = [...new Set(areas)].slice(0, 20);
+    const out: string[] = [];
+    for (const a of uniq) {
+      const rows = (await sql`
+        SELECT COUNT(*)::int AS n
+        FROM user_state s
+        WHERE COALESCE((s.state->'areaXp'->>${a})::int, 0) > 0`) as { n: number }[];
+      if ((rows[0]?.n ?? 0) >= MIN_PLAYERS) out.push(a);
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
 export async function areaBoard(area: string, uid: number | null): Promise<RankBoard> {
   const empty: RankBoard = { rows: [], total: 0, mine: null, locked: false, minPlayers: MIN_PLAYERS };
   if (!sql) return empty;
