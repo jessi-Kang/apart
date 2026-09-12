@@ -5,11 +5,13 @@ import { shareLink, shareText, type ShareCardData } from "@/lib/sharecard";
 import { sfxTap } from "@/lib/sound";
 
 /**
- * 가벼운 공유 한 줄.
+ * 링크 공유 — 통지서(그림)를 뽑지 않고 글만 한 번에 넘기는 길.
  *
- * 통지서(이미지)를 뽑는 건 마음먹어야 하는 일이라, 그냥 지나치는 사람이 훨씬 많다.
- * 그림을 만들 것도 없이 한 번에 퍼뜨릴 수 있는 길을 옆에 작게 둔다 —
- * 여기서 나가는 글에는 항상 주소가 붙으므로, 본 사람이 찾아올 길이 생긴다.
+ * 처음에는 버튼 묶음 옆에 작은 칩으로 뒀는데, 아무 데도 안 붙은 조각이
+ * 떠 있는 꼴이라 무엇에 딸린 것인지 알 수 없었다. 지금은 통지서 공유와
+ * 같은 크기로 나란히 선다 — 둘 다 "이 결과를 남에게 보내는" 일이고,
+ * 그림을 만들 만큼 마음먹지 않은 사람이 고르는 쪽이 이것일 뿐이다.
+ * 판을 끝낸 뒤 할 일(다시 도전·창구로 돌아가기)은 그 아래 줄로 내려갔다.
  */
 export function ShareLink({ data }: { data: ShareCardData }) {
   const [state, setState] = useState<"idle" | "shared" | "copied" | "failed">("idle");
@@ -18,21 +20,12 @@ export function ShareLink({ data }: { data: ShareCardData }) {
   return (
     <button
       type="button"
-      className="share-link"
+      className="btn btn-ghost"
       onClick={async () => {
         sfxTap();
         setState(await shareLink(shareText(data)));
       }}
     >
-      <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
-        <path
-          d="M5.6 8.4a2.6 2.6 0 0 0 3.7 0l2.1-2.1a2.6 2.6 0 0 0-3.7-3.7l-.7.7M8.4 5.6a2.6 2.6 0 0 0-3.7 0L2.6 7.7a2.6 2.6 0 0 0 3.7 3.7l.7-.7"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </svg>
       {label}
     </button>
   );

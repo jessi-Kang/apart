@@ -584,6 +584,11 @@ export default function PlayPage() {
                         ? "다시 시도"
                         : "통지서 공유"}
               </button>
+              <ShareLink data={endlessCard()} />
+            </div>
+            {/* 아래 줄은 이 판을 끝낸 다음에 할 일이다. 공유 두 갈래와
+                섞어 놓으면 네 단추가 다 같은 무게로 보인다 */}
+            <div className="result-actions">
               <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
                 다시 도전
               </button>
@@ -591,9 +596,6 @@ export default function PlayPage() {
                 창구로 돌아가기
               </Link>
             </div>
-            {/* 통지서(그림)가 주 동작이고 이건 그 대안이라 아래에 둔다.
-                위에 끼우면 주 버튼보다 먼저 읽혀 순서가 거꾸로다 */}
-            <ShareLink data={endlessCard()} />
           </section>
         )}
 
@@ -640,6 +642,11 @@ export default function PlayPage() {
                         ? "다시 시도"
                         : "통지서 공유"}
               </button>
+              <ShareLink data={officialCard()} />
+            </div>
+            {/* 아래 줄은 이 판을 끝낸 다음에 할 일이다. 공유 두 갈래와
+                섞어 놓으면 네 단추가 다 같은 무게로 보인다 */}
+            <div className="result-actions">
               <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
                 무한 계속
               </button>
@@ -647,9 +654,6 @@ export default function PlayPage() {
                 창구로 돌아가기
               </Link>
             </div>
-            {/* 통지서(그림)가 주 동작이고 이건 그 대안이라 아래에 둔다.
-                위에 끼우면 주 버튼보다 먼저 읽혀 순서가 거꾸로다 */}
-            <ShareLink data={officialCard()} />
           </section>
         )}
 
