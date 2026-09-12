@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { firstVisit } from "@/lib/local";
 import { rulesFor } from "@/lib/rules";
 import type { GameKey } from "@/lib/scoring";
 
@@ -22,15 +21,26 @@ import type { GameKey } from "@/lib/scoring";
 /**
  * 안내를 열지 말지. 창구별로 이 기기에 한 번만 저절로 열린다.
  * `auto`는 "저절로 열린 그 판인가". 그때만 닫는 단추가 "시작하기"다.
+ *
+ * 표시는 이 안내 전용 열쇠를 쓴다. 처음에는 이미 있던 firstVisit
+ * (`aptgam:seen:*`)을 재사용했는데, 그 열쇠는 예전 한 줄 힌트가 이미
+ * 써 버린 뒤였다. 그래서 전에 한 번이라도 친 사람에게는 안내가 영영
+ * 안 떴다(라이브에서 확인). 뜻이 달라진 표시는 새로 판다.
  */
+const KEY = (game: GameKey) => `aptgam:guide:${game}`;
+
 export function useGuide(game: GameKey): { open: boolean; auto: boolean; setOpen: (v: boolean) => void } {
   const [open, setOpen] = useState(false);
   const [auto, setAuto] = useState(false);
   useEffect(() => {
-    if (firstVisit(game)) {
-      setOpen(true);
-      setAuto(true);
+    try {
+      if (localStorage.getItem(KEY(game))) return;
+      localStorage.setItem(KEY(game), "1");
+    } catch {
+      return; // storage를 못 쓰면 저절로 열지 않는다. 머리글 단추는 그대로 있다
     }
+    setOpen(true);
+    setAuto(true);
   }, [game]);
   return {
     open,
