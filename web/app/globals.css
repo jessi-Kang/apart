@@ -349,9 +349,13 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .capbox .sec-cap + .cap-q { margin-top: 6px; }
 .cap-q { font-size: 12.5px; line-height: 1.6; color: var(--ink-soft); }
 .cap-q b { color: var(--stamp); }
+/* collapse가 아니라 separate다. collapse로 두면 칸 선이 표 테두리와 합쳐지면서
+   바깥쪽으로 삐져나온다(실기기에서 회색 선이 좌우로 튀어나온 것이 이것이다).
+   separate + overflow:hidden이면 칸 선이 테두리 안에서 끝난다 */
 .capledger {
   width: 100%; margin-top: 10px; border: 1px solid var(--ink);
-  border-radius: var(--radius); border-collapse: collapse; border-spacing: 0;
+  border-radius: var(--radius); border-collapse: separate; border-spacing: 0;
+  overflow: hidden;
 }
 .capledger th, .capledger td { border-bottom: 1px solid var(--line); text-align: left; }
 .capledger tr:last-child th, .capledger tr:last-child td { border-bottom: 0; }
