@@ -58,6 +58,12 @@ export function collectLocal(): SyncState {
   } catch {
     /* storage 불가 환경 */
   }
+  try {
+    const area = localStorage.getItem("aptgam:area");
+    if (area) out.area = area;
+  } catch {
+    /* storage 불가 환경 */
+  }
   const streak = readJson<{ lastDate: string; count: number }>(K.streak);
   if (streak?.lastDate) out.streak = streak;
   const combo = readJson<SyncState["combo"]>(K.combo);
@@ -84,6 +90,7 @@ function write(key: string, value: unknown) {
 
 function applyMerged(merged: SyncState) {
   if (merged.xp !== undefined) write(K.xp, String(merged.xp));
+  if (merged.area) write("aptgam:area", merged.area);
   if (merged.streak) write(K.streak, merged.streak);
   if (merged.combo) write(K.combo, merged.combo);
   if (merged.endless?.ox) write(K.endlessOx, merged.endless.ox);
