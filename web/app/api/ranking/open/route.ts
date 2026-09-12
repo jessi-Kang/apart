@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readSession } from "@/lib/auth";
 import { normalizeArea } from "@/lib/areaparam";
 import { openAreas } from "@/lib/ranking";
 
@@ -15,6 +16,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const raw = new URL(req.url).searchParams.get("areas") ?? "";
   const asked = raw.split(",").slice(0, 20).map((a) => normalizeArea(a));
-  const open = await openAreas(asked);
+  // 운영자에게는 사람이 모이기 전에도 입구를 보인다
+  const session = await readSession();
+  const open = await openAreas(asked, Boolean(session?.own));
   return NextResponse.json({ open }, { headers: { "Cache-Control": "no-store" } });
 }

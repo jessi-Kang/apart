@@ -79,17 +79,19 @@ export const MIN_PLAYERS = 10;
  * 두면 눌러 보고 나서야 볼 게 없다는 걸 알게 된다 — 볼 것이 없으면
  * 들어가는 문도 없어야 한다.
  */
-export async function openAreas(areas: string[]): Promise<string[]> {
+export async function openAreas(areas: string[], owner = false): Promise<string[]> {
   if (!sql || !areas.length) return [];
   try {
     const uniq = [...new Set(areas)].slice(0, 20);
+    // 운영자는 만들어 둔 화면이 실제로 도는지 봐야 해서 한 명만 있어도 연다
+    const need = owner ? 1 : MIN_PLAYERS;
     const out: string[] = [];
     for (const a of uniq) {
       const rows = (await sql`
         SELECT COUNT(*)::int AS n
         FROM user_state s
         WHERE COALESCE((s.state->'areaXp'->>${a})::int, 0) > 0`) as { n: number }[];
-      if ((rows[0]?.n ?? 0) >= MIN_PLAYERS) out.push(a);
+      if ((rows[0]?.n ?? 0) >= need) out.push(a);
     }
     return out;
   } catch {
@@ -97,7 +99,13 @@ export async function openAreas(areas: string[]): Promise<string[]> {
   }
 }
 
-export async function areaBoard(area: string, uid: number | null): Promise<RankBoard> {
+/**
+ * @param owner 운영자인가. 사람이 모이기 전에도 명부가 제대로 도는지 보려면
+ *   직접 열어 봐야 한다. 문턱은 남을 지키려고 둔 것이지(셋뿐인 명부는
+ *   가린 이름이라도 누가 누군지 짐작된다) 만든 사람까지 막을 이유는 없다.
+ *   운영자 판정은 세션의 own 한 칸으로만 하고, 이 값은 클라이언트가 보낼 수 없다.
+ */
+export async function areaBoard(area: string, uid: number | null, owner = false): Promise<RankBoard> {
   const empty: RankBoard = { rows: [], total: 0, mine: null, locked: false, minPlayers: MIN_PLAYERS };
   if (!sql) return empty;
   try {
@@ -112,7 +120,7 @@ export async function areaBoard(area: string, uid: number | null): Promise<RankB
     // 내 자리는 명부가 잠겨 있어도 알려 준다. 내 기록을 내가 못 보는 건 이상하다
     const mine = uid === null ? null : await myRow(area, uid);
 
-    if (total < MIN_PLAYERS) return { rows: [], total, mine, locked: true, minPlayers: MIN_PLAYERS };
+    if (total < MIN_PLAYERS && !owner) return { rows: [], total, mine, locked: true, minPlayers: MIN_PLAYERS };
 
     // 점수가 같으면 먼저 기록한 쪽이 위로 간다 — 같은 점수에서 순위가
     // 새로고침마다 바뀌면 명부로 읽히지 않는다

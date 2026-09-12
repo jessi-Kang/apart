@@ -230,6 +230,17 @@ export default function RankingPage() {
             </div>
           )}
 
+          {/* 운영자에게는 문턱 아래여도 열린다. 그때는 "남들은 아직 이 화면을
+              못 본다"를 분명히 해 둔다 — 안 그러면 이미 공개된 줄 안다 */}
+          {board && !board.locked && board.total < board.minPlayers && (
+            <p className="inhouse">
+              <span className="inhouse-k mono">내부</span>
+              <span className="inhouse-t">
+                {board.total}명 · {board.minPlayers}명이 모이기 전까지 다른 사람에게는 이 명부가 보이지 않습니다
+              </span>
+            </p>
+          )}
+
           {board && !board.locked && board.rows.length > 0 && (
             <>
               <div className="roster-head">

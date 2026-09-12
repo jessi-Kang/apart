@@ -319,6 +319,11 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   padding-right: 8px; border-right: 1px solid var(--line);
 }
 .inhouse a { color: var(--ink); font-weight: 700; text-decoration: none; transition: color 0.12s ease; }
+/* 명부의 안내는 여러 줄이 될 수 있다. 글을 따로 묶어 남는 폭을 다 쓰게 한다 —
+   그냥 두면 "내부" 딱지만 첫 줄에 남고 글이 통째로 다음 줄로 내려간다 */
+.inhouse { line-height: 1.6; color: var(--ink-soft); align-items: flex-start; }
+.inhouse .inhouse-t { flex: 1; min-width: 0; }
+.inhouse .inhouse-k { padding-top: 2px; }
 .inhouse a:focus-visible { color: var(--stamp); }
 
 /* ---- 버그 제보 ---- */
