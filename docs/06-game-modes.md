@@ -62,3 +62,7 @@
 - **M4**: 높거나 낮거나, 빈칸 한 조각을 지표 보고 선별 투입.
 
 게임 화면의 원본 시안은 `design/sian-a-document.html`이고, 홈·결과·공유는 각각 `home2-a-ledger.html`, `result3-r1-verdict.html`, `share3-s2-receipt.html`이 확정본이다.
+
+---
+
+© 2026 Jessi · 아파트 감별사. 무단 전재·재배포 금지.
