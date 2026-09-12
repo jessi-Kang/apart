@@ -16,17 +16,9 @@ export interface QuizItem {
   fake?: FakeName;
 }
 
-export function kstDateString(now = new Date()): string {
-  const kst = new Date(now.getTime() + 9 * 3600 * 1000);
-  return kst.toISOString().slice(0, 10);
-}
-
-/** 서비스 회차 번호 (에피소드). 기준일로부터 경과일 + 1 */
-const EPOCH = Date.UTC(2026, 8, 10); // 2026-09-10 = #1
-export function episodeNumber(date: string): number {
-  const [y, m, d] = date.split("-").map(Number);
-  return Math.max(1, Math.round((Date.UTC(y, m - 1, d) - EPOCH) / 86400000) + 1);
-}
+// 날짜·회차 계산은 lib/episode.ts에 있다 (출제 풀을 안 끌고 오는 순수 함수).
+// 여기서 다시 내보내 기존 호출부는 그대로 둔다
+export { kstDateString, episodeNumber } from "./episode";
 
 export function pickByDifficulty<T extends { difficulty: Difficulty }>(
   pool: T[],

@@ -13,6 +13,7 @@ import { assembleGradeFor } from "@/lib/grades";
 import { areaPref, bumpEndlessRecord, endlessRecord, firstVisit, type EndlessRecord } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { mergeMask } from "@/lib/hintmask";
+import { hintTimeNote, hintTimes } from "@/lib/hinttime";
 import { FINISH_BONUS, RECORD_BONUS, questionScore } from "@/lib/scoring";
 import { shareCardImage, type ShareCardData } from "@/lib/sharecard";
 import { ShareLink } from "@/components/ShareLink";
@@ -156,12 +157,12 @@ export default function AssemblePage() {
   // 힌트 마스크는 정답 토큰 순서 그대로 — 칸마다 제 몫의 초성이 들어간다
   const hintTokens = hintMask ? hintMask.split(" ") : [];
 
-  // 초성 힌트 자동 공개: 15초 → 1글자, 25초 → 2글자, 33초 → 3글자
+  // 초성 힌트 자동 공개. 시간표는 칸 수를 따라간다 (lib/hinttime.ts)
   useEffect(() => {
     setHintMask(null);
     setHintTier(0);
     if (phase !== "solve" || !puzzle) return;
-    const timers = [15_000, 25_000, 33_000].map((delay, i) =>
+    const timers = hintTimes(puzzle.answerLen).map((sec, i) =>
       setTimeout(async () => {
         try {
           // 조각은 왼쪽부터 채워지므로 채운 칸은 늘 앞쪽 연속이다.
@@ -185,7 +186,7 @@ export default function AssemblePage() {
         } catch {
           /* 힌트 실패는 게임 진행에 영향 없음 */
         }
-      }, delay),
+      }, sec * 1000),
     );
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -594,7 +595,7 @@ export default function AssemblePage() {
             <p className="hint-when">
               {hintTier > 0
                 ? `초성 ${hintTier}단계 공개됨 · 정답 칸에 표시`
-                : "15초 · 25초 · 33초에 초성이 한 글자씩 열립니다"}
+                : hintTimeNote(puzzle.answerLen)}
             </p>
 
             <TimerBar
