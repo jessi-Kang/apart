@@ -293,6 +293,13 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 .area-rank:focus-visible { color: var(--stamp); }
 
+/* ---- 감별 리포트 ---- */
+.rep-intro { margin-top: 16px; font-size: 12.5px; line-height: 1.65; color: var(--ink-soft); }
+.rep-head { margin-top: 22px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+.rep-head b { font-size: 15px; letter-spacing: -0.02em; }
+.rep-head small { display: block; margin-top: 3px; font-size: 11.5px; color: var(--ink-soft); font-weight: 400; }
+.rep-head + .roster { border-top: 0; border-radius: 0 0 var(--radius) var(--radius); }
+
 /* 내가 기록을 가진 구역들. 구역은 딸린 값이 아니라 오가는 범위라 탭으로 둔다 */
 .area-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
 .area-tab {
@@ -808,6 +815,8 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .lv { font-size: 11.5px; }
   .lv small { font-size: 10px; }
   .roster-note { font-size: 10.5px; }
+  .rep-intro { font-size: 11.5px; }
+  .rep-head b { font-size: 13.5px; }
   .share-link { font-size: 11px; padding: 5px 8px; margin-top: 14px; }
   .area-tab { font-size: 11px; padding: 4px 8px; }
   .locked { padding: 13px; }
