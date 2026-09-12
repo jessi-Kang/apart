@@ -5,9 +5,29 @@ import { CloudSync } from "@/components/CloudSync";
 import { InstallToast } from "@/components/InstallToast";
 import { PwaRegister } from "@/components/PwaRegister";
 
+const SITE = "https://apt-game.app";
+const DESC = "이거 진짜 있는 아파트야, AI가 지어낸 거야? 진짜 아파트와 AI가 지은 이름을 가려내는 데일리 퀴즈.";
+
 export const metadata: Metadata = {
-  title: "아파트 감별사",
-  description: "이거 진짜 있는 아파트야, AI가 지어낸 거야? 하루 10문제 공식전",
+  // 상대 경로 이미지를 정식 도메인으로 풀어 준다. 없으면 미리보기 이미지
+  // 주소가 localhost로 나가 카카오톡·슬랙에서 그림이 안 뜬다
+  metadataBase: new URL(SITE),
+  title: {
+    default: "아파트 감별사",
+    // 하위 화면은 "구역 명부 · 아파트 감별사"처럼 붙는다 — 링크만 봐도 어느 서비스인지 안다
+    template: "%s · 아파트 감별사",
+  },
+  description: DESC,
+  applicationName: "아파트 감별사",
+  openGraph: {
+    type: "website",
+    siteName: "아파트 감별사",
+    locale: "ko_KR",
+    url: SITE,
+    title: "아파트 감별사",
+    description: DESC,
+  },
+  twitter: { card: "summary_large_image", title: "아파트 감별사", description: DESC },
   // SVG(벡터)와 고해상도 PNG를 함께 선언한다 — SVG를 못 쓰거나
   // 저해상도로 래스터하는 컨텍스트(구형 브라우저·검색결과·북마크)가 PNG를 집게.
   icons: {

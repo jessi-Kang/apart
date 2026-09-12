@@ -17,13 +17,17 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const r = parseSlug(slug);
-  if (!r) return { title: "아파트 감별사" };
+  if (!r) return { title: { absolute: "아파트 감별사" } };
   const grade = gradeFor(r.score);
+  // 제목에 이미 서비스 이름이 들어 있으므로 absolute로 둔다.
+  // 그냥 두면 루트 템플릿이 붙어 "… · 아파트 감별사 · 아파트 감별사"가 된다
   const title = `아파트 감별사 #${episodeNumber(r.date)} · ${r.score}/10 ${grade.name}`;
+  const description = `10문제 중 ${r.score}문제 적중. 당신도 진짜 아파트와 AI가 지은 이름을 가려낼 수 있나요?`;
   return {
-    title,
-    description: "이거 진짜 있는 아파트야, AI가 지어낸 거야? 하루 10문제 공식전",
-    openGraph: { title },
+    title: { absolute: title },
+    description,
+    openGraph: { title, description, type: "article" },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
