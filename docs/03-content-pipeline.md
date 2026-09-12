@@ -7,7 +7,7 @@
 | 단계 | 현재 | 위치 |
 |---|---|---|
 | 실단지 수집 | 수동 실행 배치. 서울 전수 + 시도 14곳 표본 | `web/scripts/collect-kapt.mjs` |
-| 실단지 풀 | **정적 JSON 11,233건** (DB 테이블 아님) | `web/data/apartments.json` |
+| 실단지 풀 | **정적 JSON 12,121건** (DB 테이블 아님) | `web/data/apartments.json` |
 | 가짜 생성 | LLM 배치(대화형) + 수기 등록 | — |
 | 가짜 풀 | **정적 JSON 262건** | `web/data/fake_names.json` |
 | 자동 필터 | 구현 (실존 대조·형식·블랙리스트) | `web/scripts/validate-pool.mjs` |
@@ -19,7 +19,7 @@
 ### 1-1. 소스 (구현)
 - 공공데이터포털 **공동주택 단지 목록제공 V4**(`AptListService4/getSidoAptList4`) + **공동주택 기본 정보 V5**(`AptBasisInfoServiceV5/getAphusBassInfoV5`).
 - 사용 필드: 단지명(`kaptName`), 주소(`as1/as2/as3` 또는 `kaptAddr`), 준공년도(`kaptUsedate` 앞 4자리), 세대수(`kaptdaCnt`).
-- **수집 범위**: 서울특별시(11) 전수 + 시도 14곳 표본. 총 11,233건, 시도 15곳.
+- **수집 범위**: 서울특별시(11) 전수 + 시도 14곳 표본. 총 12,121건, 시도 15곳.
   인자로 시도코드를 주면 그 시도를 받고, 다시 실행하면 기존 수집본에 이어붙는다.
   **시도코드에 함정이 있다**: 강원은 42가 아니라 51, 전북은 45가 아니라 52다(특별자치도 전환).
   확인된 코드 표는 `collect-kapt.mjs` 주석에 있다.
@@ -55,7 +55,7 @@ K-apt 원본에는 단지명이 아니라 관리 단위가 이름 칸에 들어�
 
 ### 1-3. 결과물과 승격 절차 (구현)
 - 수집 결과는 `web/data/apartments.collected.json`에 쓰고, **사람이 검토한 뒤** `apartments.json`으로 승격한다. 무검토로 출제 풀에 들어가지 않게 하는 2단계 구조.
-- 현재 풀: **11,233건, 시도 15곳.** 서울 2,889 + 경남 1,287 · 경북 981 · 충남 920 · 전북 796 · 강원 739 · 충북 721 · 대전 509 · 울산 458 · 경기 419 · 부산 411 · 인천 402 · 대구 390 · 제주 172 · 세종 139. 항목 필드는 `id`(`k` + kaptCode) / `name` / `sido` / `sigungu` / `dong` / `builtYear` / `households` / `difficulty`.
+- 현재 풀: **12,121건, 시도 15곳.** 서울 2,889 + 경기 1,307 · 경남 1,287 · 경북 981 · 충남 920 · 전북 796 · 강원 739 · 충북 721 · 대전 509 · 울산 458 · 부산 411 · 인천 402 · 대구 390 · 제주 172 · 세종 139. 항목 필드는 `id`(`k` + kaptCode) / `name` / `sido` / `sigungu` / `dong` / `builtYear` / `households` / `difficulty`.
 - 정답 공개 화면의 "서울특별시 서초구 반포동 · 2023년 · 2,990세대"가 이 데이터에서 나온다. 표기 규칙: 시/도 + 시/군/구 + 동까지만(도로명 상세주소 미노출), 준공년도 4자리, 세대수 콤마 표기.
 
 ## 2. 가짜 단지명 생성 (LLM 배치)
@@ -148,7 +148,7 @@ K-apt 원본에는 단지명이 아니라 관리 단위가 이름 칸에 들어�
 [K-apt API] ─수동 실행─> [collect-kapt] ─> [apartments.collected.json]
                                                   │ 사람 검토 후 승격
                                                   ▼
-[LLM 배치 생성] ──> [validate-pool 대조] ──> [apartments.json 11,233]
+[LLM 배치 생성] ──> [validate-pool 대조] ──> [apartments.json 12,121]
                           │  (실패 시 등록 불가)   [fake_names.json 262]
                           └────────────────────────────┘
                                                   │
