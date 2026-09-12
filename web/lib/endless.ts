@@ -117,11 +117,11 @@ export function randomAssemble(area?: string | null): {
 const realById = new Map(apartments.map((a) => [a.id, a]));
 
 /** 무한 조립의 초성 힌트 (데일리와 같은 규칙) */
-export function assembleHintById(id: unknown, tier: number): { mask: string } | null {
+export function assembleHintById(id: unknown, tier: number, filled: number[] = []): { mask: string } | null {
   if (typeof id !== "string" || !Number.isInteger(tier) || tier < 1) return null;
   const apt = realById.get(id);
   if (!apt) return null;
-  return { mask: choseongHint(apt.name, Math.min(tier, 3), id) };
+  return { mask: choseongHint(apt.name, Math.min(tier, 3), id, filled) };
 }
 
 export function judgeAssemble(

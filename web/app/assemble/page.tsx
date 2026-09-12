@@ -64,6 +64,9 @@ export default function AssemblePage() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number[]>([]);
+  // 힌트 타이머는 예약될 때의 picked를 붙들고 있어서, 그 뒤에 채운 칸을 모른다.
+  // ref로 지금 몇 칸을 채웠는지만 따로 들고 간다
+  const pickedRef = useRef(0);
   const [reveal, setReveal] = useState<CheckResponse | null>(null);
   const [timedOut, setTimedOut] = useState(false);
   const [marks, setMarks] = useState<boolean[]>([]);
@@ -137,6 +140,10 @@ export default function AssemblePage() {
   }, [pendingOfficial, quiz, officialDone]);
 
   useEffect(() => {
+    pickedRef.current = picked.length;
+  }, [picked]);
+
+  useEffect(() => {
     if (phase === "solve") qStart.current = Date.now();
   }, [phase, idx, eCount]);
 
@@ -152,9 +159,16 @@ export default function AssemblePage() {
     const timers = [15_000, 25_000, 33_000].map((delay, i) =>
       setTimeout(async () => {
         try {
+          // 조각은 왼쪽부터 채워지므로 채운 칸은 늘 앞쪽 연속이다.
+          // 그 칸들을 알려 주고 빈 칸부터 열게 한다 — 이미 푼 칸을 여는 건
+          // 힌트가 아니라 아무 일도 안 일어난 것으로 보인다.
+          // 다 채웠으면 열 자리가 없으니 이번 차례는 건너뛴다(감점도 없다).
+          const done = pickedRef.current;
+          if (done >= (puzzle as { answerLen: number }).answerLen) return;
+          const q = done > 0 ? `&filled=${Array.from({ length: done }, (_, i) => i).join(",")}` : "";
           const url = endless
-            ? `/api/endless/assemble/hint?id=${encodeURIComponent((puzzle as EndlessPuzzle).id)}&tier=${i + 1}`
-            : `/api/assemble/hint?no=${(puzzle as Puzzle).no}&tier=${i + 1}${quiz?.area ? `&area=${encodeURIComponent(quiz.area)}` : ""}`;
+            ? `/api/endless/assemble/hint?id=${encodeURIComponent((puzzle as EndlessPuzzle).id)}&tier=${i + 1}${q}`
+            : `/api/assemble/hint?no=${(puzzle as Puzzle).no}&tier=${i + 1}${quiz?.area ? `&area=${encodeURIComponent(quiz.area)}` : ""}${q}`;
           const res = await fetch(url);
           if (!res.ok) return;
           const { mask } = (await res.json()) as { mask: string };

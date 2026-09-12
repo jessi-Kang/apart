@@ -135,8 +135,8 @@ export default function HomePage() {
             </div>
           </nav>
           <p className="ledger-note">
-            창구 이름을 누르면 <b>무한</b>으로 바로 시작합니다. 오른쪽 <b>공식전</b> 도장을 누르면
-            그날 전국이 같은 10문제를 푸는 랭킹전에 출전합니다.
+            창구 이름을 누르면 <b>무한</b>, 오른쪽 <b>출전하기</b>를 누르면 같은 구역끼리 겨루는{" "}
+            <b>공식전</b>입니다.
           </p>
         </section>
 
