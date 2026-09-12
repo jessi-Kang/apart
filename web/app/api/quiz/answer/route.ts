@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { kstDateString, quizForDate } from "@/lib/daily";
 import { recordAnswer, answerRate } from "@/lib/stats";
+import { recordName } from "@/lib/namestats";
 import { normalizeArea } from "@/lib/areaparam";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +31,13 @@ export async function POST(req: Request) {
   const area = normalizeArea(body.area);
   const item = quizForDate(today, area)[no! - 1];
   const correct = choice === item.kind;
-  if (body.practice !== true) await recordAnswer(today, no!, correct, area, "ox");
+  if (body.practice !== true) {
+    await recordAnswer(today, no!, correct, area, "ox");
+    // 이름별 집계: 어떤 이름에 사람들이 잘 속는지. 시간 초과는 판단이 아니라
+    // 판단하지 못한 것이므로 속았다고 세지 않는다
+    const shownName = item.kind === "real" ? item.real!.name : item.fake!.name;
+    if (choice !== "timeout") await recordName(shownName, item.kind, !correct);
+  }
   const { rate, sample } = await answerRate(today, no!, 100, area, "ox");
 
   if (item.kind === "real") {
