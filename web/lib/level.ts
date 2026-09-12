@@ -11,6 +11,34 @@
 import { schedulePush } from "./cloud";
 
 const KEY = "aptgam:xp";
+/**
+ * 구역별 누적 점수.
+ * 구역은 사용자가 딸린 값이 아니라 그때그때 고르는 출제 범위다.
+ * 서울에서도 치고 부산에서도 쳤다면 두 명부 모두에 이름이 올라야 하므로,
+ * 점수도 구역마다 따로 쌓는다. 빈 구역(전국)도 제 칸을 갖는다.
+ */
+const AREA_XP_KEY = "aptgam:xp-area";
+
+function readAreaXp(): Record<string, number> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(AREA_XP_KEY) ?? "{}") as Record<string, number>;
+    return raw && typeof raw === "object" ? raw : {};
+  } catch {
+    return {};
+  }
+}
+
+/** 그 구역에 쌓인 점수 (명부 순위의 기준) */
+export function areaXp(area: string): number {
+  return Math.max(0, Math.round(readAreaXp()[area] ?? 0));
+}
+
+/** 기록이 있는 구역 목록 */
+export function playedAreas(): string[] {
+  return Object.entries(readAreaXp())
+    .filter(([, v]) => v > 0)
+    .map(([k]) => k);
+}
 
 export interface LevelInfo {
   level: number;
@@ -69,11 +97,20 @@ export function currentLevel(): LevelInfo {
   return levelFromXp(readXp());
 }
 
-export function addXp(points: number): XpResult {
+/**
+ * 점수를 더한다.
+ * @param area 이 점수를 쌓은 담당 구역. 직급(전체 누적)과 구역별 점수에 함께 들어간다.
+ *   직급은 어디서 쳤든 하나로 쌓이고, 명부 순위는 구역마다 따로 센다.
+ */
+export function addXp(points: number, area = ""): XpResult {
   const before = levelFromXp(readXp());
-  const xp = before.xp + Math.max(0, Math.round(points));
+  const add = Math.max(0, Math.round(points));
+  const xp = before.xp + add;
   try {
     localStorage.setItem(KEY, String(xp));
+    const byArea = readAreaXp();
+    byArea[area] = (byArea[area] ?? 0) + add;
+    localStorage.setItem(AREA_XP_KEY, JSON.stringify(byArea));
   } catch {
     /* 무시 */
   }

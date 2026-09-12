@@ -6,7 +6,7 @@ import { InstallToast } from "@/components/InstallToast";
 import { PwaRegister } from "@/components/PwaRegister";
 
 const SITE = "https://apt-game.app";
-const DESC = "이거 진짜 있는 아파트야, AI가 지어낸 거야? 진짜 아파트와 AI가 지은 이름을 가려내는 데일리 퀴즈.";
+const DESC = "이거 진짜 있는 아파트야, AI가 지어낸 거야? 매일 새 문제로 겨루는 아파트 이름 감별 퀴즈.";
 
 export const metadata: Metadata = {
   // 상대 경로 이미지를 정식 도메인으로 풀어 준다. 없으면 미리보기 이미지

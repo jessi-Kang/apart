@@ -27,8 +27,14 @@ export interface SyncDaily {
 export interface SyncState {
   v: 1;
   xp?: number;
-  /** 담당 구역 (시·도 이름). 구역 명부를 이 값으로 묶는다. 빈 값이면 전국 */
+  /** 지금 고른 담당 구역 (시·도 이름). 빈 값이면 전국 */
   area?: string;
+  /**
+   * 구역별 누적 점수. 구역은 딸린 값이 아니라 그때그때 고르는 출제 범위라,
+   * 여러 구역에서 친 사람은 그 구역들 명부에 모두 올라야 한다.
+   * 키는 구역 이름, 빈 문자열은 전국.
+   */
+  areaXp?: Record<string, number>;
   streak?: { lastDate: string; count: number };
   combo?: SyncCombo;
   endless?: { ox?: SyncEndless; assemble?: SyncEndless };
@@ -69,6 +75,17 @@ export function sanitizeState(x: unknown): SyncState {
   // 구역은 값 자체를 믿지 않는다. 길이만 자르고, 아는 구역인지는
   // 서버가 lib/areaparam.ts로 한 번 더 거른다(모르는 값은 전국으로 떨어진다)
   if (typeof s.area === "string" && s.area.length <= 32) out.area = s.area.trim();
+
+  if (s.areaXp && typeof s.areaXp === "object") {
+    const src = s.areaXp as Record<string, unknown>;
+    const dst: Record<string, number> = {};
+    // 구역 수에 상한을 둔다. 임의 문자열을 잔뜩 밀어 넣어 칸을 불리지 못하게
+    for (const [k, v] of Object.entries(src).slice(0, 40)) {
+      const n = num(v);
+      if (typeof k === "string" && k.length <= 32 && n !== null && n > 0) dst[k.trim()] = n;
+    }
+    if (Object.keys(dst).length) out.areaXp = dst;
+  }
 
   if (s.streak && typeof s.streak === "object") {
     const { lastDate, count } = s.streak as { lastDate?: unknown; count?: unknown };
@@ -136,6 +153,13 @@ export function mergeStates(a: SyncState, b: SyncState): SyncState {
   // 옛 구역에 붙들어 두면 명부가 남의 동네를 보여준다. b가 들어온 쪽이다
   const area = b.area !== undefined ? b.area : a.area;
   if (area) out.area = area;
+
+  // 구역별 점수는 구역마다 큰 쪽을 남긴다 — 기기 둘에서 친 기록이 서로를 지우면 안 된다
+  if (a.areaXp || b.areaXp) {
+    const merged: Record<string, number> = { ...(a.areaXp ?? {}) };
+    for (const [k, v] of Object.entries(b.areaXp ?? {})) merged[k] = Math.max(merged[k] ?? 0, v);
+    if (Object.keys(merged).length) out.areaXp = merged;
+  }
 
   if (a.streak || b.streak) {
     const sa = a.streak;

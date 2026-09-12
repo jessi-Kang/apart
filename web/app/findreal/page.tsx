@@ -12,6 +12,7 @@ import { TimerBar } from "@/components/TimerBar";
 import { findGradeFor } from "@/lib/grades";
 import { applyComboPick, areaPref, comboState, firstVisit, type ComboState } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
+import { FINISH_BONUS, RECORD_BONUS, questionScore } from "@/lib/scoring";
 import { shareCardImage, type ShareCardData } from "@/lib/sharecard";
 import { ShareLink } from "@/components/ShareLink";
 import { sfxCombo, sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -73,6 +74,9 @@ export default function FindRealPage() {
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
   const qStart = useRef(0);
+  // 문제마다 쌓는 점수 (lib/scoring.ts). 이탈 경로에서도 읽어야 해 ref로 둔다
+  const officialPts = useRef(0);
+  const endlessPts = useRef(0);
 
   useEffect(() => {
     setCombo(comboState());
@@ -135,6 +139,7 @@ export default function FindRealPage() {
       setECount(0);
       setSHits(0);
       setSMaxCombo(0);
+      endlessPts.current = 0;
       setEImgState("idle");
       sessionTimes.current = [];
       startBest.current = comboState().best;
@@ -175,11 +180,21 @@ export default function FindRealPage() {
       setPicked(option);
       setReveal(data);
       setTimedOut(option === null);
-      if (!endless) setMarks((m) => [...m, data.correct]);
-      else {
+      if (!endless) {
+        setMarks((m) => [...m, data.correct]);
+        officialPts.current += questionScore("findreal", { correct: data.correct, elapsedMs: dt });
+      } else {
         setECount((c) => c + 1);
         sessionTimes.current.push(dt);
-        if (data.correct) setSHits((h) => h + 1);
+        if (data.correct) {
+          setSHits((h) => h + 1);
+          endlessPts.current += questionScore("findreal", {
+            correct: true,
+            elapsedMs: dt,
+            run: combo.current + 1,
+            endless: true,
+          });
+        }
       }
       if (data.correct) sfxStampRight();
       else sfxStampWrong();
@@ -222,7 +237,7 @@ export default function FindRealPage() {
     }
     sfxResult();
     setOfficialDone(true);
-    setXpRes(addXp(marks.filter(Boolean).length * 10 + 20));
+    setXpRes(addXp(officialPts.current + FINISH_BONUS, quiz?.area ?? ""));
     setPhase("done");
     // 공식전 완주 접수: 그날 그 구역 찾기 참가자끼리의 순위
     setDTop(null);
@@ -264,12 +279,12 @@ export default function FindRealPage() {
       .catch(() => null);
   }
 
-  const runXp = () => sHits * 5 + (sMaxCombo > startBest.current ? 30 : 0);
+  const runXp = () => endlessPts.current + (sMaxCombo > startBest.current ? RECORD_BONUS : 0);
 
   function finishEndless() {
     if (sMaxCombo > startBest.current) sfxRecord();
     else sfxResult();
-    setEXpRes(addXp(runXp()));
+    setEXpRes(addXp(runXp(), areaPref()));
     setPhase("eresult");
     setETop(null);
     void submitEndlessRun().then(setETop);
@@ -278,7 +293,7 @@ export default function FindRealPage() {
   /** 결과를 안 보고 떠나도 쌓은 것은 남긴다 */
   function abandonEndless(keepalive = false) {
     if (!endless || eCount === 0) return;
-    addXp(runXp());
+    addXp(runXp(), areaPref());
     void submitEndlessRun(keepalive);
   }
 
@@ -289,6 +304,7 @@ export default function FindRealPage() {
     setEndless(false);
     setIdx(0);
     setMarks([]);
+    officialPts.current = 0;
     setPicked(null);
     setReveal(null);
     setPhase("solve");
