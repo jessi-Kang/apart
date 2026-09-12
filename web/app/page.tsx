@@ -5,6 +5,7 @@ import { DailyChop } from "@/components/LedgerStatus";
 import { IdBadge } from "@/components/IdBadge";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
+import { StampFilter } from "@/components/StampFilter";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,8 @@ export default function HomePage() {
         </header>
 
         <section className="screen home">
+          {/* 접수 대장의 '성적표' 도장이 쓰는 변위 필터. 페이지당 한 번만 심는다 */}
+          <StampFilter />
           <div className="home-seal" aria-hidden="true">
             <Seal size={216} />
           </div>
