@@ -21,7 +21,7 @@
 ### 2-1. 출제 풀 (정적 파일, DB 아님)
 
 ```jsonc
-// web/data/apartments.json — K-apt 실데이터 7,532건 (서울 전수 + 시도 14곳 표본)
+// web/data/apartments.json — K-apt 실데이터 11,233건 (서울 전수 + 시도 14곳 표본)
 { "items": [{
   "id": "kA10021295",        // "k" + kaptCode
   "name": "경희궁의아침4단지",
