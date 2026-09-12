@@ -161,6 +161,20 @@ export function sfxHint() {
   }, 300);
 }
 
+/**
+ * 작명소에서 조각을 끼울 때. 끼울수록 음이 한 단씩 올라간다 — 같은 소리가
+ * 되풀이되면 조립하는 맛이 없고, 몇 조각째인지도 귀로 알 수 없다.
+ * 다섯 단에서 멈춘다(그 위로 올리면 날카로워진다).
+ */
+export function sfxPiece(index: number) {
+  const step = Math.min(Math.max(index, 0), 5);
+  const f = 523 * Math.pow(2, (step * 2) / 12); // 온음씩
+  withAudio((ac, t) => {
+    noiseBurst(ac, t, 0.03, 0.12, 3000);
+    tone(ac, t, f, f * 0.92, 0.07, 0.09, "triangle");
+  }, 220);
+}
+
 /** 신기록: 도장 위에 얹는 짧은 팡파르 (레벨 업보다 가볍게) */
 export function sfxRecord() {
   withAudio((ac, t) => {

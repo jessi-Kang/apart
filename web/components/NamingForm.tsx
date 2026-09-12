@@ -5,10 +5,12 @@ import { useEffect, useState } from "react";
 import { DocTitle, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
+import { SoundToggle } from "@/components/SoundToggle";
 import { addXp } from "@/lib/level";
 import { areaPref, setAreaPref } from "@/lib/local";
-import { sfxResult, sfxTap, sfxStampWrong } from "@/lib/sound";
+import { sfxPiece, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 import type { PieceGroup } from "@/lib/naming";
+import { AWARD_PER_DAY, COIN_POINTS } from "@/lib/coinrule";
 
 interface Region {
   sido: string;
@@ -56,8 +58,10 @@ export function NamingForm({ regions }: { regions: Region[] }) {
 
   // 구역을 고르면 그 구역의 조각을 받아 온다
   useEffect(() => {
-    if (!area) return;
+    // 구역을 도로 비우면 조각도 치운다. 일찍 돌아가면 앞서 받은 조각이 남아,
+    // 고르지도 않은 구역의 동네 이름이 계속 떠 있는다
     setGroups([]);
+    if (!area) return;
     fetch(`/api/naming?area=${encodeURIComponent(area)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no"))))
       .then((d: { groups: PieceGroup[] }) => setGroups(d.groups))
@@ -87,12 +91,13 @@ export function NamingForm({ regions }: { regions: Region[] }) {
   };
 
   const add = (piece: string) => {
-    sfxTap();
+    // 조각이 쌓일수록 음이 올라간다. 같은 소리가 반복되면 조립하는 맛이 없다
+    sfxPiece(name ? name.split(" ").length : 0);
     setVerdict(null);
     setName((prev) => (prev ? `${prev} ${piece}` : piece).slice(0, 20));
   };
 
-  async function submit(checkOnly: boolean) {
+  async function submit() {
     if (busy || !name.trim() || !area) return;
     setBusy(true);
     setFailed("");
@@ -100,7 +105,7 @@ export function NamingForm({ regions }: { regions: Region[] }) {
       const res = await fetch("/api/naming", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, area, check: checkOnly }),
+        body: JSON.stringify({ name, area }),
       });
       if (!res.ok) {
         setFailed(res.status === 503 ? "접수하지 못했습니다. 잠시 뒤 다시 시도해 주세요" : "확인하지 못했습니다");
@@ -112,11 +117,8 @@ export function NamingForm({ regions }: { regions: Region[] }) {
         sfxStampWrong();
         return;
       }
-      if (checkOnly) {
-        sfxTap();
-        return;
-      }
       if (data.awarded && data.points) addXp(data.points);
+      sfxStampRight();
       sfxResult();
       setDone({ no: data.no, awarded: Boolean(data.awarded), points: data.points ?? 0, name });
       setPhase("done");
@@ -143,11 +145,16 @@ export function NamingForm({ regions }: { regions: Region[] }) {
           <Link className="brand" href="/">
             아파트 감별사<small>작명소</small>
           </Link>
-          <Link className="close-x" href="/" aria-label="창구로 돌아가기">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-              <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-          </Link>
+          {/* 작명소도 창구다. 배경음과 그 스위치가 다른 창구와 같아야 한다 —
+              여기만 조용하면 같은 건물 안에서 방을 옮긴 느낌이 안 난다 */}
+          <span className="head-tools">
+            <SoundToggle />
+            <Link className="close-x" href="/" aria-label="창구로 돌아가기">
+              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </Link>
+          </span>
         </header>
 
         <section className="screen result">
@@ -166,16 +173,23 @@ export function NamingForm({ regions }: { regions: Region[] }) {
                 <VRow label="하는 일">
                   있을 법한데 실제로는 없는 단지명을 짓습니다
                 </VRow>
+                {/* 무엇을 얻는지를 앞에 둔다. 절차만 늘어놓으면 왜 하는지 모른 채 닫는다 */}
+                <VRow label="얻는 것">
+                  <span>
+                    <b className="accent">{COIN_POINTS}점</b>, 그리고 내 이름이 감별 창구에 걸립니다
+                    <small>하루 {AWARD_PER_DAY}건까지 점수가 붙습니다</small>
+                  </span>
+                </VRow>
+                <VRow label="자랑">
+                  <span>
+                    <b>몇 명이 속았는지</b> 이름마다 세어 알려 드립니다
+                    <small>많이 속인 이름을 지은 사람에게는 따로 호칭이 붙습니다</small>
+                  </span>
+                </VRow>
                 <VRow label="확인">
                   <span>
                     접수 즉시 실단지 <b className="accent">12,121건</b>과 대조합니다
-                    <small>진짜로 있는 이름이면 알려 드리고 고치게 합니다</small>
-                  </span>
-                </VRow>
-                <VRow label="그 다음">
-                  <span>
-                    통과한 이름은 감별 창구의 문제가 됩니다
-                    <small>남이 진짜라고 속을수록 잘 지은 이름입니다</small>
+                    <small>진짜로 있는 이름이면 그 이름을 짚어 드립니다</small>
                   </span>
                 </VRow>
               </VForm>
@@ -216,11 +230,12 @@ export function NamingForm({ regions }: { regions: Region[] }) {
                 </VRow>
                 <VRow label="지은 이름">
                   <input
-                    className="coin-input"
+                    key={name.split(" ").length}
+                    className="coin-input paper-in"
                     aria-label="지은 이름"
                     value={name}
                     maxLength={20}
-                    placeholder="조각을 누르거나 직접 적으세요"
+                    placeholder="조각을 누르거나 직접 적기"
                     onChange={(e) => {
                       setName(e.target.value);
                       setVerdict(null);
@@ -254,15 +269,14 @@ export function NamingForm({ regions }: { regions: Region[] }) {
                   )}
                 </p>
               )}
-              {verdict?.ok && <p className="coin-yes">이 이름은 실제로 없습니다. 접수할 수 있습니다.</p>}
               {failed && <p className="bug-error">{failed}</p>}
 
+              {/* 단추는 하나다. 접수하기가 어차피 실단지와 대조하므로 "있는지 확인"을
+                  따로 두면 무엇이 다른지 생각하게 만들 뿐이다. 실존하는 이름이면
+                  저장하지 않고 그 이름을 짚어 준다 */}
               <div className="result-actions">
-                <button className="btn btn-ghost" onClick={() => void submit(true)} disabled={busy || !name || !area}>
-                  {busy ? "대조 중" : "있는지 확인"}
-                </button>
-                <button className="btn btn-next" onClick={() => void submit(false)} disabled={busy || !name || !area}>
-                  접수하기
+                <button className="btn btn-next full" onClick={() => void submit()} disabled={busy || !name || !area}>
+                  {busy ? "대조 중" : "대조하고 접수하기"}
                 </button>
               </div>
 
