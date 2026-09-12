@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authConfigured, requestOrigin, signSession, SESSION_COOKIE, STATE_COOKIE } from "@/lib/auth";
+import { authConfigured, isOwnerEmail, requestOrigin, signSession, SESSION_COOKIE, STATE_COOKIE } from "@/lib/auth";
 import { upsertUser } from "@/lib/userdb";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +55,8 @@ export async function GET(req: Request) {
   if (uid === null) return fail("db");
 
   const name = payload.name || payload.email?.split("@")[0] || "감별사";
-  const { token, maxAge } = signSession(uid, name.slice(0, 40));
+  // 운영자 여부는 로그인할 때 한 번만 정한다 — 매 요청마다 DB를 뒤지지 않게
+  const { token, maxAge } = signSession(uid, name.slice(0, 40), isOwnerEmail(payload.email));
   const res = NextResponse.redirect(`${origin}/?login=ok`);
   res.cookies.delete(STATE_COOKIE);
   res.cookies.set(SESSION_COOKIE, token, {

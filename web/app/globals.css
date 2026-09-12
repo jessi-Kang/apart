@@ -191,6 +191,13 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   content: ""; position: absolute; inset: 2px; border: 0.8px solid currentColor;
 }
 .chop.off { color: var(--ink-soft); border-style: dashed; transform: none; font-weight: 500; }
+/* 전개 전 창구 표시 (운영자에게만 보인다) */
+.unreleased {
+  font-style: normal; margin-left: 6px; padding: 1px 5px; vertical-align: 2px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--stamp); border: 1px solid currentColor; border-radius: var(--radius);
+}
+
 /* 아직 안 친 공식전은 도장이 아니라 권유다. 도장은 이미 찍힌 것에만 쓴다 */
 .chop-go {
   display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
