@@ -12,6 +12,7 @@ import { TimerBar } from "@/components/TimerBar";
 import { assembleGradeFor } from "@/lib/grades";
 import { areaPref, bumpEndlessRecord, endlessRecord, firstVisit, type EndlessRecord } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
+import { FINISH_BONUS, RECORD_BONUS, questionScore } from "@/lib/scoring";
 import { shareCardImage, type ShareCardData } from "@/lib/sharecard";
 import { ShareLink } from "@/components/ShareLink";
 import { sfxHint, sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -102,6 +103,8 @@ export default function AssemblePage() {
   const [firstTime, setFirstTime] = useState(false); // 이 창구 첫 방문인가
   const [area, setArea] = useState(""); // 조립은 시·도 단위로 좁힌다 (서버가 정한 범위를 그대로 받는다)
   const qStart = useRef(0);
+  // 무한에서 문제마다 쌓는 점수 (lib/scoring.ts). 공식전은 points 상태를 쓴다
+  const endlessPts = useRef(0);
 
   useEffect(() => {
     setERec(endlessRecord("assemble"));
@@ -205,6 +208,7 @@ export default function AssemblePage() {
       setECount(0);
       setSHits(0);
       setSBest(0);
+      endlessPts.current = 0;
       setEImgState("idle");
       runTimes.current = [];
       sessionTimes.current = [];
@@ -250,12 +254,12 @@ export default function AssemblePage() {
       .catch(() => null);
   }
 
-  const runXp = () => sHits * 8 + (sBest > startBest.current ? 30 : 0);
+  const runXp = () => endlessPts.current + (sBest > startBest.current ? RECORD_BONUS : 0);
 
   function finishEndless() {
     if (sBest > startBest.current) sfxRecord();
     else sfxResult();
-    setEXpRes(addXp(runXp()));
+    setEXpRes(addXp(runXp(), areaPref()));
     setPhase("eresult");
     setETop(null);
     void submitEndlessRun().then(setETop);
@@ -264,7 +268,7 @@ export default function AssemblePage() {
   /** 결과를 안 보고 떠나도 쌓은 것은 남긴다 */
   function abandonEndless(keepalive = false) {
     if (!endless || eCount === 0) return;
-    addXp(runXp());
+    addXp(runXp(), areaPref());
     void submitEndlessRun(keepalive);
   }
 
@@ -336,6 +340,13 @@ export default function AssemblePage() {
         if (data.correct) {
           runTimes.current.push(dt);
           const nextRun = run + 1;
+          endlessPts.current += questionScore("assemble", {
+            correct: true,
+            elapsedMs: dt,
+            hintTier,
+            run: nextRun,
+            endless: true,
+          });
           setRun(nextRun);
           setSHits((h) => h + 1);
           setSBest((b) => Math.max(b, nextRun));
@@ -348,9 +359,8 @@ export default function AssemblePage() {
         }
       } else {
         setMarks((m) => [...m, data.correct]);
-        // 속도 점수: 기본 10 + 남은 시간 보너스(4초당 1, 최대 10) − 힌트 감점(개당 4)
-        const remainSec = Math.max(0, TIME_LIMIT - dt / 1000);
-        const pts = data.correct ? Math.max(2, 10 + Math.round(remainSec / 4) - hintTier * 4) : 0;
+        // 점수 규칙은 세 창구가 한 곳을 쓴다 (lib/scoring.ts)
+        const pts = questionScore("assemble", { correct: data.correct, elapsedMs: dt, hintTier });
         setLastPts(pts);
         setPoints((p) => p + pts);
         if (data.correct) sfxStampRight();
@@ -390,7 +400,7 @@ export default function AssemblePage() {
     }
     sfxResult();
     setOfficialDone(true);
-    setXpRes(addXp(points + 20)); // 속도·힌트가 반영된 조립 점수 + 완주 20점
+    setXpRes(addXp(points + FINISH_BONUS, quiz?.area ?? "")); // 문제 점수 + 완주 보너스
     setPhase("done");
     // 공식전 완주 접수: 그날 그 구역 조립 참가자끼리의 순위
     setDTop(null);

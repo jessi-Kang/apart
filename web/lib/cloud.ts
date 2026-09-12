@@ -61,6 +61,8 @@ export function collectLocal(): SyncState {
   try {
     const area = localStorage.getItem("aptgam:area");
     if (area) out.area = area;
+    const byArea = JSON.parse(localStorage.getItem("aptgam:xp-area") ?? "{}") as Record<string, number>;
+    if (byArea && typeof byArea === "object" && Object.keys(byArea).length) out.areaXp = byArea;
   } catch {
     /* storage 불가 환경 */
   }
@@ -91,6 +93,7 @@ function write(key: string, value: unknown) {
 function applyMerged(merged: SyncState) {
   if (merged.xp !== undefined) write(K.xp, String(merged.xp));
   if (merged.area) write("aptgam:area", merged.area);
+  if (merged.areaXp) write("aptgam:xp-area", merged.areaXp);
   if (merged.streak) write(K.streak, merged.streak);
   if (merged.combo) write(K.combo, merged.combo);
   if (merged.endless?.ox) write(K.endlessOx, merged.endless.ox);

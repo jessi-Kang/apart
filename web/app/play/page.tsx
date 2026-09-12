@@ -12,6 +12,7 @@ import { TimerBar } from "@/components/TimerBar";
 import { gradeFor } from "@/lib/grades";
 import { areaPref, bumpStreak, bumpEndlessRecord, comboState, endlessRecord, firstVisit, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
+import { FINISH_BONUS, RECORD_BONUS, questionScore } from "@/lib/scoring";
 import { shareCardImage, type ShareCardData } from "@/lib/sharecard";
 import { ShareLink } from "@/components/ShareLink";
 import { sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
@@ -71,6 +72,10 @@ export default function PlayPage() {
   const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
   const sessionTimes = useRef<number[]>([]); // 이번 판 전체 풀이 시간(ms)
   const startBest = useRef(0); // 판 시작 시점의 역대 최고 (신기록 판정용)
+  // 문제마다 쌓는 점수. 빨리 맞힐수록 커진다 (lib/scoring.ts).
+  // 결과를 안 보고 떠나는 경로에서도 읽어야 해서 ref로 둔다
+  const officialPts = useRef(0);
+  const endlessPts = useRef(0);
 
   useEffect(() => {
     setERec(endlessRecord("ox"));
@@ -120,6 +125,7 @@ export default function PlayPage() {
       setECount(0);
       setSHits(0);
       setSBest(0);
+      endlessPts.current = 0;
       setEImgState("idle");
       runTimes.current = [];
       sessionTimes.current = [];
@@ -154,13 +160,13 @@ export default function PlayPage() {
       .catch(() => null);
   }
 
-  /** 무한 정답 5점 + 신기록 보너스 30점 */
-  const runXp = () => sHits * 5 + (sBest > startBest.current ? 30 : 0);
+  /** 이번 판에 쌓은 문제 점수 + 신기록 보너스 */
+  const runXp = () => endlessPts.current + (sBest > startBest.current ? RECORD_BONUS : 0);
 
   function finishEndless() {
     if (sBest > startBest.current) sfxRecord();
     else sfxResult();
-    setEXpRes(addXp(runXp()));
+    setEXpRes(addXp(runXp(), areaPref()));
     setPhase("eresult");
     // 판 기록 접수: 최근 7일 다른 판들과 비교한 상위 % (익명 집계)
     setETop(null);
@@ -170,7 +176,7 @@ export default function PlayPage() {
   /** 결과를 안 보고 떠나는 경우에도 쌓은 것은 남긴다 — 나가면 손해인 구조는 만들지 않는다 */
   function abandonEndless(keepalive = false) {
     if (!endless || eCount === 0) return;
-    addXp(runXp());
+    addXp(runXp(), areaPref());
     void submitEndlessRun(keepalive);
   }
 
@@ -182,6 +188,7 @@ export default function PlayPage() {
     setIdx(0);
     setMarks([]);
     setReview([]);
+    officialPts.current = 0;
     setReveal(null);
     setPhase("question");
   }
@@ -221,6 +228,7 @@ export default function PlayPage() {
         if (data.correct) {
           runTimes.current.push(dt);
           const nextRun = run + 1;
+          endlessPts.current += questionScore("ox", { correct: true, elapsedMs: dt, run: nextRun, endless: true });
           setRun(nextRun);
           setSHits((h) => h + 1);
           setSBest((b) => Math.max(b, nextRun));
@@ -246,6 +254,7 @@ export default function PlayPage() {
       setReveal(data);
       setTimedOut(choice === "timeout");
       setMarks((m) => [...m, data.correct]);
+      officialPts.current += questionScore("ox", { correct: data.correct, elapsedMs: dt });
       setReview((r) => [...r, { no: item.no, name: item.name, kind: data.kind, correct: data.correct }]);
       if (data.correct) sfxStampRight();
       else sfxStampWrong();
@@ -283,7 +292,7 @@ export default function PlayPage() {
     const score = marks.filter(Boolean).length;
     saveResult({ date: quiz.date, marks, review });
     setStreak(bumpStreak(quiz.date));
-    setXpRes(addXp(score * 10 + 20)); // 정답 10점 + 완주 20점
+    setXpRes(addXp(officialPts.current + FINISH_BONUS, quiz.area ?? "")); // 문제 점수 + 완주 보너스
     setPhase("result");
     try {
       const res = await fetch("/api/quiz/finish", {
