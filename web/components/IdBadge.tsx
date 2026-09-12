@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SYNC_EVENT, ensureSynced } from "@/lib/cloud";
+import { GoogleMark } from "./GoogleMark";
 import type { RegionGroup } from "@/lib/data";
 import { currentLevel, type LevelInfo } from "@/lib/level";
 import { AREA_EVENT, areaPref, setAreaPref } from "@/lib/local";
@@ -62,6 +63,7 @@ export function IdBadge({ regions }: { regions: RegionGroup[] }) {
         </Link>
         {guest && (
           <a className="idb-auth" href="/api/auth/login">
+            <GoogleMark size={13} />
             기록 보관
           </a>
         )}
