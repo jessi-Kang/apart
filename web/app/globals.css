@@ -306,6 +306,21 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 .area-rank:focus-visible { color: var(--stamp); }
 
+/* 내부용 한 줄 (운영자에게만 실린다). 대장의 일부가 아니라 사무실 쪽 문이라
+   점선으로 구분한다 — 실선 괘선을 쓰면 창구가 하나 더 있는 것처럼 보인다 */
+.inhouse {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 14px; padding: 9px 12px;
+  border: 1px dashed var(--line); border-radius: var(--radius);
+  font-size: 12.5px;
+}
+.inhouse-k {
+  font-size: 10.5px; letter-spacing: 0.08em; color: var(--ink-soft);
+  padding-right: 8px; border-right: 1px solid var(--line);
+}
+.inhouse a { color: var(--ink); font-weight: 700; text-decoration: none; transition: color 0.12s ease; }
+.inhouse a:focus-visible { color: var(--stamp); }
+
 /* ---- 버그 제보 ---- */
 /* 입력칸은 서식표(vform) 값 칸 안에 들어간다 — 이 화면만 딴 폼처럼 보이지
    않게, 다른 창구의 통지서와 같은 괘선 안에서 글을 받는다 */

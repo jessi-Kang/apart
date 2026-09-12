@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { regions } from "@/lib/data";
-import { visibleGames } from "@/lib/release";
+import { visibleGames, viewerIsOwner } from "@/lib/release";
 import { DailyChop } from "@/components/LedgerStatus";
 import { IdBadge } from "@/components/IdBadge";
 import { Seal } from "@/components/Seal";
@@ -16,6 +16,9 @@ export default async function HomePage() {
   const ep = episodeNumber(date);
   // 전개 전 창구는 운영자에게만 실린다 (lib/release.ts)
   const games = await visibleGames();
+  // 리포트는 주소를 알아도 운영자만 열리지만(app/report/layout.tsx), 들어갈
+  // 길이 아예 없어서 주소를 외워 치고 있었다. 대장 아래에 내부용 한 줄을 둔다
+  const owner = await viewerIsOwner();
   const [, mm, dd] = date.split("-");
 
   return (
@@ -40,7 +43,7 @@ export default async function HomePage() {
             <small>감별 민원 접수 창구</small>
           </div>
           <div className="form-no">
-            <span>#{ep}</span>
+            <span>제{ep}호</span>
             <span>
               {mm}.{dd}
             </span>
@@ -109,6 +112,12 @@ export default async function HomePage() {
             창구 이름을 누르면 <b>무한</b>, 오른쪽 <b>출전하기</b>를 누르면 같은 구역끼리 겨루는{" "}
             <b>공식전</b>입니다.
           </p>
+          {owner && (
+            <p className="inhouse">
+              <span className="inhouse-k mono">내부</span>
+              <Link href="/report">감별 리포트 · 제보함 열람</Link>
+            </p>
+          )}
         </section>
 
         <SheetFooter />
