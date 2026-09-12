@@ -485,7 +485,8 @@ export function shareText(data: ShareCardData): string {
   if (data.marks.length) {
     const grid = data.marks.map((m) => (m ? "⬛" : "⬜")).join("");
     return [
-      `[아파트 감별사] 제${data.episode}호 · ${data.gradeName}`,
+      "[아파트 감별사]",
+      `제${data.episode}호 · ${data.gradeName}`,
       `${data.total}문제 중 ${data.score}문제 적중`,
       grid,
       `당신은 몇 개나 가려낼까요 ${SITE}`,
@@ -493,7 +494,8 @@ export function shareText(data: ShareCardData): string {
   }
   const name = data.subtitle.replace(/\s*통지서$/, ""); // "무한 감별 통지서" → "무한 감별"
   return [
-    `[아파트 감별사] ${data.gradeName}`,
+    "[아파트 감별사]",
+    data.gradeName,
     `${name} 최고 연속 ${data.score}`,
     `당신은 몇 개나 가려낼까요 ${SITE}`,
   ].join("\n");
@@ -506,7 +508,8 @@ export function shareText(data: ShareCardData): string {
 export function rankShareText(area: string, rank: number, total: number, title: string): string {
   const where = area || "전국";
   return [
-    `[아파트 감별사] ${where} ${total}명 중 ${rank}위`,
+    "[아파트 감별사]",
+    `${where} ${total}명 중 ${rank}위`,
     title,
     `당신은 몇 위일까요 ${SITE}`,
   ].join("\n");
@@ -520,7 +523,8 @@ export function rankShareText(area: string, rank: number, total: number, title: 
  */
 export function siteShareText(): string {
   return [
-    "[아파트 감별사] 진짜 아파트와 AI가 지은 이름 가려내기",
+    "[아파트 감별사]",
+    "진짜 아파트와 AI가 지은 이름 가려내기",
     `매일 새 문제가 나옵니다. 당신은 몇 개나 가려낼까요 ${SITE}`,
   ].join("\n");
 }

@@ -17,7 +17,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const area = areaFromUrl(req.url);
   const session = await readSession();
-  const board = await areaBoard(area, session?.uid ?? null);
+  // 운영자는 문턱 아래여도 명부를 연다 (lib/ranking.ts areaBoard)
+  const board = await areaBoard(area, session?.uid ?? null, Boolean(session?.own));
   return NextResponse.json(
     { area, ...board, signedIn: Boolean(session) },
     { headers: { "Cache-Control": "no-store" } },
