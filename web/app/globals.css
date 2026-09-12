@@ -42,10 +42,18 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   flex: 1; display: flex; flex-direction: column; width: 100%;
   box-shadow: 0 1px 0 rgba(27, 27, 30, 0.04);
 }
+/* 머리글은 스크롤을 따라온다. 명부처럼 긴 화면에서 한참 내려가면
+   지금 보는 서류가 무엇인지, 나가는 문이 어디인지 사라져 버린다.
+   짧은 화면에서는 스크롤이 없으니 아무 일도 일어나지 않는다.
+   배경을 시트 색으로 깔아 둬야 아래 글이 비쳐 보이지 않는다 */
 .sheet-header {
   display: flex; justify-content: space-between; align-items: baseline;
   padding: 18px 20px; border-bottom: 2.5px solid var(--ink);
-  position: relative;
+  position: sticky; top: 0; z-index: 5;
+  background: var(--sheet);
+  /* 이중 괘선의 가는 선은 머리글 밖 5px에 그려진다. 고정된 동안 그 틈으로
+     아래 글이 비쳐 괘선과 겹치므로, 같은 높이만큼 종이색으로 덮는다 */
+  box-shadow: 0 5px 0 var(--sheet);
 }
 /* 공문서식 이중 괘선: 굵은 선 아래 가는 선 */
 .sheet-header::after {
