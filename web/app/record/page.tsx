@@ -229,7 +229,10 @@ export default function RecordPage() {
                         type="button"
                         onClick={async () => {
                           await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
-                          location.reload();
+                          // 로그아웃하면 접수 창구로 돌려보낸다. 제자리에서 새로고침하면
+                          // 방금 나온 사람에게 열람실이 다시 뜬다.
+                          // replace로 가야 뒤로 가기가 로그인 상태의 열람실을 되살리지 않는다.
+                          location.replace("/");
                         }}
                       >
                         로그아웃
