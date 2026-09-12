@@ -8,9 +8,10 @@ import { CloseX } from "@/components/CloseX";
 import { SoundToggle } from "@/components/SoundToggle";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
+import { RuleButton, RuleOverlay, useGuide } from "@/components/RuleNote";
 import { TimerBar } from "@/components/TimerBar";
 import { gradeFor } from "@/lib/grades";
-import { areaPref, bumpStreak, bumpEndlessRecord, comboState, endlessRecord, firstVisit, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
+import { areaPref, bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { FINISH_BONUS, RECORD_BONUS, questionScore } from "@/lib/scoring";
 import { shareCardImage, type ShareCardData } from "@/lib/sharecard";
@@ -43,6 +44,8 @@ const fmtSec = (ms: number | null | undefined) =>
 
 export default function PlayPage() {
   const [quiz, setQuiz] = useState<TodayResponse | null>(null);
+  // 처음 온 사람에게는 이용 안내를 덮어서 먼저 보여준다 (그동안 제한 시간은 멈춘다)
+  const guide = useGuide("ox");
   const [phase, setPhase] = useState<Phase>("loading");
   const [idx, setIdx] = useState(0);
   const [marks, setMarks] = useState<boolean[]>([]);
@@ -66,7 +69,6 @@ export default function PlayPage() {
   const [sHits, setSHits] = useState(0); // 이번 판 적중 수
   const [sBest, setSBest] = useState(0); // 이번 판 최고 연속
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
-  const [firstTime, setFirstTime] = useState(false); // 이 창구 첫 방문인가
   const [area, setArea] = useState(""); // 담당 구역 (빈 값이면 서울 전체)
   const qStart = useRef(0);
   const runTimes = useRef<number[]>([]); // 현재 연속 구간의 문제별 풀이 시간(ms)
@@ -79,7 +81,6 @@ export default function PlayPage() {
 
   useEffect(() => {
     setERec(endlessRecord("ox"));
-    setFirstTime(firstVisit("ox"));
     setArea(areaPref().replace(/특별자치시$|특별시$|광역시$/, ""));
     // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다
     const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
@@ -422,6 +423,7 @@ export default function PlayPage() {
             </small>
           </Link>
           <span className="head-tools">
+            <RuleButton onOpen={() => guide.setOpen(true)} />
             <SoundToggle />
             {/* 결과·성적표 화면에는 "창구로 돌아가기" 버튼이 이미 있다.
                 같은 일을 하는 X를 헤더에 또 두면 나가는 문이 둘로 보인다 */}
@@ -475,19 +477,13 @@ export default function PlayPage() {
                 </p>
               </>
             )}
-            {/* 첫 판 첫 문제에만 규칙 한 줄 — 기록이 쌓인 사람에게는 다시 보이지 않는다 */}
-            {endless && eCount === 0 && firstTime && (
-              <p className="rule-hint">
-                실제로 있는 단지일까요? <b>틀리면 연속이 끊깁니다.</b>
-              </p>
-            )}
             <div className="qname-wrap paper-in" key={`${endless ? "e" : "d"}-${endless ? eCount : idx}`}>
               <h2 className="qname">{currentName}</h2>
             </div>
 
             <TimerBar
               seconds={TIME_LIMIT}
-              active={phase === "question"}
+              active={phase === "question" && !guide.open}
               resetKey={endless ? `e${eCount}` : idx}
               onExpire={() => answer("timeout")}
             />
@@ -658,6 +654,9 @@ export default function PlayPage() {
         )}
 
         <SheetFooter />
+        {guide.open && (
+          <RuleOverlay game="ox" official={!endless} first={guide.auto} onClose={() => guide.setOpen(false)} />
+        )}
       </main>
     </div>
   );

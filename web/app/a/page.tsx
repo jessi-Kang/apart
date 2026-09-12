@@ -8,9 +8,10 @@ import { CloseX } from "@/components/CloseX";
 import { SoundToggle } from "@/components/SoundToggle";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
+import { RuleButton, RuleOverlay, useGuide } from "@/components/RuleNote";
 import { TimerBar } from "@/components/TimerBar";
 import { assembleGradeFor } from "@/lib/grades";
-import { areaPref, bumpEndlessRecord, endlessRecord, firstVisit, type EndlessRecord } from "@/lib/local";
+import { areaPref, bumpEndlessRecord, endlessRecord, type EndlessRecord } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { mergeMask } from "@/lib/hintmask";
 import { hintTimeNote, hintTimes } from "@/lib/hinttime";
@@ -65,6 +66,8 @@ const maskLabel = (mask: string) => {
 
 export default function AssemblePage() {
   const [quiz, setQuiz] = useState<TodayResponse | null>(null);
+  // 처음 온 사람에게는 이용 안내를 덮어서 먼저 보여준다 (그동안 제한 시간은 멈춘다)
+  const guide = useGuide("assemble");
   const [phase, setPhase] = useState<Phase>("loading");
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number[]>([]);
@@ -102,7 +105,6 @@ export default function AssemblePage() {
   const runTimes = useRef<number[]>([]);
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
-  const [firstTime, setFirstTime] = useState(false); // 이 창구 첫 방문인가
   const [area, setArea] = useState(""); // 조립은 시·도 단위로 좁힌다 (서버가 정한 범위를 그대로 받는다)
   const qStart = useRef(0);
   // 무한에서 문제마다 쌓는 점수 (lib/scoring.ts). 공식전은 points 상태를 쓴다
@@ -110,7 +112,6 @@ export default function AssemblePage() {
 
   useEffect(() => {
     setERec(endlessRecord("assemble"));
-    setFirstTime(firstVisit("assemble"));
     setArea(areaPref());
     // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
     // quiz가 들어온 뒤에 열어야 해서 깃발만 세우고 아래 effect에서 처리한다
@@ -529,6 +530,7 @@ export default function AssemblePage() {
             </small>
           </Link>
           <span className="head-tools">
+            <RuleButton onOpen={() => guide.setOpen(true)} />
             <SoundToggle />
             {/* 결과·성적표 화면에는 "창구로 돌아가기" 버튼이 이미 있다.
                 같은 일을 하는 X를 헤더에 또 두면 나가는 문이 둘로 보인다 */}
@@ -575,12 +577,6 @@ export default function AssemblePage() {
                 {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
               </p>
             )}
-            {/* 첫 판 첫 문제에만 규칙 한 줄 */}
-            {endless && eCount === 0 && firstTime && (
-              <p className="rule-hint">
-                조각을 눌러 단지명을 맞추세요. <b>함정도 섞여 있습니다.</b>
-              </p>
-            )}
             <div className="hintcard paper-in" key={endless ? `e${eCount}` : (puzzle as Puzzle).no}>
               {/* 주소는 제 줄을 준다. 앞 문구에 이어 붙이면 "서울특별시 / 구로구 개봉동"처럼
                   주소 한가운데서 줄이 꺾인다 */}
@@ -600,7 +596,7 @@ export default function AssemblePage() {
 
             <TimerBar
               seconds={TIME_LIMIT}
-              active={phase === "solve"}
+              active={phase === "solve" && !guide.open}
               resetKey={endless ? `e${eCount}` : idx}
               onExpire={() => check(true)}
             />
@@ -821,6 +817,9 @@ export default function AssemblePage() {
         )}
 
         <SheetFooter />
+        {guide.open && (
+          <RuleOverlay game="assemble" official={!endless} first={guide.auto} onClose={() => guide.setOpen(false)} />
+        )}
       </main>
     </div>
   );

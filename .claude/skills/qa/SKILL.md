@@ -20,8 +20,13 @@ argument-hint: "[all|layout|behavior|copy|data|live] (기본 all)"
 
 ```bash
 cd web && npm run build && DATABASE_URL= npm start &   # 반드시 DB를 떼고 띄운다
-node .claude/skills/qa/scripts/qa.mjs [all|layout|behavior|copy|data|live]
+node .claude/skills/qa/scripts/qa.mjs [all|layout|behavior|structure|copy|data|live]
 ```
+
+**한 번 고칠 때마다 돌리지 않는다.** 작업 묶음(배포 한 번에 올릴 분량)이 끝났을 때
+`all`로 한 번 돌린다. 고칠 때마다 전체를 돌리면 같은 결과를 몇 번씩 읽게 되고
+품이 그만큼 나간다. 중간에 한 곳만 의심스러우면 그 항목만 돌린다
+(`layout`, `structure` 등).
 
 `DATABASE_URL=`를 비우는 이유: `web/.env.local`에 운영 연결 문자열이 있어서
 그냥 띄우면 **점검용 쓰기가 운영 집계에 섞인다.** 실제로 한 번 섞여서 지웠다.
@@ -70,7 +75,20 @@ node .claude/skills/qa/scripts/qa.mjs [all|layout|behavior|copy|data|live]
 - 관리 단위 행(`201동`·`제2관리사무소`·`임대`)이 출제 풀에 남아 있는가.
 - 구역별 출제 풀 두께 — 시·도별 실단지·조립 퍼즐 수가 문턱(20) 위인가.
 
-### 5. 배포 (`live`)
+### 5. 구조 (`structure`)
+뭔가를 **더할 때** 무너지는 것들. 사람이 이 세 가지를 반복해서 잡아 줬다.
+
+| 검사 | 왜 |
+|---|---|
+| **주 동작이 첫 화면에 보이는가** — 320x568·390x844에서 진짜/가짜 단추·조각·보기가 화면 안에 있는가 | 설명을 넣겠다고 게임을 밀어낸 적이 있다. 이용 안내를 문제 위에 접이식으로 끼웠더니 펼쳐진 동안 감별 7px · 조립 145px · 찾기 347px가 잘렸다. **설명은 얹지 말고 덮는다** — 덮개는 닫혀 있는 동안 화면 구조를 건드리지 않는다 |
+| **같은 층위 블록이 예산 안인가** — `.screen > *` 개수 | 뺀 것 없이 붙이기만 하면 화면이 목록이 된다. 예산은 지금 값이라, 늘리려면 무엇을 뺄지 정하고 스크립트의 숫자를 손으로 고쳐야 한다. 저절로 늘어나면 예산이 아니다 |
+
+"길을 잃는가"의 나머지 절반(나가는 문이 둘인가)은 `copy`에 있다.
+
+**새 요소를 넣기 전에 스스로 묻는다**: 이 자리에 얹으면 무엇이 밀려나는가 /
+이걸 넣으면서 뺄 것은 무엇인가 / 같은 일을 하는 것이 이미 화면에 있는가.
+
+### 6. 배포 (`live`)
 - 방금 푸시한 내용이 apt-game.app에 반영됐는가 (번들에서 확인, 마커 아님).
 - 옛 주소(`apt-gam-jessikang.vercel.app`)가 정식 도메인으로 308 넘기는가 — 안 넘기면
   그 주소로 설치한 앱의 로그인이 `redirect_uri_mismatch`로 막힌다.

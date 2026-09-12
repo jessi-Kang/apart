@@ -1,0 +1,96 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { firstVisit } from "@/lib/local";
+import { rulesFor } from "@/lib/rules";
+import type { GameKey } from "@/lib/scoring";
+
+/**
+ * 창구 이용 안내.
+ *
+ * 왜 화면에 얹지 않고 덮는가: 처음에는 문제 위에 접이식으로 끼워 넣었는데,
+ * 펼쳐진 동안 진짜 할 일(진짜/가짜 단추, 조각, 보기 넷)이 화면 밖으로
+ * 밀려났다. 320x568에서 재 보니 감별 7px · 조립 145px · 찾기 347px가
+ * 잘렸다. 설명을 넣겠다고 게임을 밀어낸 셈이다.
+ *
+ * 그래서 안내는 제 자리를 따로 갖는다. 처음 온 사람에게는 문제 위를 덮고
+ * 나타나 읽고 시작하게 하고(그동안 제한 시간은 멈춘다), 그 뒤로는 머리글의
+ * 작은 "안내"로만 남는다. 덮개가 닫혀 있는 동안 화면 구조는 손대지 않으므로
+ * 안내를 넣기 전과 정확히 같은 화면이다.
+ */
+
+/**
+ * 안내를 열지 말지. 창구별로 이 기기에 한 번만 저절로 열린다.
+ * `auto`는 "저절로 열린 그 판인가". 그때만 닫는 단추가 "시작하기"다.
+ */
+export function useGuide(game: GameKey): { open: boolean; auto: boolean; setOpen: (v: boolean) => void } {
+  const [open, setOpen] = useState(false);
+  const [auto, setAuto] = useState(false);
+  useEffect(() => {
+    if (firstVisit(game)) {
+      setOpen(true);
+      setAuto(true);
+    }
+  }, [game]);
+  return {
+    open,
+    auto,
+    setOpen: (v: boolean) => {
+      setOpen(v);
+      if (v) setAuto(false); // 손으로 연 것은 첫 안내가 아니다
+    },
+  };
+}
+
+/** 머리글의 작은 안내 단추 (배경음 토글 옆) */
+export function RuleButton({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button type="button" className="rule-btn" aria-label="이용 안내" onClick={onOpen}>
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+        <path
+          d="M6.3 6.1a1.75 1.75 0 1 1 2.2 1.7c-.4.12-.5.4-.5.7v.4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+        <circle cx="8" cy="11.4" r="0.85" fill="currentColor" />
+      </svg>
+    </button>
+  );
+}
+
+export function RuleOverlay({
+  game,
+  official,
+  first,
+  onClose,
+}: {
+  game: GameKey;
+  official: boolean;
+  /** 처음 온 사람인가 — 닫는 단추의 말이 달라진다 */
+  first: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <div className="rule-veil" role="dialog" aria-modal="true" aria-label="이용 안내">
+      <div className="rule-card">
+        <p className="doc-title">
+          이용안내
+          <b>{official ? "공식전 치르는 법" : "이 창구 이용법"}</b>
+        </p>
+        <ul className="rule-list">
+          {rulesFor(game, official).map((l) => (
+            <li key={l}>{l}</li>
+          ))}
+        </ul>
+        <div className="result-actions">
+          <button className="btn btn-next" onClick={onClose}>
+            {first ? "시작하기" : "닫기"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

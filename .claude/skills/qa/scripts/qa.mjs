@@ -370,11 +370,81 @@ async function live() {
   }
 }
 
+
+/* ---------- 6. 구조 (뭔가를 더할 때 무너지는 것들) ----------
+ *
+ * 새 요소를 넣을 때 사람이 반복해서 잡아 준 것이 셋이다.
+ *   (1) 인터페이스 구조를 해쳤는가 — 설명을 넣겠다고 진짜 할 일을 밀어냈다
+ *   (2) 정보가 쌓이기만 했는가 — 뺀 것 없이 붙이기만 하면 화면이 목록이 된다
+ *   (3) 길을 잃게 됐는가 — 같은 일을 하는 문이 둘, 주 동작이 둘
+ *
+ * (3)의 "나가는 문"은 copy()에 이미 있다. 여기서는 (1)과 (2)를 잰다.
+ * 잰다는 건 화면을 열어 실제 좌표를 본다는 뜻이다 — "코드에 그 클래스가
+ * 있다"로는 밀려난 것을 알 수 없다.
+ */
+
+/** 창구별 주 동작(사람이 눌러야 게임이 진행되는 것)과 같은 층위 블록 예산.
+ *  예산은 지금 값이다. 뭔가를 더해 넘치면 실패다 — 넣으려면 무엇을 뺄지
+ *  같이 정하고 이 숫자를 손으로 고쳐라. 저절로 늘어나면 예산이 아니다. */
+const SCREENS = [
+  { name: "감별 O/X", path: "/o", act: ".btn-real, .btn-fake", blocks: 4 },
+  { name: "이름 조립", path: "/a", act: ".tile", blocks: 7 },
+  { name: "진짜 찾기", path: "/f", act: ".pick", blocks: 3 },
+];
+/** 작은 폰과 보통 폰. 큰 화면에서는 웬만해선 안 밀린다 */
+const FOLDS = [
+  [320, 568],
+  [390, 844],
+];
+
+async function structure() {
+  if (!chromium) return skip("구조", "playwright 없음 — 설치: npm i -g playwright && npx playwright install chromium");
+  const browser = await chromium.launch();
+  try {
+    const pushed = [];
+    const grown = [];
+    for (const [w, h] of FOLDS) {
+      for (const sc of SCREENS) {
+        const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+        const page = await ctx.newPage();
+        try {
+          await page.goto(LOCAL + sc.path, { waitUntil: "domcontentloaded" });
+          await page.waitForSelector(sc.act, { timeout: 15000 });
+          await page.waitForTimeout(700);
+          const r = await page.evaluate((sel) => {
+            const els = [...document.querySelectorAll(sel)];
+            const last = els[els.length - 1];
+            return {
+              bottom: Math.round(last.getBoundingClientRect().bottom),
+              vh: window.innerHeight,
+              blocks: document.querySelectorAll(".screen > *").length,
+            };
+          }, sc.act);
+          const over = r.bottom - r.vh;
+          if (over > 0) pushed.push(`${w}x${h} ${sc.name} 주 동작이 ${over}px 잘림`);
+          if (r.blocks > sc.blocks) grown.push(`${sc.name} 블록 ${r.blocks} > 예산 ${sc.blocks}`);
+        } catch (e) {
+          pushed.push(`${w}x${h} ${sc.name} 열지 못했습니다: ${String(e.message).split("\n")[0]}`);
+        } finally {
+          await ctx.close();
+        }
+      }
+    }
+    if (pushed.length) bad("첫 화면", pushed.join("\n         ") + "\n         설명·안내를 넣을 때는 얹지 말고 덮어라(덮개는 닫혀 있는 동안 구조를 건드리지 않는다).");
+    else ok("첫 화면", `주 동작이 스크롤 없이 보인다 (${FOLDS.map(([w, h]) => `${w}x${h}`).join(" · ")} × 창구 3)`);
+    if (grown.length) bad("정보량", grown.join("\n         ") + "\n         붙이기만 하면 화면이 목록이 된다. 뺄 것을 정하고 예산을 손으로 고쳐라.");
+    else ok("정보량", `창구 화면의 같은 층위 블록이 예산 안 (${SCREENS.map((s) => `${s.name} ${s.blocks}`).join(" · ")})`);
+  } finally {
+    await browser.close();
+  }
+}
+
 /* ---------- 실행 ---------- */
 if (want("data")) data();
 if (want("copy")) copy();
 if (want("layout")) await layout();
 if (want("behavior")) await behavior();
+if (want("structure")) await structure();
 if (want("live")) await live();
 
 const icon = { ok: "  OK ", fail: "실패 ", skip: "확인못함" };

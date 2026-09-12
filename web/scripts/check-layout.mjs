@@ -174,7 +174,7 @@ const findUnderfilled = () => {
     return rows;
   };
   const out = [];
-  for (const el of document.querySelectorAll("p, li, .dd, .area-note, .install-tip, .rule-hint, .pick-tip")) {
+  for (const el of document.querySelectorAll("p, li, .dd, .area-note, .install-tip, .rule-list li")) {
     const style = getComputedStyle(el);
     if (style.textAlign === "center" || style.textAlign === "right") continue; // 가운데 정렬은 짧은 게 모양이다
     if (style.display === "none" || el.offsetParent === null) continue;

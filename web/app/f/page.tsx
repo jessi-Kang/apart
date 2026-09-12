@@ -8,9 +8,10 @@ import { CloseX } from "@/components/CloseX";
 import { SoundToggle } from "@/components/SoundToggle";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
+import { RuleButton, RuleOverlay, useGuide } from "@/components/RuleNote";
 import { TimerBar } from "@/components/TimerBar";
 import { findGradeFor } from "@/lib/grades";
-import { applyComboPick, areaPref, comboState, firstVisit, type ComboState } from "@/lib/local";
+import { applyComboPick, areaPref, comboState, type ComboState } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { FINISH_BONUS, RECORD_BONUS, questionScore } from "@/lib/scoring";
 import { shareCardImage, type ShareCardData } from "@/lib/sharecard";
@@ -46,6 +47,8 @@ const fmtSec = (ms: number | null | undefined) =>
 
 export default function FindRealPage() {
   const [quiz, setQuiz] = useState<TodayResponse | null>(null);
+  // 처음 온 사람에게는 이용 안내를 덮어서 먼저 보여준다 (그동안 제한 시간은 멈춘다)
+  const guide = useGuide("findreal");
   const [phase, setPhase] = useState<Phase>("loading");
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
@@ -70,7 +73,6 @@ export default function FindRealPage() {
   const [pendingOfficial, setPendingOfficial] = useState(false); // 홈에서 공식전으로 바로 들어왔는가
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const [area, setArea] = useState(""); // 담당 구역 (빈 값이면 서울 전체)
-  const [firstTime, setFirstTime] = useState(false); // 이 창구 첫 방문인가
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
   const qStart = useRef(0);
@@ -81,7 +83,6 @@ export default function FindRealPage() {
   useEffect(() => {
     setCombo(comboState());
     setArea(areaPref().replace(/특별자치시$|특별시$|광역시$/, ""));
-    setFirstTime(firstVisit("findreal"));
     // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
     // quiz가 들어온 뒤에 열어야 해서 깃발만 세우고 아래 effect에서 처리한다
     const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
@@ -432,6 +433,7 @@ export default function FindRealPage() {
             </small>
           </Link>
           <span className="head-tools">
+            <RuleButton onOpen={() => guide.setOpen(true)} />
             <SoundToggle />
             {/* 결과·성적표 화면에는 "창구로 돌아가기" 버튼이 이미 있다.
                 같은 일을 하는 X를 헤더에 또 두면 나가는 문이 둘로 보인다 */}
@@ -478,15 +480,10 @@ export default function FindRealPage() {
                 {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
               </p>
             )}
-            {endless && eCount === 0 && firstTime && (
-              <p className="pick-tip">
-                넷 중 <b>진짜는 하나</b>. 나머지는 AI가 지었습니다.
-              </p>
-            )}
 
             <TimerBar
               seconds={TIME_LIMIT}
-              active={phase === "solve"}
+              active={phase === "solve" && !guide.open}
               resetKey={endless ? `e${eCount}` : idx}
               onExpire={() => pick(null)}
             />
@@ -671,6 +668,9 @@ export default function FindRealPage() {
         )}
 
         <SheetFooter />
+        {guide.open && (
+          <RuleOverlay game="findreal" official={!endless} first={guide.auto} onClose={() => guide.setOpen(false)} />
+        )}
       </main>
     </div>
   );
