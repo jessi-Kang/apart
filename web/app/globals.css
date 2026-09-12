@@ -568,11 +568,12 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   position: relative; display: block; padding: 14px 22px;
   font-weight: 700; font-size: clamp(18px, 5vw, 24px); letter-spacing: -0.02em;
 }
-/* 가벼운 공유 한 줄: 통지서 버튼 위에 작게. 크게 만들면 통지서와 겨루고,
-   없으면 그냥 지나친다 — 눈에 띄되 주인공은 아닌 크기 */
+/* 가벼운 공유 한 줄: 버튼 묶음 아래에 가운데로. 크게 만들면 통지서와 겨루고,
+   없으면 그냥 지나친다 — 눈에 띄되 주인공은 아닌 크기.
+   왼쪽에 혼자 두면 어디에 딸린 것인지 알 수 없어 가운데로 맞춘다 */
 .share-link {
-  display: inline-flex; align-items: center; gap: 5px; align-self: flex-start;
-  margin-top: 18px; padding: 6px 10px;
+  display: inline-flex; align-items: center; gap: 5px; align-self: center;
+  margin-top: 12px; padding: 6px 10px;
   font: inherit; font-size: 12px; font-weight: 700; letter-spacing: -0.01em;
   color: var(--ink-soft); background: none;
   border: 1px solid var(--line); border-radius: var(--radius);
@@ -580,9 +581,10 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 .share-link svg { flex-shrink: 0; }
 .share-link:focus-visible { color: var(--stamp); border-color: var(--stamp); }
+/* 명부에서는 내 순위 카드에 딸린 줄이라 왼쪽에 붙인다 */
+.mycard + .share-link { align-self: flex-start; margin-top: 10px; }
 .share-link:active { color: var(--ink); border-color: var(--ink-soft); }
-/* 공유 줄 바로 아래에 버튼 묶음이 오므로 위쪽 여백을 줄인다 */
-.share-link + .result-actions { padding-top: 12px; }
+
 
 /* 버튼은 서식표와 같은 폭으로 떨어지고, 둘씩 나란히 놓인다.
    버튼마다 한 줄을 먹으면 결과가 아니라 메뉴판처럼 보인다 */

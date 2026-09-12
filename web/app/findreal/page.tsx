@@ -577,9 +577,6 @@ export default function FindRealPage() {
               </VRow>
             </VForm>
             <div className="cut" />
-            {/* 통지서를 뽑는 건 마음먹어야 하는 일이라 그냥 지나치는 사람이 많다.
-                그림 없이 한 번에 퍼뜨리는 가벼운 길을 옆에 작게 둔다 */}
-            <ShareLink data={endlessCard()} />
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
                 {eImgState === "busy"
@@ -599,6 +596,9 @@ export default function FindRealPage() {
                 창구로 돌아가기
               </Link>
             </div>
+            {/* 통지서(그림)가 주 동작이고 이건 그 대안이라 아래에 둔다.
+                위에 끼우면 주 버튼보다 먼저 읽혀 순서가 거꾸로다 */}
+            <ShareLink data={endlessCard()} />
           </section>
         )}
 
@@ -641,9 +641,6 @@ export default function FindRealPage() {
               </VRow>
             </VForm>
             <div className="cut" />
-            {/* 통지서를 뽑는 건 마음먹어야 하는 일이라 그냥 지나치는 사람이 많다.
-                그림 없이 한 번에 퍼뜨리는 가벼운 길을 옆에 작게 둔다 */}
-            <ShareLink data={officialCard()} />
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
                 {imgState === "busy"
@@ -663,6 +660,9 @@ export default function FindRealPage() {
                 창구로 돌아가기
               </Link>
             </div>
+            {/* 통지서(그림)가 주 동작이고 이건 그 대안이라 아래에 둔다.
+                위에 끼우면 주 버튼보다 먼저 읽혀 순서가 거꾸로다 */}
+            <ShareLink data={officialCard()} />
           </section>
         )}
 

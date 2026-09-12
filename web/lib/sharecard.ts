@@ -474,17 +474,29 @@ export const SITE = "https://apt-game.app";
  */
 export function shareText(data: ShareCardData): string {
   // 문장은 용어집을 따른다: "10문제 중 7문제 적중", "최고 연속 12"
+  //
+  // 성적만 늘어놓으면 통계 보고서가 되고, 읽는 사람이 눌러 볼 이유가 없다.
+  // 받은 등급을 앞세우고 마지막에 권하는 말을 둔다 — 자랑과 초대가 같이 가야
+  // 링크가 퍼진다.
+  //
+  // 판정 칸은 화면 타일과 같은 색으로 쓴다. 적중은 잉크를 채운 칸(⬛),
+  // 못 맞힌 것은 빈 칸(⬜)이다. 인주색(🟥)을 적중에 쓰면 빨강이 오답처럼
+  // 읽혀서 그림이 거꾸로 전해진다.
   if (data.marks.length) {
-    const grid = data.marks.map((m) => (m ? "🟥" : "⬜")).join("");
+    const grid = data.marks.map((m) => (m ? "⬛" : "⬜")).join("");
     return [
-      `아파트 감별사 제${data.episode}호 · ${data.total}문제 중 ${data.score}문제 적중`,
+      `[아파트 감별사] 제${data.episode}호 · ${data.gradeName}`,
+      `${data.total}문제 중 ${data.score}문제 적중`,
       grid,
-      data.gradeName,
-      SITE,
+      `당신은 몇 개나 가려낼까요 ${SITE}`,
     ].join("\n");
   }
   const name = data.subtitle.replace(/\s*통지서$/, ""); // "무한 감별 통지서" → "무한 감별"
-  return [`아파트 감별사 · ${name} 최고 연속 ${data.score}`, data.gradeName, SITE].join("\n");
+  return [
+    `[아파트 감별사] ${data.gradeName}`,
+    `${name} 최고 연속 ${data.score}`,
+    `당신은 몇 개나 가려낼까요 ${SITE}`,
+  ].join("\n");
 }
 
 /**
@@ -493,14 +505,20 @@ export function shareText(data: ShareCardData): string {
  */
 export function rankShareText(area: string, rank: number, total: number, title: string): string {
   const where = area || "전국";
-  return [`아파트 감별사 · ${where} 감별사 ${total}명 중 ${rank}위`, title, SITE].join("\n");
+  return [
+    `[아파트 감별사] ${where} ${total}명 중 ${rank}위`,
+    title,
+    `당신은 몇 위일까요 ${SITE}`,
+  ].join("\n");
 }
 
 /** 링크만 간단히 넘긴다 (그림을 만들 것도 없이 퍼뜨리는 가벼운 길) */
 export async function shareLink(text: string): Promise<"shared" | "copied" | "failed"> {
   try {
     if (navigator.share) {
-      await navigator.share({ text, url: SITE });
+      // url을 따로 넘기지 않는다. 글 안에 이미 주소가 있는데 url까지 주면
+      // 카카오톡 같은 앱이 둘을 나란히 붙여 같은 주소가 두 번 나온다
+      await navigator.share({ text });
       return "shared";
     }
   } catch {
