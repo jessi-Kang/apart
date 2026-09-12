@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { sealDataUri } from "@/lib/sealsvg";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -55,8 +56,18 @@ export default async function OgImage() {
             background: "#fdfdfb",
             border: "3px solid #d9d9d3",
             gap: 26,
+            position: "relative",
+            overflow: "hidden",
           }}
         >
+          {/* 관인은 서류에 눌러 찍는 것이라 글 위가 아니라 뒤에, 모서리에
+              걸쳐 잘리게 둔다 (홈·결과 화면과 같은 방식) */}
+          <img
+            src={sealDataUri()}
+            width={440}
+            height={440}
+            style={{ position: "absolute", top: -96, right: -128, opacity: 0.16, transform: "rotate(-14deg)" }}
+          />
           <div style={{ display: "flex", fontSize: 26, color: "#5c5c62", letterSpacing: 8 }}>{stamp}</div>
           <div style={{ display: "flex", fontSize: 96, color: "#1b1b1e", fontWeight: 700, lineHeight: 1 }}>
             {title}

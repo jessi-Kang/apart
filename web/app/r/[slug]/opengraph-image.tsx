@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { sealDataUri } from "@/lib/sealsvg";
 import { episodeNumber } from "@/lib/daily";
 import { gradeFor } from "@/lib/grades";
 import { parseSlug } from "@/lib/slug";
@@ -55,8 +56,17 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
             background: "#fdfdfb",
             border: "3px solid #d9d9d3",
             gap: 18,
+            position: "relative",
+            overflow: "hidden",
           }}
         >
+          {/* 관인은 글 위가 아니라 뒤에, 모서리에 걸쳐 잘리게 (화면과 같은 방식) */}
+          <img
+            src={sealDataUri()}
+            width={440}
+            height={440}
+            style={{ position: "absolute", top: -96, right: -128, opacity: 0.16, transform: "rotate(-14deg)" }}
+          />
           <div style={{ fontSize: 40, color: "#1b1b1e", fontWeight: 700 }}>{`아파트 감별사 #${ep}`}</div>
           <div style={{ fontSize: 120, color: "#1b1b1e", fontWeight: 700, lineHeight: 1 }}>{`${score} / 10`}</div>
           <div
