@@ -256,9 +256,7 @@ export default function RecordPage() {
             <Link className="btn btn-next" href="/play">
               감별하러 가기
             </Link>
-            <Link className="btn btn-ghost" href="/">
-              창구로 돌아가기
-            </Link>
+
           </div>
         </section>
 

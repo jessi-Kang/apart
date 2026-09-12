@@ -279,9 +279,7 @@ export default function RankingPage() {
             <Link className="btn btn-ghost" href="/record">
               기록 열람실
             </Link>
-            <Link className="btn btn-ghost" href="/">
-              창구로 돌아가기
-            </Link>
+
           </div>
         </section>
 

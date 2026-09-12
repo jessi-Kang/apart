@@ -18,6 +18,14 @@ interface Report {
   ready: { real: number; fake: number };
   minShown: number;
 }
+interface Bug {
+  id: number;
+  body: string;
+  where_at: string;
+  ua: string;
+  user_id: number | null;
+  created_at: string;
+}
 
 const pct = (r: number) => `${Math.round(r * 100)}%`;
 
@@ -33,6 +41,7 @@ const pct = (r: number) => `${Math.round(r * 100)}%`;
  */
 export default function ReportPage() {
   const [data, setData] = useState<Report | null>(null);
+  const [bugs, setBugs] = useState<Bug[] | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -40,6 +49,10 @@ export default function ReportPage() {
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no"))))
       .then((d: Report) => setData(d))
       .catch(() => setFailed(true));
+    fetch("/api/bug")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no"))))
+      .then((d: { bugs: Bug[] }) => setBugs(d.bugs))
+      .catch(() => setBugs([]));
   }, []);
 
   const table = (title: string, note: string, rows: NameRow[]) => (
@@ -117,13 +130,35 @@ export default function ReportPage() {
             </>
           )}
 
+          {/* 들어온 제보. 리포트에서 같이 봐야 따로 열어 볼 일이 없다 */}
+          <div className="rep-head">
+            <b>들어온 버그 제보</b>
+            <small>최근 50건</small>
+          </div>
+          {bugs === null ? (
+            <p className="center-note">제보함을 여는 중입니다</p>
+          ) : bugs.length === 0 ? (
+            <p className="center-note">아직 들어온 제보가 없습니다</p>
+          ) : (
+            <ul className="bug-list">
+              {bugs.map((b) => (
+                <li key={b.id}>
+                  <div className="bmeta">
+                    {b.where_at && <span className="bwhere">{b.where_at}</span>}
+                    <span>{new Date(b.created_at).toLocaleString("ko-KR")}</span>
+                    <span>{b.user_id ? `계정 ${b.user_id}` : "비회원"}</span>
+                  </div>
+                  <div className="btext">{b.body}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+
           <div className="result-actions">
             <Link className="btn btn-ghost" href="/record">
               기록 열람실
             </Link>
-            <Link className="btn btn-ghost" href="/">
-              창구로 돌아가기
-            </Link>
+
           </div>
         </section>
 
