@@ -26,6 +26,10 @@ export interface Session {
  * 값이 비어 있으면 아무도 운영자가 아니다 — 환경변수를 깜빡했을 때
  * 전원에게 비공개 창구가 열리는 쪽으로 기울면 안 된다.
  */
+export function ownerConfigured(): boolean {
+  return Boolean((process.env.OWNER_EMAIL ?? "").trim());
+}
+
 export function isOwnerEmail(email: string | null | undefined): boolean {
   const owner = (process.env.OWNER_EMAIL ?? "").trim().toLowerCase();
   if (!owner || !email) return false;
