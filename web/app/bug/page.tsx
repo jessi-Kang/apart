@@ -160,9 +160,6 @@ export default function BugPage() {
                 >
                   또 접수하기
                 </button>
-                <Link className="btn btn-ghost" href="/">
-                  창구로 돌아가기
-                </Link>
               </div>
             </>
           ) : (

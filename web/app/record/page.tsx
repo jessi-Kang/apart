@@ -9,6 +9,7 @@ import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { comboState, currentStreak, endlessRecord, type ComboState } from "@/lib/local";
 import { currentLevel, type LevelInfo } from "@/lib/level";
+import { episodeNumber, kstDateString } from "@/lib/episode";
 
 interface Me {
   configured: boolean;
@@ -139,11 +140,6 @@ export default function RecordPage() {
           <Link className="brand" href="/">
             아파트 감별사<small>기록 열람실</small>
           </Link>
-          <Link className="close-x" href="/" aria-label="창구로 돌아가기">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-              <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-          </Link>
         </header>
 
         <section className="screen result">
@@ -155,6 +151,11 @@ export default function RecordPage() {
             {loaded ? `누적 ${level?.xp ?? 0}점 · 연속 출전 ${Math.max(streak.count, 0)}일` : "기록을 불러오는 중"}
           </p>
 
+          {/* 위는 판을 거듭하며 쌓이는 것, 아래는 오늘 하루짜리다. 이름표가
+              없으면 둘 다 그냥 "내 기록"으로 읽혀 오늘 성적이 누적으로 보인다 */}
+          <p className="sec-cap">
+            누적 기록<small>무한 · 계속 쌓입니다</small>
+          </p>
           <VForm>
             <VRow label="감별 O/X">
               최고 연속 {ox.best}
@@ -175,6 +176,9 @@ export default function RecordPage() {
 
           <div className="cut" />
 
+          <p className="sec-cap">
+            오늘의 공식전<small>제{episodeNumber(kstDateString())}호 · 자정에 새 판</small>
+          </p>
           <VForm>
             {/* 공식전은 창구마다 문제도 순위도 따로다. 한 행에 뭉쳐 두면
                 어느 게임 성적인지 알 수 없다 */}
@@ -215,6 +219,14 @@ export default function RecordPage() {
                 </VRow>
               );
             })}
+          </VForm>
+
+          {/* 직급과 계정은 오늘 성적이 아니라 이 사람에 대한 것이다. 공식전 표
+              안에 같이 두면 "오늘의 공식전" 이름표가 셋을 다 덮어 버린다 */}
+          <p className="sec-cap">
+            감별사 정보<small>직급 · 계정</small>
+          </p>
+          <VForm>
             <VRow label="직급">
               <LevelBar />
             </VRow>
@@ -245,6 +257,9 @@ export default function RecordPage() {
                         <GoogleMark />
                         Google로 보관
                       </a>
+                      {/* 로그인하면 collectLocal()이 이 기기 기록을 함께 올리고
+                          항목마다 큰 쪽으로 합쳐진다. 지워지지 않는다는 걸 말해 준다 */}
+                      <small>지금까지 친 기록도 그대로 이어집니다</small>
                     </>
                   )}
                 </span>
@@ -252,11 +267,13 @@ export default function RecordPage() {
             )}
           </VForm>
 
+          {/* 여기서 나가는 길은 접수 창구 하나다. 전에는 이 단추가 감별 O/X로
+              바로 넘어갔는데, 열람실에서 나오는 사람이 무엇을 하고 싶은지는
+              알 수 없다 — 셋 중 하나를 대신 골라 주는 셈이었다 */}
           <div className="result-actions">
-            <Link className="btn btn-next" href="/play">
-              감별하러 가기
+            <Link className="btn btn-next full" href="/">
+              창구로 돌아가기
             </Link>
-
           </div>
         </section>
 
