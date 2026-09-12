@@ -34,9 +34,9 @@ interface DailyRun {
 
 const DAILY_KEYS = { ox: "aptgam:result", assemble: "aptgam:assemble", findreal: "aptgam:findreal" } as const;
 const GAMES = [
-  { mode: "ox", label: "감별 O/X", href: "/play" },
-  { mode: "assemble", label: "이름 조립", href: "/assemble" },
-  { mode: "findreal", label: "진짜 찾기", href: "/findreal" },
+  { mode: "ox", label: "감별 O/X", href: "/o" },
+  { mode: "assemble", label: "이름 조립", href: "/a" },
+  { mode: "findreal", label: "진짜 찾기", href: "/f" },
 ] as const;
 
 /** 세 창구의 오늘 공식전 기록을 한 번에 읽는다 (창구마다 저장 키가 다르다) */

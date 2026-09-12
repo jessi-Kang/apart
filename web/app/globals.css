@@ -167,12 +167,15 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
    세로선을 가운데 칸 안쪽(border-inline)에 그리면 본문 행의 선(첫 칸 오른쪽,
    끝 칸 왼쪽)과 1px 어긋나고, 여백도 본문 .cell(14px)과 달라 '창구'와 '감별 O/X'가
    3px 어긋나 보였다. 그래서 선 위치와 좌우 여백을 본문과 같은 자리에 맞춘다 */
-.ledger-head span { padding: 8px 10px; text-align: center; }
+.ledger-head span { padding: 7px 10px; text-align: center; }
 .ledger-head span:first-child { border-right: 1px solid var(--line); }
 .ledger-head span:nth-child(2) { text-align: left; padding-inline: 14px; }
 .ledger-head span:last-child { border-left: 1px solid var(--line); }
 /* 한 행에 목적지가 둘이다: 창구 이름 = 무한, 오른쪽 도장 = 공식전.
-   그래서 행 전체를 링크로 감싸지 않고 두 링크로 나눈다 */
+   그래서 행 전체를 링크로 감싸지 않고 두 링크로 나눈다.
+   행 여백은 글자 높이에 맞춰 잡는다 — 390px에서 글 40px에 여백 30px(75%)이라
+   행이 글보다 빈칸이 더 많았다. 지금은 24px(60%)이고, 그래도 행 높이는
+   69px이라 손가락이 닿는 크기(44px)보다 넉넉하다 */
 .ledger .row {
   display: grid; grid-template-columns: 1fr 74px; align-items: stretch;
   border-bottom: 1px solid var(--line);
@@ -188,9 +191,9 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 500;
   border-right: 1px solid var(--line);
 }
-.ledger .cell { padding: 15px 14px; }
+.ledger .cell { padding: 12px 14px; }
 .ledger .tt { display: block; font-weight: 700; font-size: 15.5px; letter-spacing: -0.02em; }
-.ledger .dd { display: block; font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; line-height: 1.55; }
+.ledger .dd { display: block; font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; line-height: 1.55; }
 /* 기록 꼬리는 설명과 같은 줄에 이어 붙이지 않는다 — 폭에 따라 어디서 꺾일지 모른다 */
 .ledger .dd-rec { display: block; font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; font-variant-numeric: tabular-nums; }
 .ledger .st { display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--line); }
@@ -888,7 +891,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .ledger-head { font-size: 10.5px; }
   .ledger-head span { padding: 7px 8px; }
   .ledger-head span:nth-child(2) { padding-inline: 11px; }
-  .ledger .cell { padding: 12px 11px; padding-right: 20px; }
+  .ledger .cell { padding: 10px 11px; padding-right: 20px; }
   .ledger .no { font-size: 13px; }
   .ledger .tt { font-size: 14px; }
   .ledger .dd { font-size: 11.5px; }
@@ -954,7 +957,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .sheet-footer { padding: 16px 24px; font-size: 12.5px; }
   .home .sub { font-size: 15.5px; }
   .ledger-head { font-size: 12px; }
-  .ledger .cell { padding: 17px 16px; }
+  .ledger .cell { padding: 13px 16px; }
   .ledger-head span:nth-child(2) { padding-inline: 16px; } /* 본문 .cell과 같은 자리 */
   .ledger .no { font-size: 16px; }
   .ledger .tt { font-size: 17px; }

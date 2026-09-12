@@ -91,7 +91,7 @@ export default async function ResultPage({ params }: Props) {
             같은 문제로 겨루는 제{ep}호 공식전은 게임 안에서 신청할 수 있습니다.
           </p>
           <div className="result-actions">
-            <Link className="btn btn-next" href="/play">
+            <Link className="btn btn-next" href="/o">
               나도 감별하기
             </Link>
           </div>

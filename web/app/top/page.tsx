@@ -287,7 +287,7 @@ export default function RankingPage() {
           )}
 
           <div className="result-actions">
-            <Link className="btn btn-ghost" href="/record">
+            <Link className="btn btn-ghost" href="/me">
               기록 열람실
             </Link>
 

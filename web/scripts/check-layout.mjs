@@ -61,13 +61,13 @@ function globalModulePath(name) {
 /** 화면 하나를 열고 손봐야 할 상태까지 몰고 가는 방법 */
 const SCREENS = [
   { name: "홈", path: "/" },
-  { name: "기록 열람실", path: "/record", wait: 1200 },
-  { name: "이름 조립", path: "/assemble", ready: ".tile" },
-  { name: "진짜 찾기", path: "/findreal", wait: 2500 },
-  { name: "감별 O/X", path: "/play", ready: ".qname" },
+  { name: "기록 열람실", path: "/me", wait: 1200 },
+  { name: "이름 조립", path: "/a", ready: ".tile" },
+  { name: "진짜 찾기", path: "/f", wait: 2500 },
+  { name: "감별 O/X", path: "/o", ready: ".qname" },
   {
     name: "결과 통지서",
-    path: "/play",
+    path: "/o",
     ready: ".qname",
     async after(page) {
       await page.locator('button:has-text("진짜"), button:has-text("가짜")').first().click();
