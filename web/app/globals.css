@@ -238,10 +238,13 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 }
 .idb-go { margin-left: auto; font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; }
 .idb-main:focus-visible .idb-go { color: var(--stamp); }
+/* 어느 계정으로 보관되는지 로고로 밝힌다 — 누르기 전에 알아야 한다 */
 .idb-auth {
+  display: inline-flex; align-items: center; gap: 5px;
   font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; text-decoration: none;
   padding-left: 10px; border-left: 1px solid var(--line); transition: color 0.12s ease;
 }
+.idb-auth svg { flex-shrink: 0; }
 .idb-auth:focus-visible { color: var(--stamp); }
 
 /* ---- 담당 구역 고르기 (홈) ---- */
