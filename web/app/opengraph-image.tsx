@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { sealDataUri } from "@/lib/sealsvg";
+import { OgSeal, SEAL_TEXT } from "@/lib/ogseal";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -12,6 +12,10 @@ export const alt = "아파트 감별사 · 진짜 아파트와 AI가 지은 이�
  *
  * 결과 카드와 같은 서류 세계관으로 그린다 — 괘선 틀, 인주색 도장, 관인.
  * 한글 폰트는 이 카드에 쓰는 글자만 서브셋으로 받아온다.
+ *
+ * 짜임새: 글은 왼쪽에 서식처럼 세우고 관인은 오른쪽에 통째로 찍는다.
+ * 전에는 글을 가운데 세우고 관인을 모서리에 걸쳐 잘랐는데, 잘린 관인은
+ * 제목 위로 번진 얼룩처럼 보였고 가운데 정렬이라 오른쪽이 통째로 비었다.
  */
 async function loadFont(text: string): Promise<ArrayBuffer | null> {
   try {
@@ -31,8 +35,9 @@ async function loadFont(text: string): Promise<ArrayBuffer | null> {
 export default async function OgImage() {
   const title = "아파트 감별사";
   const sub = "진짜 아파트와 AI가 지은 이름 가려내기";
-  const stamp = "감별 민원 접수처";
-  const font = await loadFont(`${title}${sub}${stamp}aptgame.`);
+  const eyebrow = "감별 민원 접수처";
+  // 관인 링 글자도 같은 폰트로 그리므로 서브셋에 함께 넣는다
+  const font = await loadFont(`${title}${sub}${eyebrow}${SEAL_TEXT}aptgame.-`);
 
   return new ImageResponse(
     (
@@ -50,42 +55,39 @@ export default async function OgImage() {
           style={{
             flex: 1,
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
             background: "#fdfdfb",
             border: "3px solid #d9d9d3",
-            gap: 26,
+            padding: "0 60px",
             position: "relative",
             overflow: "hidden",
           }}
         >
-          {/* 관인은 서류에 눌러 찍는 것이라 글 위가 아니라 뒤에, 모서리에
-              걸쳐 잘리게 둔다 (홈·결과 화면과 같은 방식) */}
-          <img
-            src={sealDataUri()}
-            width={440}
-            height={440}
-            style={{ position: "absolute", top: -96, right: -128, opacity: 0.16, transform: "rotate(-14deg)" }}
-          />
-          <div style={{ display: "flex", fontSize: 26, color: "#5c5c62", letterSpacing: 8 }}>{stamp}</div>
-          <div style={{ display: "flex", fontSize: 96, color: "#1b1b1e", fontWeight: 700, lineHeight: 1 }}>
-            {title}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 24 }}>
+            <div style={{ display: "flex", fontSize: 25, color: "#5c5c62", letterSpacing: 7 }}>{eyebrow}</div>
+            <div style={{ display: "flex", fontSize: 88, color: "#1b1b1e", fontWeight: 700, lineHeight: 1 }}>
+              {title}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                fontSize: 31,
+                color: "#c73a2f",
+                fontWeight: 700,
+                border: "5px solid #c73a2f",
+                padding: "11px 22px",
+                transform: "rotate(-2deg)",
+              }}
+            >
+              {sub}
+            </div>
+            <div style={{ display: "flex", fontSize: 26, color: "#5c5c62", marginTop: 6 }}>apt-game.app</div>
           </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 34,
-              color: "#c73a2f",
-              fontWeight: 700,
-              border: "5px solid #c73a2f",
-              padding: "12px 26px",
-              transform: "rotate(-2.5deg)",
-            }}
-          >
-            {sub}
+          {/* 관인은 서류에 눌러 찍는 것이라 통째로 보이게 둔다. 글을 덮지
+              않도록 오른쪽에 자리를 따로 주고, 인주가 옅게 먹은 만큼만 남긴다 */}
+          <div style={{ display: "flex", transform: "rotate(-8deg)", marginLeft: 40 }}>
+            <OgSeal size={290} opacity={0.62} />
           </div>
-          <div style={{ display: "flex", fontSize: 26, color: "#5c5c62", marginTop: 8 }}>apt-game.app</div>
         </div>
       </div>
     ),

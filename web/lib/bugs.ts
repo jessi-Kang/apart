@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { kstDateString } from "./daily";
 
 /**
  * 버그 제보함.
@@ -68,6 +69,8 @@ export interface SaveResult {
   /** 점수를 받았는가 */
   awarded: boolean;
   points: number;
+  /** 접수번호. 창구에서 받아 가는 번호라 실제로 들어간 행 번호를 쓴다 */
+  no?: string;
 }
 
 /** 제보 저장 + 점수 지급 여부 판단 */
@@ -80,10 +83,12 @@ export async function saveBug(input: {
   if (!sql) return { ok: false, awarded: false, points: 0 };
   try {
     const awarded = await canAward(input.uid);
-    await sql`
+    const rows = (await sql`
       INSERT INTO bug_report (body, where_at, ua, user_id, awarded)
-      VALUES (${input.body.slice(0, MAX_BODY)}, ${input.where.slice(0, MAX_WHERE)}, ${input.ua.slice(0, 200)}, ${input.uid}, ${awarded})`;
-    return { ok: true, awarded, points: awarded ? BUG_POINTS : 0 };
+      VALUES (${input.body.slice(0, MAX_BODY)}, ${input.where.slice(0, MAX_WHERE)}, ${input.ua.slice(0, 200)}, ${input.uid}, ${awarded})
+      RETURNING id`) as { id: number }[];
+    const no = rows[0] ? `${kstDateString().replace(/-/g, "")}-${String(rows[0].id).padStart(4, "0")}` : undefined;
+    return { ok: true, awarded, points: awarded ? BUG_POINTS : 0, no };
   } catch {
     return { ok: false, awarded: false, points: 0 };
   }

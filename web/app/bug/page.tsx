@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { DocTitle } from "@/components/VerdictForm";
+import { DocTitle, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { GoogleMark } from "@/components/GoogleMark";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
@@ -10,22 +10,28 @@ import { addXp } from "@/lib/level";
 import { areaPref } from "@/lib/local";
 import { sfxResult, sfxTap } from "@/lib/sound";
 
-type Sent = { ok: true; awarded: boolean; points: number } | null;
+type Sent = { ok: true; awarded: boolean; points: number; no?: string } | null;
+interface Cap {
+  rows: { k: string; v: number }[] | null;
+  ask: string | null;
+}
 
 const WHERE = ["감별 O/X", "이름 조립", "진짜 찾기", "홈 접수 대장", "기록 열람실", "구역 명부", "그 밖"];
 
 /**
- * 버그 제보.
+ * 버그 제보 — 민원 접수 창구.
  *
  * 버그를 알려 주러 온 사람에게 로그인부터 하라고 하면 대부분 그냥 간다.
  * 그래서 비회원도 그냥 낼 수 있다. 다만 점수는 계정이 있어야 붙는다 —
  * 서버가 누군지 알아야 몇 번 냈는지 셀 수 있고, 그래야 어뷰징을 막는다.
  *
- * 캡챠는 한 자리 덧셈이다. 그림을 비틀어 놓는 방식은 눈이 불편한 사람에게
- * 읽을 방법이 없는 관문이 된다.
+ * 화면은 다른 창구와 같은 서식이다. 전에는 여기만 라벨과 입력칸을 세로로
+ * 늘어놓은 평범한 웹 폼이라, 서류 세계관 한가운데에 다른 사이트 한 장이
+ * 끼어 있는 것처럼 보였다. 항목은 괘선 서식표에 넣고, 본인 확인도 창구에서
+ * 실제로 하는 일 — 대장을 보고 칸의 값을 옮겨 적기 — 로 바꿨다.
  */
 export default function BugPage() {
-  const [question, setQuestion] = useState<string | null>(null);
+  const [cap, setCap] = useState<Cap>({ rows: null, ask: null });
   const [body, setBody] = useState("");
   const [where, setWhere] = useState("");
   const [answer, setAnswer] = useState("");
@@ -35,11 +41,14 @@ export default function BugPage() {
   const [sent, setSent] = useState<Sent>(null);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
-  useEffect(() => {
+  const newCaptcha = () =>
     fetch("/api/bug/captcha")
       .then((r) => r.json())
-      .then((d: { question: string | null }) => setQuestion(d.question))
-      .catch(() => setQuestion(null));
+      .then((d: Cap) => setCap(d))
+      .catch(() => setCap({ rows: null, ask: null }));
+
+  useEffect(() => {
+    void newCaptcha();
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((m: { user: unknown }) => setSignedIn(Boolean(m.user)))
@@ -57,28 +66,31 @@ export default function BugPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body, where: where || areaPref(), answer, nickname }),
       });
-      const data = (await res.json()) as { ok?: boolean; awarded?: boolean; points?: number; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        awarded?: boolean;
+        points?: number;
+        no?: string;
+        error?: string;
+      };
       if (!res.ok || !data.ok) {
         setError(
           data.error === "captcha"
-            ? "덧셈 답이 맞지 않습니다"
+            ? "대장의 숫자와 다릅니다. 다시 확인해 주세요"
             : data.error === "too_short"
               ? "조금만 더 자세히 적어 주세요"
-              : "보내지 못했습니다. 잠시 뒤 다시 시도해 주세요",
+              : "접수하지 못했습니다. 잠시 뒤 다시 시도해 주세요",
         );
-        // 캡챠는 한 번 쓰면 버려지므로 새 문제를 받아 온다
-        fetch("/api/bug/captcha")
-          .then((r) => r.json())
-          .then((d: { question: string | null }) => setQuestion(d.question))
-          .catch(() => undefined);
+        // 확인란은 한 번 쓰면 버려지므로 새 대장을 받아 온다
+        void newCaptcha();
         setAnswer("");
         return;
       }
       if (data.awarded && data.points) addXp(data.points);
       sfxResult();
-      setSent({ ok: true, awarded: Boolean(data.awarded), points: data.points ?? 0 });
+      setSent({ ok: true, awarded: Boolean(data.awarded), points: data.points ?? 0, no: data.no });
     } catch {
-      setError("보내지 못했습니다. 잠시 뒤 다시 시도해 주세요");
+      setError("접수하지 못했습니다. 잠시 뒤 다시 시도해 주세요");
     } finally {
       setBusy(false);
     }
@@ -90,11 +102,9 @@ export default function BugPage() {
         <h2>
           겪으신 문제를
           <br />
-          <em>알려</em> 주세요
+          <em>접수</em>합니다
         </h2>
-        <p className="note">
-          어느 화면에서 무엇이 이상했는지 적어 주시면 고치는 데 큰 도움이 됩니다.
-        </p>
+        <p className="note">어느 창구에서 무엇이 이상했는지 적어 주시면 고치는 데 큰 도움이 됩니다.</p>
       </aside>
 
       <main className="sheet">
@@ -109,24 +119,35 @@ export default function BugPage() {
           </Link>
         </header>
 
-        <section className="screen result">
+        <section className="screen result bug-screen">
           <div className="result-seal" aria-hidden="true">
             <Seal size={216} />
           </div>
 
           {sent ? (
             <>
-              <DocTitle eyebrow="접수완료" title="제보를 접수했습니다" />
-              <p className="stamp-sub">
-                {sent.awarded
-                  ? `알려 주셔서 고맙습니다. ${sent.points}점을 드렸습니다.`
-                  : "알려 주셔서 고맙습니다. 확인하고 고치겠습니다."}
-              </p>
-              {!sent.awarded && signedIn === false && (
-                <p className="bug-note">
-                  기록을 계정에 보관하시면 제보에도 점수가 붙습니다.
-                </p>
-              )}
+              <DocTitle eyebrow="접수완료" title="민원을 접수했습니다" />
+              {/* 도장은 끝난 일에만 찍는다 — 접수가 끝난 지금이 그 자리다 */}
+              <StampHero name="접 수 완 료" />
+              <VForm>
+                {sent.no && (
+                  <VRow label="접수번호">
+                    <span className="mono">제 {sent.no} 호</span>
+                  </VRow>
+                )}
+                <VRow label="처리">
+                  <span>확인하고 고치겠습니다</span>
+                </VRow>
+                <VRow label="사례">
+                  {sent.awarded ? (
+                    <span className="accent">{sent.points}점</span>
+                  ) : (
+                    <span>
+                      없음 <small>{signedIn === false ? "기록을 보관하시면 사례가 붙습니다" : "오늘 사례는 다 나갔습니다"}</small>
+                    </span>
+                  )}
+                </VRow>
+              </VForm>
               <div className="result-actions">
                 <button
                   className="btn btn-ghost"
@@ -134,44 +155,50 @@ export default function BugPage() {
                     setSent(null);
                     setBody("");
                     setAnswer("");
-                    fetch("/api/bug/captcha")
-                      .then((r) => r.json())
-                      .then((d: { question: string | null }) => setQuestion(d.question))
-                      .catch(() => undefined);
+                    void newCaptcha();
                   }}
                 >
-                  또 제보하기
+                  또 접수하기
                 </button>
+                <Link className="btn btn-ghost" href="/">
+                  창구로 돌아가기
+                </Link>
               </div>
             </>
           ) : (
             <>
               <DocTitle eyebrow="민원접수" title="버그 제보" />
 
-              <label className="bug-k" htmlFor="bug-where">
-                어느 화면인가요
-              </label>
-              <select id="bug-where" className="bug-sel" value={where} onChange={(e) => setWhere(e.target.value)}>
-                <option value="">고르지 않음</option>
-                {WHERE.map((w) => (
-                  <option key={w} value={w}>
-                    {w}
-                  </option>
-                ))}
-              </select>
-
-              <label className="bug-k" htmlFor="bug-body">
-                무엇이 이상했나요
-              </label>
-              <textarea
-                id="bug-body"
-                className="bug-body"
-                value={body}
-                maxLength={1000}
-                rows={6}
-                placeholder="무엇을 하다가 어떻게 됐는지 적어 주세요. 화면이 어떻게 보였는지도 좋습니다."
-                onChange={(e) => setBody(e.target.value)}
-              />
+              <VForm>
+                <VRow label="접수 창구">
+                  <select
+                    id="bug-where"
+                    className="bug-sel"
+                    aria-label="접수 창구"
+                    value={where}
+                    onChange={(e) => setWhere(e.target.value)}
+                  >
+                    <option value="">고르지 않음</option>
+                    {WHERE.map((w) => (
+                      <option key={w} value={w}>
+                        {w}
+                      </option>
+                    ))}
+                  </select>
+                </VRow>
+                <VRow label="민원 내용">
+                  <textarea
+                    id="bug-body"
+                    className="bug-body"
+                    aria-label="민원 내용"
+                    value={body}
+                    maxLength={1000}
+                    rows={6}
+                    placeholder="무엇을 하다가 어떻게 됐는지 적어 주세요. 화면이 어떻게 보였는지도 좋습니다."
+                    onChange={(e) => setBody(e.target.value)}
+                  />
+                </VRow>
+              </VForm>
 
               {/* 허니팟: 사람 눈에 안 보이고 읽는 기계에도 안 잡힌다 */}
               <input
@@ -185,21 +212,41 @@ export default function BugPage() {
                 className="hp"
               />
 
-              {question && (
-                <>
-                  <label className="bug-k" htmlFor="bug-answer">
-                    사람인지 확인합니다 · {question}
-                  </label>
-                  <input
-                    id="bug-answer"
-                    className="bug-answer"
-                    type="text"
-                    inputMode="numeric"
-                    value={answer}
-                    maxLength={3}
-                    onChange={(e) => setAnswer(e.target.value)}
-                  />
-                </>
+              {cap.rows && cap.ask && (
+                <div className="capbox">
+                  <p className="cap-q">
+                    아래 단지 대장에서 <b>{cap.ask}</b> 칸의 숫자를 그대로 옮겨 적으십시오
+                  </p>
+                  {/* 적는 칸도 대장 안에 둔다. 표 밖에 입력칸을 따로 세우면
+                      "서식을 보고 옮겨 적는다"가 아니라 "퀴즈에 답한다"가 된다 */}
+                  <table className="capledger">
+                    <tbody>
+                      {cap.rows.map((r) => (
+                        <tr key={r.k}>
+                          <th scope="row">{r.k}</th>
+                          <td className="mono">{r.v}</td>
+                        </tr>
+                      ))}
+                      <tr className="cap-write">
+                        <th scope="row">
+                          <label htmlFor="bug-answer">{cap.ask}</label>
+                        </th>
+                        <td>
+                          <input
+                            id="bug-answer"
+                            type="text"
+                            inputMode="numeric"
+                            value={answer}
+                            maxLength={4}
+                            autoComplete="off"
+                            placeholder="여기에 옮겨 적으십시오"
+                            onChange={(e) => setAnswer(e.target.value)}
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               )}
 
               {error && <p className="bug-error">{error}</p>}
@@ -210,13 +257,13 @@ export default function BugPage() {
                     <GoogleMark size={13} />
                     기록 보관
                   </a>
-                  을 하시면 제보에도 점수가 붙습니다. 안 하셔도 제보는 보내집니다.
+                  을 하시면 접수에도 사례가 붙습니다. 안 하셔도 접수는 됩니다.
                 </p>
               )}
 
               <div className="result-actions">
                 <button className="btn btn-next full" onClick={submit} disabled={busy || body.trim().length < 10}>
-                  {busy ? "보내는 중" : "제보 보내기"}
+                  {busy ? "접수하는 중" : "접수하기"}
                 </button>
               </div>
             </>

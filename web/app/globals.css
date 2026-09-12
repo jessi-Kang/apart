@@ -65,13 +65,26 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .issue { font-size: 12px; color: var(--ink-soft); text-align: right; }
 .screen { flex: 1; display: flex; flex-direction: column; padding: 24px 20px; }
 .sheet-footer {
-  padding: 14px 20px; border-top: 1px solid var(--line);
+  padding: 10px 16px 10px 20px; border-top: 1px solid var(--line);
   font-size: 12px; color: var(--ink-soft); display: flex; justify-content: space-between;
-  gap: 12px; align-items: baseline;
+  gap: 12px; align-items: center;
 }
-.sheet-footer span:last-child { flex-shrink: 0; white-space: nowrap; }
-.sheet-footer { flex-wrap: wrap; }
-.sheet-footer .copyright { flex-basis: 100%; white-space: normal; margin-top: 2px; }
+/* 표기 글은 한 덩어리, 공유 단추는 오른쪽 끝. 예전에는 형제 span들을
+   space-between으로 흩었는데, 줄이 접히면 어느 것이 오른쪽인지 뒤바뀌었다 */
+.foot-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sheet-footer .copyright { white-space: normal; }
+.foot-share-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.foot-share-said { font-size: 11.5px; color: var(--ink); }
+/* 손가락이 닿을 만큼(32px)은 되되 음수 여백은 쓰지 않는다 — 음수 여백을
+   주면 상자 폭이 내용보다 좁아져 푸터 줄이 밖으로 밀린다(레이아웃 검사가 잡음) */
+.foot-share {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--ink); transition: color 0.12s ease;
+}
+.foot-share:focus-visible { color: var(--stamp); }
+.foot-share:active { color: var(--stamp); }
 /* 링크는 밑줄 대신 진한 잉크로 구분하고, 포커스·호버에서 인주색으로 반응.
    호버는 마우스가 있는 기기에서만 건다 — 터치에서는 탭한 뒤에도 :hover가 남아서
    눌렀던 것이 계속 붉게 보이고, 인주색은 이 서류에서 도장의 색이라 오류처럼 읽힌다 */
@@ -104,8 +117,8 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 /* 꺼진 상태도 보여야 다시 켤 수 있다. --line(#d9d9d3)은 종이 위에서 거의 안 보였다 */
 .sound-btn[aria-pressed="false"] { color: var(--ink-soft); }
 @media (max-width: 479px) {
-  .sheet-footer { flex-direction: column; gap: 3px; align-items: flex-start; }
-  .sheet-footer span:last-child { white-space: normal; }
+  /* 좁아져도 단추는 오른쪽에 남는다 — 글만 여러 줄로 흐른다 */
+  .sheet-footer { gap: 10px; }
 }
 
 /* ---- 홈 (확정 시안 home2-a: 접수 대장) ---- */
@@ -294,21 +307,49 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .area-rank:focus-visible { color: var(--stamp); }
 
 /* ---- 버그 제보 ---- */
-.bug-k {
-  display: block; margin-top: 18px; margin-bottom: 6px;
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 11px; letter-spacing: 0.06em; color: var(--ink-soft);
-}
-.bug-sel, .bug-body, .bug-answer {
-  font: inherit; width: 100%; color: var(--ink); background: var(--paper);
-  border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px;
+/* 입력칸은 서식표(vform) 값 칸 안에 들어간다 — 이 화면만 딴 폼처럼 보이지
+   않게, 다른 창구의 통지서와 같은 괘선 안에서 글을 받는다 */
+.vv > .bug-sel, .vv > .bug-body {
+  font: inherit; flex: 1; min-width: 0; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 11px;
 }
 .bug-sel { font-size: 14px; appearance: none; cursor: pointer; }
 .bug-body { font-size: 14.5px; line-height: 1.65; resize: vertical; min-height: 120px; }
-.bug-answer { font-size: 15px; width: 96px; font-variant-numeric: tabular-nums; }
-.bug-sel:focus-visible, .bug-body:focus-visible, .bug-answer:focus-visible {
+.bug-sel:focus-visible, .bug-body:focus-visible, .cap-in input:focus-visible {
   outline: none; border-color: var(--ink);
 }
+
+/* 본인 확인: 창구에서 실제로 하는 일 그대로 — 대장을 보고 칸의 값을 옮겨 적기.
+   한 자리 덧셈은 이 서류 세계에 없는 말투라 화면이 통째로 어설퍼 보였다 */
+.capbox { margin-top: 22px; }
+.cap-q { font-size: 12.5px; line-height: 1.6; color: var(--ink-soft); }
+.cap-q b { color: var(--stamp); }
+.capledger {
+  width: 100%; margin-top: 10px; border: 1px solid var(--ink);
+  border-radius: var(--radius); border-collapse: collapse; border-spacing: 0;
+}
+.capledger th, .capledger td { border-bottom: 1px solid var(--line); text-align: left; }
+.capledger tr:last-child th, .capledger tr:last-child td { border-bottom: 0; }
+.capledger th {
+  width: 96px; padding: 9px 12px; background: var(--paper);
+  border-right: 1px solid var(--line);
+  font-size: 12px; font-weight: 400; color: var(--ink-soft);
+}
+.capledger td { padding: 9px 14px; font-size: 14.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* 적는 줄: 표의 마지막 칸이라 입력칸 테두리를 지운다. 칸 안에 손으로
+   적어 넣는 느낌이어야 하는데, 테두리가 있으면 표 위에 상자가 하나 더 얹힌다 */
+.cap-write th { color: var(--ink); font-weight: 700; }
+.cap-write th label { cursor: text; }
+.cap-write td { padding: 0; }
+.cap-write input {
+  font: inherit; font-size: 14.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+  width: 100%; color: var(--ink); background: var(--sheet);
+  border: 0; border-radius: 0; padding: 9px 14px; outline: none;
+}
+/* 어디에 적는지 보이게 — 채워야 할 칸만 인주색 밑줄로 표시한다 */
+.cap-write input { box-shadow: inset 0 -2px 0 var(--stamp); }
+.cap-write input:focus { background: var(--paper); }
+.cap-write input::placeholder { color: var(--ink-soft); font-weight: 400; font-size: 13px; }
 .bug-error { margin-top: 10px; font-size: 12.5px; font-weight: 700; color: var(--stamp); }
 .bug-note { margin-top: 12px; font-size: 12px; line-height: 1.65; color: var(--ink-soft); }
 .bug-login { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); font-weight: 700; text-decoration: none; }
@@ -588,6 +629,9 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 
 /* 버튼은 서식표와 같은 폭으로 떨어지고, 둘씩 나란히 놓인다.
    버튼마다 한 줄을 먹으면 결과가 아니라 메뉴판처럼 보인다 */
+/* 접수 창구는 통지서가 아니라 적는 화면이라 단추가 서식 바로 뒤에 온다.
+   통지서처럼 바닥에 붙이면 다 적고도 한참 내려가야 단추가 나온다 */
+.bug-screen .result-actions { margin-top: 0; }
 .result-actions { margin-top: auto; padding-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 /* 셋 이상일 때만 주 버튼이 한 줄을 쓴다 */
 .result-actions:has(> :nth-child(3)) .btn-next { grid-column: 1 / -1; }
@@ -853,6 +897,10 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   .rep-head b { font-size: 13.5px; }
   .bug-body { font-size: 13.5px; }
   .bug-sel { font-size: 13px; }
+  .capledger th { width: 78px; padding: 8px 10px; }
+  .capledger td { padding: 8px 11px; font-size: 13.5px; }
+  .cap-write td { padding: 0; }
+  .cap-write input { padding: 8px 11px; font-size: 13.5px; }
   .share-link { font-size: 11px; padding: 5px 8px; margin-top: 14px; }
   .area-tab { font-size: 11px; padding: 4px 8px; }
   .locked { padding: 13px; }
