@@ -60,6 +60,19 @@
 - 배포: Vercel 프로젝트 `apt-gam` → **https://apt-game.app** (프로덕션 도메인, `apt-gam.vercel.app`은 307 리디렉션). Root Directory는 `web`, `DATABASE_URL`은 프로젝트 환경변수(Secret). 배포는 `.github/workflows/vercel-deploy.yml`이 푸시마다 Vercel Deploy Hook을 호출하는 한 경로로만 돈다 — 훅 URL은 Actions 시크릿 `VERCEL_DEPLOY_HOOK`, 깃 웹훅 경로는 `web/vercel.json`의 `{"git":{"deploymentEnabled":false}}`로 꺼 두었다(이중 배포 = 한도 2배 소모).
 - **배포 한도(중요)**: Hobby는 하루 100건이고 이 한도는 프로젝트가 아니라 **계정 전체 합산**이다. 넘으면 훅은 201을 돌려주지만 빌드가 아예 생성되지 않아 "푸시했는데 배포가 없다"로 보인다 — 세 번 겪었고 앞의 두 번은 웹훅 유실로 오진했다(대시보드 Create Deployment가 듣지 않고 `api-deployments-free-per-day` 에러가 뜨면 이것이다). 대책은 배포를 아끼는 것뿐이다: 작업 단계를 묶어 푸시하고, 검증은 로컬 `npm run build && npm start`로 끝낸 뒤 올린다. 한도는 24시간 롤링이라 오래된 배포가 빠지면서 풀린다.
 
+## 문서 최신화
+
+사용자가 **"문서 업데이트 하자"**라고 하면 `README.md`와 `docs/*.md`를 지금 코드 기준으로
+최신화한다. 기획 당시에 쓴 문서와 실제로 만들어진 것이 갈라져 있는 곳을 찾아 고친다:
+
+- `README.md` — 문서 맵과 현재 단계
+- `docs/01`~`05` — 개요·게임 기획·콘텐츠 파이프라인·기술 사양·확산과 운영
+- `docs/06-game-modes.md` — 세 창구와 무한/공식전 구조
+- `docs/07-account-and-records.md` — 계정·기록 동기화
+- `docs/08-glossary.md` — 용어집. 새 개념이 생겼으면 여기부터 올린다
+
+없어진 기능을 지우고, 새로 생긴 화면·테이블·규칙을 넣고, 용어가 용어집과 어긋나면 맞춘다.
+
 ## 커밋 규칙
 
 이 레포의 커밋 메시지는 vibelog가 매일 밤 읽어 데브로그 글과 쇼츠 영상을
