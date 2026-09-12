@@ -8,6 +8,8 @@ import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { areaPref } from "@/lib/local";
 import { areaXp, levelFromXp, playedAreas, titleFor } from "@/lib/level";
+import { rankShareText, shareLink } from "@/lib/sharecard";
+import { sfxTap } from "@/lib/sound";
 
 interface Row {
   rank: number;
@@ -44,6 +46,7 @@ export default function RankingPage() {
   const [board, setBoard] = useState<Board | null>(null);
   const [failed, setFailed] = useState(false);
   const [localXp, setLocalXp] = useState(0);
+  const [shared, setShared] = useState<"idle" | "shared" | "copied" | "failed">("idle");
   const meRow = useRef<HTMLLIElement | null>(null);
 
   useEffect(() => {
@@ -61,6 +64,7 @@ export default function RankingPage() {
     setBoard(null);
     setFailed(false);
     setLocalXp(areaXp(area));
+    setShared("idle");
     fetch(`/api/ranking${area ? `?area=${encodeURIComponent(area)}` : ""}`)
       .then((r) => r.json())
       .then((b: Board) => setBoard(b))
@@ -183,6 +187,34 @@ export default function RankingPage() {
               </>
             )}
           </div>
+
+          {/* 순위는 자랑이 되는 자리다. 남들 사이에서 내가 어디쯤인지가
+              그림 없이도 한 줄로 전해진다 */}
+          {mine && board && !board.locked && (
+            <button
+              type="button"
+              className="share-link"
+              onClick={async () => {
+                sfxTap();
+                setShared(
+                  await shareLink(
+                    rankShareText(label === "전국" ? "" : label, mine.rank, board.total, titleFor(lv(mine.xp))),
+                  ),
+                );
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
+                <path
+                  d="M5.6 8.4a2.6 2.6 0 0 0 3.7 0l2.1-2.1a2.6 2.6 0 0 0-3.7-3.7l-.7.7M8.4 5.6a2.6 2.6 0 0 0-3.7 0L2.6 7.7a2.6 2.6 0 0 0 3.7 3.7l.7-.7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+              {shared === "shared" ? "공유 완료" : shared === "copied" ? "링크 복사됨" : shared === "failed" ? "복사 실패" : "내 순위 공유"}
+            </button>
+          )}
 
           {failed && <p className="center-note">명부를 불러오지 못했습니다</p>}
           {!failed && !board && <p className="center-note">명부를 펼치는 중입니다</p>}

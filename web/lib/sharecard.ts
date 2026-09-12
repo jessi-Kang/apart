@@ -487,6 +487,15 @@ export function shareText(data: ShareCardData): string {
   return [`아파트 감별사 · ${name} 최고 연속 ${data.score}`, data.gradeName, SITE].join("\n");
 }
 
+/**
+ * 구역 명부에서 내 순위를 알리는 한 줄.
+ * 등수만 있으면 자랑도 초대도 안 된다 — 몇 명 중 몇 위인지와 직급을 같이 싣는다.
+ */
+export function rankShareText(area: string, rank: number, total: number, title: string): string {
+  const where = area || "전국";
+  return [`아파트 감별사 · ${where} 감별사 ${total}명 중 ${rank}위`, title, SITE].join("\n");
+}
+
 /** 링크만 간단히 넘긴다 (그림을 만들 것도 없이 퍼뜨리는 가벼운 길) */
 export async function shareLink(text: string): Promise<"shared" | "copied" | "failed"> {
   try {
