@@ -339,13 +339,6 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   padding: 3px 8px; color: var(--ink); white-space: nowrap;
 }
 .mode-chip.official { color: var(--stamp); border-color: var(--stamp); }
-/* 공식전 초대장: 무한 플레이 중 오늘의 랭킹전으로 건너가는 칩 */
-.official-chip {
-  margin-left: auto; font-size: 11px; font-weight: 700; color: var(--stamp);
-  border: 1.5px solid currentColor; border-radius: var(--radius); padding: 3px 9px;
-  background: none; cursor: pointer; transform: rotate(-2deg); letter-spacing: 0.02em;
-}
-.official-chip:active { transform: rotate(-2deg) translateY(1px); }
 .qname-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 0; min-height: 150px; }
 .qname {
   font-size: clamp(30px, 8.5vw, 44px); font-weight: 700; letter-spacing: -0.03em;
@@ -714,6 +707,6 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
    키보드 포커스 표시는 마우스·키보드 기기에 그대로 남는다 */
 @media (pointer: coarse) {
   /* 길게 눌렀을 때 버튼·도장·조각에 글자 선택 영역이 잡히지 않게 */
-  .btn, .tile, .slot, .chop, .mode-chip, .official-chip, .ledger .tt, .ledger .dd,
+  .btn, .tile, .slot, .chop, .mode-chip, .ledger .tt, .ledger .dd,
   .ledger-head, .area-k, .idb-lv, .sound-btn, .foot-install { user-select: none; -webkit-user-select: none; }
 }

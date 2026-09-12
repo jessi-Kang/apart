@@ -533,16 +533,6 @@ export default function AssemblePage() {
               <p className="qlabel mono qlabel-row">
                 <span className="mode-chip">무한</span>
                 {eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
-                {quiz && (
-                  <button
-                    type="button"
-                    className="official-chip"
-                    onClick={officialDone ? replayOfficial : startOfficial}
-                    disabled={busy}
-                  >
-                    {officialDone ? "성적표 보기" : "공식전 출전"}
-                  </button>
-                )}
               </p>
             ) : (
               <p className="qlabel mono qlabel-row">
