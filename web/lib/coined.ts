@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { AWARD_PER_DAY, COIN_POINTS } from "./coinrule";
 
 /**
  * 접수된 작명 (작명소).
@@ -14,10 +15,7 @@ import { neon } from "@neondatabase/serverless";
 
 const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
 
-/** 작명 한 건에 주는 점수. 감별 한 문제 값이다 — 고맙다는 표시지 벌이가 아니다 */
-export const COIN_POINTS = 12;
-/** 하루에 점수를 받을 수 있는 작명 수 */
-export const AWARD_PER_DAY = 5;
+export { COIN_POINTS, AWARD_PER_DAY } from "./coinrule";
 
 export interface CoinResult {
   ok: boolean;
