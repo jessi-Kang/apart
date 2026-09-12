@@ -465,6 +465,46 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   });
 }
 
+export const SITE = "https://apt-game.app";
+
+/**
+ * 공유에 함께 실을 한 줄.
+ * 그림만 나가면 본 사람이 찾아올 길이 없다 — 퍼져도 돌아오지 않는다.
+ * 이모지는 클립보드 공유 텍스트에만 쓴다는 규칙에 따라 여기서만 쓴다.
+ */
+export function shareText(data: ShareCardData): string {
+  // 문장은 용어집을 따른다: "10문제 중 7문제 적중", "최고 연속 12"
+  if (data.marks.length) {
+    const grid = data.marks.map((m) => (m ? "🟥" : "⬜")).join("");
+    return [
+      `아파트 감별사 제${data.episode}호 · ${data.total}문제 중 ${data.score}문제 적중`,
+      grid,
+      data.gradeName,
+      SITE,
+    ].join("\n");
+  }
+  const name = data.subtitle.replace(/\s*통지서$/, ""); // "무한 감별 통지서" → "무한 감별"
+  return [`아파트 감별사 · ${name} 최고 연속 ${data.score}`, data.gradeName, SITE].join("\n");
+}
+
+/** 링크만 간단히 넘긴다 (그림을 만들 것도 없이 퍼뜨리는 가벼운 길) */
+export async function shareLink(text: string): Promise<"shared" | "copied" | "failed"> {
+  try {
+    if (navigator.share) {
+      await navigator.share({ text, url: SITE });
+      return "shared";
+    }
+  } catch {
+    /* 시트를 닫았으면 복사로 내려간다 */
+  }
+  try {
+    await navigator.clipboard.writeText(`${text}`);
+    return "copied";
+  } catch {
+    return "failed";
+  }
+}
+
 /** 모바일이면 시스템 공유 시트, 아니면 파일 다운로드 */
 export async function shareCardImage(data: ShareCardData): Promise<"shared" | "downloaded"> {
   const blob = await renderShareCard(data);
@@ -474,7 +514,10 @@ export async function shareCardImage(data: ShareCardData): Promise<"shared" | "d
   const file = new File([blob], `apt-game-${data.date}.png`, { type: "image/png" });
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file] });
+      // 그림에 글과 주소를 같이 실어 보낸다. 그림만 나가면 본 사람이
+      // 찾아올 길이 없어서, 퍼져도 돌아오지 않는다
+      const withText = { files: [file], text: shareText(data) };
+      await navigator.share(navigator.canShare(withText) ? withText : { files: [file] });
       return "shared";
     } catch {
       /* 사용자가 시트를 닫음 → 다운로드 폴백 */

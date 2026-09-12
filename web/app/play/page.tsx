@@ -12,7 +12,8 @@ import { TimerBar } from "@/components/TimerBar";
 import { gradeFor } from "@/lib/grades";
 import { areaPref, bumpStreak, bumpEndlessRecord, comboState, endlessRecord, firstVisit, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
-import { shareCardImage } from "@/lib/sharecard";
+import { shareCardImage, type ShareCardData } from "@/lib/sharecard";
+import { ShareLink } from "@/components/ShareLink";
 import { sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
 interface TodayResponse {
@@ -307,30 +308,33 @@ export default function PlayPage() {
   const eGradeName =
     sBest > startBest.current ? "신기록 갱신" : eRate >= 0.8 ? "상급 감별" : eRate >= 0.5 ? "감별 수련" : "재수련 요망";
 
+  /** 공유 카드 내용. 통지서(이미지)와 링크 공유가 같은 값을 쓴다 */
+  const officialCard = (): ShareCardData => ({
+      episode: quiz?.episode ?? 0,
+      date: quiz?.date ?? "",
+      subtitle: "감별 결과 통지서",
+      score,
+      total: 10,
+      marks,
+      gradeName: grade.name,
+      stats: [
+        {
+          value: topPct !== null ? `상위 ${topPct}%` : "집계 중",
+          label: officialArea ? `오늘 ${officialArea} 순위` : "오늘 전국 순위",
+          accent: topPct !== null,
+        },
+        { value: `${Math.max(streak, 1)}일`, label: "연속 감별" },
+        { value: `${10 - score}번`, label: "AI에 속은 횟수" },
+        { value: `${comboState().best}`, label: "진짜 찾기 최고 연속" },
+      ],
+  });
+
   async function shareImage() {
     if (!quiz || imgState === "busy") return;
     sfxTap();
     setImgState("busy");
     try {
-      const result = await shareCardImage({
-        episode: quiz.episode,
-        date: quiz.date,
-        subtitle: "감별 결과 통지서",
-        score,
-        total: 10,
-        marks,
-        gradeName: grade.name,
-        stats: [
-          {
-            value: topPct !== null ? `상위 ${topPct}%` : "집계 중",
-            label: officialArea ? `오늘 ${officialArea} 순위` : "오늘 전국 순위",
-            accent: topPct !== null,
-          },
-          { value: `${Math.max(streak, 1)}일`, label: "연속 감별" },
-          { value: `${10 - score}번`, label: "AI에 속은 횟수" },
-          { value: `${comboState().best}`, label: "진짜 찾기 최고 연속" },
-        ],
-      });
+      const result = await shareCardImage(officialCard());
       setImgState(result);
     } catch {
       setImgState("failed");
@@ -344,31 +348,34 @@ export default function PlayPage() {
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
   const currentName = endless ? eq : quiz?.items[idx]?.name;
 
+  /** 공유 카드 내용. 통지서(이미지)와 링크 공유가 같은 값을 쓴다 */
+  const endlessCard = (): ShareCardData => ({
+      episode: quiz?.episode ?? 0,
+      date: quiz?.date ?? "",
+      subtitle: "무한 감별 통지서",
+      headerRight: `무한 감별 · ${mm}.${dd}`,
+      score: sBest,
+      total: eCount,
+      totalText: "연속",
+      marks: [], // 무한은 문제 수가 열려 있어 10칸 그리드로 못 담는다
+
+      gradeName: eGradeName,
+      stats: [
+        { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
+        { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 풀이 시간" },
+        { value: `${Math.max(eRec.best, sBest)}`, label: "역대 최고 연속", accent: sBest > startBest.current },
+        eTop !== null
+          ? { value: `상위 ${eTop}%`, label: "최근 7일 판 순위", accent: true }
+          : { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
+      ],
+  });
+
   async function shareEndlessImage() {
     if (!quiz || eImgState === "busy") return;
     sfxTap();
     setEImgState("busy");
     try {
-      const result = await shareCardImage({
-        episode: quiz.episode,
-        date: quiz.date,
-        subtitle: "무한 감별 통지서",
-        headerRight: `무한 감별 · ${mm}.${dd}`,
-        score: sBest,
-        total: eCount,
-        totalText: "연속",
-        marks: [], // 무한은 문제 수가 열려 있어 10칸 그리드로 못 담는다
-
-        gradeName: eGradeName,
-        stats: [
-          { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
-          { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 풀이 시간" },
-          { value: `${Math.max(eRec.best, sBest)}`, label: "역대 최고 연속", accent: sBest > startBest.current },
-          eTop !== null
-            ? { value: `상위 ${eTop}%`, label: "최근 7일 판 순위", accent: true }
-            : { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
-        ],
-      });
+      const result = await shareCardImage(endlessCard());
       setEImgState(result);
     } catch {
       setEImgState("failed");
@@ -556,6 +563,9 @@ export default function PlayPage() {
               </VRow>
             </VForm>
             <div className="cut" />
+            {/* 통지서를 뽑는 건 마음먹어야 하는 일이라 그냥 지나치는 사람이 많다.
+                그림 없이 한 번에 퍼뜨리는 가벼운 길을 옆에 작게 둔다 */}
+            <ShareLink data={endlessCard()} />
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
                 {eImgState === "busy"
@@ -609,6 +619,9 @@ export default function PlayPage() {
               </VRow>
             </VForm>
             <div className="cut" />
+            {/* 통지서를 뽑는 건 마음먹어야 하는 일이라 그냥 지나치는 사람이 많다.
+                그림 없이 한 번에 퍼뜨리는 가벼운 길을 옆에 작게 둔다 */}
+            <ShareLink data={officialCard()} />
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
                 {imgState === "busy"

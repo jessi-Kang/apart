@@ -12,7 +12,8 @@ import { TimerBar } from "@/components/TimerBar";
 import { findGradeFor } from "@/lib/grades";
 import { applyComboPick, areaPref, comboState, firstVisit, type ComboState } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
-import { shareCardImage } from "@/lib/sharecard";
+import { shareCardImage, type ShareCardData } from "@/lib/sharecard";
+import { ShareLink } from "@/components/ShareLink";
 import { sfxCombo, sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
 interface Round {
@@ -319,26 +320,29 @@ export default function FindRealPage() {
   const eGradeName =
     sMaxCombo > startBest.current ? "신기록 갱신" : sMaxCombo >= 5 ? "매의 눈" : "감정 수련";
 
+  /** 공유 카드 내용. 통지서(이미지)와 링크 공유가 같은 값을 쓴다 */
+  const officialCard = (): ShareCardData => ({
+      episode: quiz?.episode ?? 0,
+      date: quiz?.date ?? "",
+      subtitle: "진짜 찾기 감정 통지서",
+      score: hits,
+      total,
+      marks,
+      gradeName: dGrade.name,
+      stats: [
+        { value: `${combo.current}`, label: "이어지는 연속", accent: combo.current > 0 },
+        { value: `${combo.best}`, label: "역대 최고 연속" },
+        { value: `${total - hits}번`, label: "AI에 속은 횟수" },
+        { value: fmtSec(combo.bestAvgMs) ?? "-", label: "최고 기록 평균 판단" },
+      ],
+  });
+
   async function shareImage() {
     if (!quiz || imgState === "busy") return;
     sfxTap();
     setImgState("busy");
     try {
-      const result = await shareCardImage({
-        episode: quiz.episode,
-        date: quiz.date,
-        subtitle: "진짜 찾기 감정 통지서",
-        score: hits,
-        total,
-        marks,
-        gradeName: dGrade.name,
-        stats: [
-          { value: `${combo.current}`, label: "이어지는 연속", accent: combo.current > 0 },
-          { value: `${combo.best}`, label: "역대 최고 연속" },
-          { value: `${total - hits}번`, label: "AI에 속은 횟수" },
-          { value: fmtSec(combo.bestAvgMs) ?? "-", label: "최고 기록 평균 판단" },
-        ],
-      });
+      const result = await shareCardImage(officialCard());
       setImgState(result);
     } catch {
       setImgState("failed");
@@ -351,30 +355,33 @@ export default function FindRealPage() {
   const officialName = officialArea ? `제${ep}호 ${officialArea} 공식전` : `제${ep}호 공식전`;
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
 
+  /** 공유 카드 내용. 통지서(이미지)와 링크 공유가 같은 값을 쓴다 */
+  const endlessCard = (): ShareCardData => ({
+      episode: quiz?.episode ?? 0,
+      date: quiz?.date ?? "",
+      subtitle: "무한 진짜 찾기 통지서",
+      headerRight: `무한 감정 · ${mm}.${dd}`,
+      score: sMaxCombo,
+      total: eCount,
+      totalText: "연속",
+      marks: [], // 무한은 문제 수가 열려 있어 10칸 그리드로 못 담는다
+      gradeName: eGradeName,
+      stats: [
+        { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
+        { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 판단 시간" },
+        { value: `${Math.max(combo.best, sMaxCombo)}`, label: "역대 최고 연속", accent: sMaxCombo > startBest.current },
+        eTop !== null
+          ? { value: `상위 ${eTop}%`, label: "최근 7일 판 순위", accent: true }
+          : { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
+      ],
+  });
+
   async function shareEndlessImage() {
     if (!quiz || eImgState === "busy") return;
     sfxTap();
     setEImgState("busy");
     try {
-      const result = await shareCardImage({
-        episode: quiz.episode,
-        date: quiz.date,
-        subtitle: "무한 진짜 찾기 통지서",
-        headerRight: `무한 감정 · ${mm}.${dd}`,
-        score: sMaxCombo,
-        total: eCount,
-        totalText: "연속",
-        marks: [], // 무한은 문제 수가 열려 있어 10칸 그리드로 못 담는다
-        gradeName: eGradeName,
-        stats: [
-          { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
-          { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 판단 시간" },
-          { value: `${Math.max(combo.best, sMaxCombo)}`, label: "역대 최고 연속", accent: sMaxCombo > startBest.current },
-          eTop !== null
-            ? { value: `상위 ${eTop}%`, label: "최근 7일 판 순위", accent: true }
-            : { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
-        ],
-      });
+      const result = await shareCardImage(endlessCard());
       setEImgState(result);
     } catch {
       setEImgState("failed");
@@ -554,6 +561,9 @@ export default function FindRealPage() {
               </VRow>
             </VForm>
             <div className="cut" />
+            {/* 통지서를 뽑는 건 마음먹어야 하는 일이라 그냥 지나치는 사람이 많다.
+                그림 없이 한 번에 퍼뜨리는 가벼운 길을 옆에 작게 둔다 */}
+            <ShareLink data={endlessCard()} />
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
                 {eImgState === "busy"
@@ -615,6 +625,9 @@ export default function FindRealPage() {
               </VRow>
             </VForm>
             <div className="cut" />
+            {/* 통지서를 뽑는 건 마음먹어야 하는 일이라 그냥 지나치는 사람이 많다.
+                그림 없이 한 번에 퍼뜨리는 가벼운 길을 옆에 작게 둔다 */}
+            <ShareLink data={officialCard()} />
             <div className="result-actions">
               <button className="btn btn-next" onClick={shareImage} disabled={imgState === "busy"}>
                 {imgState === "busy"
