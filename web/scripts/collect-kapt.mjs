@@ -96,14 +96,39 @@ function difficultyOf(name) {
   return "easy";
 }
 
-async function getJson(url) {
-  const res = await fetch(url);
-  const text = await res.text();
-  if (!res.ok || text.trimStart().startsWith("<")) {
-    // 포털 에러는 XML(OpenAPI_ServiceResponse)로 온다 — 사유를 그대로 보여준다
-    throw new Error(`API 오류 (HTTP ${res.status}): ${text.slice(0, 300)}`);
+/** 다시 걸어 볼 만한 실패인가.
+ *  연결이 끊기거나 이름 풀이가 한 번 튄 것, 그리고 5xx는 잠시 뒤 되는 일이 많다.
+ *  인증키 오류나 쿼터 초과는 다시 걸어도 같은 답이 오므로 그대로 올린다. */
+function worthRetry(err) {
+  const m = String(err?.message ?? err);
+  if (/HTTP 5\d\d/.test(m)) return true;
+  return /fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up|DNS|resolver|network/i.test(m);
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * 수집은 수천 번 호출하는 긴 작업이라 중간에 한 번 튀는 일이 반드시 생긴다.
+ * 예전에는 목록 첫 호출에서 DNS가 한 번 튕긴 것만으로 통째로 죽어, 그날 수집이
+ * 통째로 날아갔다(예약 루틴이 헛돌았다). 잠깐 기다렸다 다시 건다.
+ */
+async function getJson(url, tries = 4) {
+  for (let i = 1; ; i++) {
+    try {
+      const res = await fetch(url);
+      const text = await res.text();
+      if (!res.ok || text.trimStart().startsWith("<")) {
+        // 포털 에러는 XML(OpenAPI_ServiceResponse)로 온다 — 사유를 그대로 보여준다
+        throw new Error(`API 오류 (HTTP ${res.status}): ${text.slice(0, 300)}`);
+      }
+      return JSON.parse(text);
+    } catch (e) {
+      if (i >= tries || !worthRetry(e)) throw e;
+      const wait = 2 ** i * 1000; // 2초 → 4초 → 8초
+      console.error(`재시도 ${i}/${tries - 1} (${wait / 1000}초 뒤): ${String(e.message ?? e).slice(0, 120)}`);
+      await sleep(wait);
+    }
   }
-  return JSON.parse(text);
 }
 
 async function listSido(sidoCode) {
