@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { sealDataUri } from "@/lib/sealsvg";
+import { OgSeal, SEAL_TEXT } from "@/lib/ogseal";
 import { episodeNumber } from "@/lib/daily";
 import { gradeFor } from "@/lib/grades";
 import { parseSlug } from "@/lib/slug";
@@ -31,7 +31,8 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
   const ep = r ? episodeNumber(r.date) : 1;
   const marks = r?.marks ?? Array(10).fill(false);
 
-  const text = `아파트 감별사 제회 결과 / 0123456789#${grade.name}`;
+  // 관인 링 글자도 같은 폰트로 그리므로 서브셋에 함께 넣는다
+  const text = `아파트 감별사 제호 결과 / 0123456789${grade.name}${SEAL_TEXT}`;
   const font = await loadFont(text);
 
   return new ImageResponse(
@@ -60,14 +61,21 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
             overflow: "hidden",
           }}
         >
-          {/* 관인은 글 위가 아니라 뒤에, 모서리에 걸쳐 잘리게 (화면과 같은 방식) */}
-          <img
-            src={sealDataUri()}
-            width={440}
-            height={440}
-            style={{ position: "absolute", top: -96, right: -128, opacity: 0.16, transform: "rotate(-14deg)" }}
-          />
-          <div style={{ fontSize: 40, color: "#1b1b1e", fontWeight: 700 }}>{`아파트 감별사 #${ep}`}</div>
+          {/* 관인은 통지서에 눌러 찍는 것이라 통째로 보이게 오른쪽 아래에
+              둔다. 전에는 모서리에 걸쳐 잘랐는데, 잘린 관인은 도장이 아니라
+              번진 얼룩으로 보였다 */}
+          <div
+            style={{
+              position: "absolute",
+              right: 34,
+              bottom: 34,
+              display: "flex",
+              transform: "rotate(-8deg)",
+            }}
+          >
+            <OgSeal size={220} opacity={0.5} />
+          </div>
+          <div style={{ fontSize: 40, color: "#1b1b1e", fontWeight: 700 }}>{`아파트 감별사 제${ep}호`}</div>
           <div style={{ fontSize: 120, color: "#1b1b1e", fontWeight: 700, lineHeight: 1 }}>{`${score} / 10`}</div>
           <div
             style={{

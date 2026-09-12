@@ -512,6 +512,19 @@ export function rankShareText(area: string, rank: number, total: number, title: 
   ].join("\n");
 }
 
+/**
+ * 사이트 자체를 권하는 글 (푸터 공유 단추).
+ *
+ * 성적 공유와 달리 내놓을 기록이 없으니, 무엇을 하는 곳인지 한 줄로 말하고
+ * 권하는 말로 닫는다. 여기서도 주소는 글 안에 한 번만 넣는다.
+ */
+export function siteShareText(): string {
+  return [
+    "[아파트 감별사] 진짜 아파트와 AI가 지은 이름 가려내기",
+    `매일 새 문제가 나옵니다. 당신은 몇 개나 가려낼까요 ${SITE}`,
+  ].join("\n");
+}
+
 /** 링크만 간단히 넘긴다 (그림을 만들 것도 없이 퍼뜨리는 가벼운 길) */
 export async function shareLink(text: string): Promise<"shared" | "copied" | "failed"> {
   try {

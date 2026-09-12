@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   const c = makeCaptcha();
-  if (!c) return NextResponse.json({ question: null });
-  const res = NextResponse.json({ question: c.question }, { headers: { "Cache-Control": "no-store" } });
+  if (!c) return NextResponse.json({ rows: null, ask: null });
+  const res = NextResponse.json({ rows: c.rows, ask: c.ask }, { headers: { "Cache-Control": "no-store" } });
   res.cookies.set(CAPTCHA_COOKIE, c.token, {
     httpOnly: true,
     sameSite: "lax",
