@@ -211,6 +211,11 @@ export default function BugPage() {
 
               {cap.rows && cap.ask && (
                 <div className="capbox">
+                  {/* 왜 갑자기 숫자를 옮겨 적으라는지 말해 준다. 이유 없이 뜨면
+                      "이건 또 뭐지" 하고 멈추게 된다 */}
+                  <p className="sec-cap">
+                    본인 확인<small>사람이 쓴 민원인지 확인합니다</small>
+                  </p>
                   <p className="cap-q">
                     아래 단지 대장에서 <b>{cap.ask}</b> 칸의 숫자를 그대로 옮겨 적으십시오
                   </p>
