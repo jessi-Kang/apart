@@ -3,6 +3,8 @@ import { kstDateString } from "@/lib/daily";
 import { checkAssemble } from "@/lib/assemble";
 import { normalizeArea } from "@/lib/areaparam";
 import { recordAnswer, answerRate } from "@/lib/stats";
+import { readSession } from "@/lib/auth";
+import { claimOfficialAnswer } from "@/lib/officialrun";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +29,19 @@ export async function POST(req: Request) {
   // practice 같은 "집계에 넣지 말라" 스위치는 두지 않는다. 어느 화면도 보낸
   // 적이 없는데 API만 받아 주고 있었고, 그 결과 아무나 흔적 없이 오늘의 정답을
   // 열 번 물어 표를 만들 수 있었다(레드팀 점검에서 실제로 만들어 봤다).
-  await recordAnswer(today, body.no!, result.correct, area, "assemble");
+  //
+  // 첫 답이 최종 답이다. 두 번째부터는 첫 답의 판정을 그대로 돌려주고 집계에
+  // 넣지 않는다 — 알고 나서 답을 바꿔도 소용이 없어야 순위가 뜻을 갖는다
+  const session = await readSession();
+  const claim = await claimOfficialAnswer({
+    uid: session?.uid ?? null,
+    date: today,
+    area,
+    mode: "assemble",
+    no: body.no!,
+    correct: result.correct,
+  });
+  if (claim.first) await recordAnswer(today, body.no!, result.correct, area, "assemble");
   const { rate, sample } = await answerRate(today, body.no!, 100, area, "assemble");
-  return NextResponse.json({ ...result, rate, sample });
+  return NextResponse.json({ ...result, correct: claim.correct, replay: !claim.first, rate, sample });
 }

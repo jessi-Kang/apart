@@ -25,6 +25,8 @@ export function hintTimes(slots: number): number[] {
 /** 화면에 적는 안내 — 칸이 많으면 다 늘어놓지 않고 범위로 줄인다 */
 export function hintTimeNote(slots: number): string {
   const t = hintTimes(slots);
-  if (t.length <= 4) return `${t.map((s) => `${s}초`).join(" · ")}에 초성이 한 글자씩 열립니다`;
-  return `${HINT_FIRST}초부터 ${HINT_LAST}초까지 ${t.length}번에 걸쳐 초성이 한 글자씩 열립니다`;
+  // 320px에서 마지막 줄이 20%만 차서 뚝 끊겼다. "초"를 매번 붙이지 않고
+  // 끝말을 줄인다 — <br>로 끊으면 폭이 바뀔 때 그 자리에서 그대로 꺾인다
+  if (t.length <= 4) return `${t.join(" · ")}초에 초성이 한 글자씩`;
+  return `${HINT_FIRST}초부터 ${HINT_LAST}초까지 ${t.length}번에 걸쳐 초성이 한 글자씩`;
 }
