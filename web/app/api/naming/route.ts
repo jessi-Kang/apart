@@ -3,7 +3,7 @@ import { readSession } from "@/lib/auth";
 import { blockIfUnreleased } from "@/lib/guard";
 import { normalizeArea } from "@/lib/areaparam";
 import { judgeName, piecesFor } from "@/lib/naming";
-import { saveCoined } from "@/lib/coined";
+import { myCoinTotals, saveCoined } from "@/lib/coined";
 
 export const dynamic = "force-dynamic";
 
@@ -51,5 +51,8 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ error: "store_unavailable" }, { status: 503 });
   }
-  return NextResponse.json({ verdict, ...saved });
+  // 접수하자마자 작명 호칭이 어디까지 왔는지 보여준다. 호칭은 감별 직급과
+  // 갈라진 축이라(lib/coinlevel.ts) 이 숫자를 화면이 따로 받아야 한다
+  const mine = session?.uid ? await myCoinTotals(session.uid) : null;
+  return NextResponse.json({ verdict, ...saved, mine });
 }

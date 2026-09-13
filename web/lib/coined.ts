@@ -87,3 +87,79 @@ export async function recentCoined(limit = 100): Promise<CoinedRow[]> {
     return [];
   }
 }
+
+/** 내가 지은 이름 한 줄 (속은 집계를 붙인 것) */
+export interface MyCoinedRow {
+  name: string;
+  area: string;
+  approved: boolean;
+  /** 감별 창구에 몇 번 걸렸나 */
+  shown: number;
+  /** 그중 몇 명이 속았나 */
+  fooled: number;
+}
+
+export interface MyCoined {
+  /** 접수한 이름 수 */
+  accepted: number;
+  /** 내 이름들이 속인 사람 수 합계 */
+  fooled: number;
+  /** 내 이름들이 걸린 횟수 합계 */
+  shown: number;
+  items: MyCoinedRow[];
+}
+
+/** 합계만. 호칭을 매기는 데는 목록이 필요 없다 (작명 접수 응답에서 쓴다) */
+export async function myCoinTotals(uid: number): Promise<{ accepted: number; fooled: number; shown: number }> {
+  const empty = { accepted: 0, fooled: 0, shown: 0 };
+  if (!sql) return empty;
+  try {
+    const rows = (await sql`
+      SELECT COUNT(*)::int AS accepted,
+             COALESCE(SUM(s.fooled), 0)::int AS fooled,
+             COALESCE(SUM(s.shown), 0)::int AS shown
+      FROM coined_name c
+      LEFT JOIN name_stats s ON s.name = c.name AND s.kind = 'fake'
+      WHERE c.user_id = ${uid}`) as { accepted: number; fooled: number; shown: number }[];
+    const r = rows[0];
+    return r ? { accepted: Number(r.accepted), fooled: Number(r.fooled), shown: Number(r.shown) } : empty;
+  } catch {
+    return empty;
+  }
+}
+
+/**
+ * 내가 지은 이름과 그 성적.
+ *
+ * 작명소는 "몇 명이 속았는지 세어 알려 드린다"고 약속한다. 그 약속을 지키는
+ * 곳이 여기다. 집계는 name_stats에 이름 단위로 쌓이므로(namestats.ts) 접수
+ * 대장과 이름으로 맞춰 붙인다 — 지은 이름은 감별 창구에서 가짜로 나가므로
+ * kind는 'fake' 쪽만 본다.
+ *
+ * 승인 전 이름은 아직 출제되지 않아 shown이 0이다. 0도 그대로 보여준다 —
+ * 줄을 감추면 접수한 것이 사라진 줄 안다.
+ */
+export async function myCoined(uid: number, limit = 50): Promise<MyCoined> {
+  const empty: MyCoined = { accepted: 0, fooled: 0, shown: 0, items: [] };
+  if (!sql) return empty;
+  try {
+    const rows = (await sql`
+      SELECT c.name, c.area, c.approved,
+             COALESCE(s.shown, 0)::int AS shown,
+             COALESCE(s.fooled, 0)::int AS fooled
+      FROM coined_name c
+      LEFT JOIN name_stats s ON s.name = c.name AND s.kind = 'fake'
+      WHERE c.user_id = ${uid}
+      ORDER BY COALESCE(s.fooled, 0) DESC, c.created_at DESC
+      LIMIT ${limit}`) as MyCoinedRow[];
+    // 합계는 목록과 따로 센다. 목록은 limit에서 잘리므로 거기서 더하면
+    // 이름이 많아진 사람의 합계가 조용히 줄어든다
+    const totals = await myCoinTotals(uid);
+    return {
+      ...totals,
+      items: rows.map((r) => ({ ...r, shown: Number(r.shown), fooled: Number(r.fooled) })),
+    };
+  } catch {
+    return empty;
+  }
+}
