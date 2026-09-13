@@ -82,7 +82,7 @@ export default function PlayPage() {
   useEffect(() => {
     setERec(endlessRecord("ox"));
     setArea(areaPref().replace(/특별자치시$|특별시$|광역시$/, ""));
-    // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다
+    // 홈 대장의 현황 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다
     const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
     // 공식전도 구역을 따른다. 같은 (날짜, 구역)이면 누구나 같은 10문제다
     const officialArea = areaPref();

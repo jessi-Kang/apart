@@ -2,7 +2,7 @@ import Link from "next/link";
 import { kstDateString, episodeNumber } from "@/lib/daily";
 import { regions } from "@/lib/data";
 import { visibleGames, hiddenGames, viewerIsOwner } from "@/lib/release";
-import { DailyChop } from "@/components/LedgerStatus";
+import { CoinChop, DailyChop } from "@/components/LedgerStatus";
 import { IdBadge } from "@/components/IdBadge";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
@@ -70,7 +70,7 @@ export default async function HomePage() {
             <div className="ledger-head mono">
               <span>순번</span>
               <span>창구</span>
-              <span>공식전</span>
+              <span>현황</span>
             </div>
             {games.map((g, i) => (
               <div className="row" key={g.key}>
@@ -90,11 +90,18 @@ export default async function HomePage() {
                     </span>
                   </span>
                 </Link>
-                {/* 공식전 칸은 그 자체가 출전구다. 무한 중에 뜨는 작은 칩으로만 열어 두니
-                    아무도 공식전을 찾지 못했다 */}
-                <Link className="st" href={`${g.href}?official=1`}>
-                  <DailyChop mode={g.key as "ox" | "assemble" | "findreal"} date={date} />
-                </Link>
+                {/* 현황 칸. 공식전이 있는 창구에서는 그 자체가 출전구다 — 무한 중에
+                    뜨는 작은 칩으로만 열어 두니 아무도 공식전을 찾지 못했다.
+                    공식전이 없는 창구(작명소)는 지금까지 접수한 이름을 세어 보여준다 */}
+                {g.official ? (
+                  <Link className="st" href={`${g.href}?official=1`}>
+                    <DailyChop mode={g.key as "ox" | "assemble" | "findreal"} date={date} />
+                  </Link>
+                ) : (
+                  <span className="st">
+                    <CoinChop />
+                  </span>
+                )}
               </div>
             ))}
             {/* 아직 안 열린 창구는 미개설 줄로만 비춘다. 손으로 박아 두면
@@ -115,8 +122,7 @@ export default async function HomePage() {
             ))}
           </nav>
           <p className="ledger-note">
-            창구 이름을 누르면 <b>무한</b>, 오른쪽 <b>출전하기</b>를 누르면 같은 구역끼리 겨루는{" "}
-            <b>공식전</b>입니다.
+            창구 이름을 누르면 <b>무한</b>, 오른쪽 <b>현황</b> 칸의 출전하기를 누르면 <b>공식전</b>입니다.
           </p>
           {owner && (
             <p className="inhouse">

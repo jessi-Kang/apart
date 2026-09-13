@@ -83,7 +83,7 @@ export default function FindRealPage() {
   useEffect(() => {
     setCombo(comboState());
     setArea(areaPref().replace(/특별자치시$|특별시$|광역시$/, ""));
-    // 홈 대장의 공식전 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
+    // 홈 대장의 현황 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
     // quiz가 들어온 뒤에 열어야 해서 깃발만 세우고 아래 effect에서 처리한다
     const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
     const officialArea = areaPref();
