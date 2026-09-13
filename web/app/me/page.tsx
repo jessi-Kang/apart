@@ -10,6 +10,7 @@ import { SheetFooter } from "@/components/SheetFooter";
 import { coinedCount, comboState, currentStreak, endlessRecord, type ComboState } from "@/lib/local";
 import { currentLevel, type LevelInfo } from "@/lib/level";
 import { coinLevel, coinScore } from "@/lib/coinlevel";
+import { coinStage } from "@/lib/coinstatus";
 import { episodeNumber, kstDateString } from "@/lib/episode";
 
 interface Me {
@@ -31,6 +32,8 @@ interface CoinedRow {
   name: string;
   area: string;
   approved: boolean;
+  rejected: boolean;
+  live: boolean;
   shown: number;
   fooled: number;
 }
@@ -308,7 +311,7 @@ export default function RecordPage() {
                       ) : (
                         // 뒷말("감별 창구에 올라가면 그때부터 셉니다")은 줄마다 되풀이하지
                         // 않는다. 검토 중인 이름이 여럿이면 같은 문장이 그 수만큼 쌓인다
-                        <small>{it.approved ? "출제 대기" : "검토 중"}</small>
+                        <small>{coinStage(it)}</small>
                       )}
                     </span>
                   </VRow>

@@ -19,6 +19,8 @@ export interface FakeName {
   name: string;
   hint: string;
   difficulty: Difficulty;
+  /** 작명소에서 사람이 지은 이름인가 (scripts/export-coined.mjs가 붙인다) */
+  coined?: boolean;
 }
 
 /**

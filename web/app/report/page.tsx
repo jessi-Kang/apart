@@ -25,7 +25,11 @@ interface Coined {
   user_id: number | null;
   created_at: string;
   approved: boolean;
+  rejected: boolean;
 }
+type CoinStatus = "pending" | "approved" | "rejected";
+const statusOf = (c: Coined): CoinStatus => (c.rejected ? "rejected" : c.approved ? "approved" : "pending");
+const STATUS_LABEL: Record<CoinStatus, string> = { pending: "대기", approved: "승인", rejected: "반려" };
 interface Bug {
   id: number;
   body: string;
@@ -51,7 +55,45 @@ export default function ReportPage() {
   const [data, setData] = useState<Report | null>(null);
   const [bugs, setBugs] = useState<Bug[] | null>(null);
   const [coined, setCoined] = useState<Coined[] | null>(null);
+  /** 접수 목록은 쪽으로 나눠 받는다. 37건에서 이미 화면이 9,190px이었다 */
+  const [cpage, setCpage] = useState(0);
+  const [cmeta, setCmeta] = useState({ total: 0, pending: 0, limit: 20 });
+  const [cscope, setCscope] = useState<"pending" | "all">("pending");
   const [failed, setFailed] = useState(false);
+  /** 지금 처리 중인 줄. 연타로 같은 줄에 두 번 쏘는 것을 막는다 */
+  const [busy, setBusy] = useState<number | null>(null);
+
+  /**
+   * 승인·반려 표시. 응답을 받고 나서야 화면을 바꾼다 — 먼저 바꿔 두면
+   * 저장이 실패했을 때 처리한 줄 알고 넘어가게 된다.
+   */
+  async function mark(id: number, status: CoinStatus) {
+    if (busy !== null) return;
+    setBusy(id);
+    try {
+      const res = await fetch("/api/coined", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+      if (!res.ok) {
+        setFailed(true);
+        return;
+      }
+      const approved = status === "approved";
+      const rejected = status === "rejected";
+      setCoined((prev) => {
+        const next = prev?.map((c) => (c.id === id ? { ...c, approved, rejected } : c)) ?? prev;
+        // "대기만" 보기에서는 처리한 줄이 목록에서 빠져야 남은 일이 줄어 보인다
+        return cscope === "pending" ? (next?.filter((c) => !c.approved && !c.rejected) ?? next) : next;
+      });
+      setCmeta((m) => ({ ...m, pending: Math.max(0, m.pending + (approved || rejected ? -1 : 1)) }));
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(null);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/report")
@@ -62,11 +104,25 @@ export default function ReportPage() {
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no"))))
       .then((d: { bugs: Bug[] }) => setBugs(d.bugs))
       .catch(() => setBugs([]));
-    fetch("/api/coined")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no"))))
-      .then((d: { coined: Coined[] }) => setCoined(d.coined))
-      .catch(() => setCoined([]));
   }, []);
+
+  // 작명 목록만 따로. 쪽이나 범위가 바뀔 때마다 다시 받는다
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/coined?offset=${cpage * cmeta.limit}&scope=${cscope}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no"))))
+      .then((d: { coined: Coined[]; total: number; pending: number; limit: number }) => {
+        if (!alive) return;
+        setCoined(d.coined);
+        setCmeta({ total: d.total, pending: d.pending, limit: d.limit });
+      })
+      .catch(() => alive && setCoined([]));
+    return () => {
+      alive = false;
+    };
+    // limit은 서버가 정하므로 의존성에 넣지 않는다 (넣으면 첫 응답에서 한 번 더 돈다)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cpage, cscope]);
 
   const table = (title: string, note: string, rows: NameRow[]) => (
     <>
@@ -146,7 +202,25 @@ export default function ReportPage() {
           {/* 사람이 지은 이름. 승인해야 출제 풀에 오르므로 여기서 훑는다 */}
           <div className="rep-head">
             <b>접수된 작명</b>
-            <small>승인해야 출제됩니다</small>
+            <small>
+              대기 {cmeta.pending} / 전체 {cmeta.total} · 승인 뒤 내보내야 출제됩니다
+            </small>
+          </div>
+          <div className="coin-head">
+            <span className="coin-sorts">
+              <button
+                className={`btn-mini${cscope === "pending" ? " on" : ""}`}
+                onClick={() => { setCscope("pending"); setCpage(0); }}
+              >
+                대기만
+              </button>
+              <button
+                className={`btn-mini${cscope === "all" ? " on" : ""}`}
+                onClick={() => { setCscope("all"); setCpage(0); }}
+              >
+                전체
+              </button>
+            </span>
           </div>
           {coined === null ? (
             <p className="center-note">작명함을 여는 중입니다</p>
@@ -154,19 +228,62 @@ export default function ReportPage() {
             <p className="center-note">아직 접수된 작명이 없습니다</p>
           ) : (
             <ul className="bug-list">
-              {coined.map((c) => (
-                <li key={c.id}>
-                  <div className="bmeta">
-                    <span className="bwhere">{c.area || "전국"}</span>
-                    <span>{new Date(c.created_at).toLocaleString("ko-KR")}</span>
-                    <span>{c.user_id ? `계정 ${c.user_id}` : "비회원"}</span>
-                    <span>{c.approved ? "승인됨" : "대기"}</span>
-                  </div>
-                  <div className="btext">{c.name}</div>
-                </li>
-              ))}
+              {coined.map((c) => {
+                const st = statusOf(c);
+                return (
+                  <li key={c.id}>
+                    <div className="bmeta">
+                      <span className="bwhere">{c.area || "전국"}</span>
+                      <span>{new Date(c.created_at).toLocaleString("ko-KR")}</span>
+                      <span>{c.user_id ? `계정 ${c.user_id}` : "비회원"}</span>
+                      <span className={`cstat cstat-${st}`}>{STATUS_LABEL[st]}</span>
+                    </div>
+                    <div className="btext">{c.name}</div>
+                    {/* 판단한 것도 되돌릴 수 있어야 한다. 잘못 누른 것을 고치려고
+                        DB를 직접 열게 되면 그건 화면이 제 몫을 못 한 것이다 */}
+                    <div className="cact">
+                      {st !== "approved" && (
+                        <button className="btn-mini" disabled={busy === c.id} onClick={() => void mark(c.id, "approved")}>
+                          승인
+                        </button>
+                      )}
+                      {st !== "rejected" && (
+                        <button className="btn-mini" disabled={busy === c.id} onClick={() => void mark(c.id, "rejected")}>
+                          반려
+                        </button>
+                      )}
+                      {st !== "pending" && (
+                        <button className="btn-mini" disabled={busy === c.id} onClick={() => void mark(c.id, "pending")}>
+                          되돌리기
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
+          {(() => {
+            const shown = cscope === "pending" ? cmeta.pending : cmeta.total;
+            if (shown <= cmeta.limit) return null;
+            return (
+              <div className="coin-pager">
+                <button className="btn-mini" onClick={() => setCpage((n) => Math.max(0, n - 1))} disabled={cpage === 0}>
+                  ‹ 이전 쪽
+                </button>
+                <span className="mono">
+                  {cpage + 1} / {Math.max(1, Math.ceil(shown / cmeta.limit))}
+                </span>
+                <button
+                  className="btn-mini"
+                  onClick={() => setCpage((n) => n + 1)}
+                  disabled={(cpage + 1) * cmeta.limit >= shown}
+                >
+                  다음 쪽 ›
+                </button>
+              </div>
+            );
+          })()}
 
           {/* 들어온 제보. 리포트에서 같이 봐야 따로 열어 볼 일이 없다 */}
           <div className="rep-head">

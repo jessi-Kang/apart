@@ -8,6 +8,7 @@ import { SheetFooter } from "@/components/SheetFooter";
 import { SoundToggle } from "@/components/SoundToggle";
 import { areaPref, bumpCoined, coinedCount, setAreaPref } from "@/lib/local";
 import { coinLevel, coinScore } from "@/lib/coinlevel";
+import { coinStage } from "@/lib/coinstatus";
 import { sfxPiece, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 import type { PieceGroup } from "@/lib/naming";
 import { AWARD_PER_DAY, COIN_POINTS } from "@/lib/coinrule";
@@ -29,6 +30,8 @@ interface CoinedRow {
   name: string;
   area: string;
   approved: boolean;
+  rejected: boolean;
+  live: boolean;
   shown: number;
   fooled: number;
 }
@@ -448,7 +451,7 @@ export function NamingForm({ regions, openMine = false }: { regions: Region[]; o
                             {Math.round((it.fooled / it.shown) * 100)}%
                           </small>
                         ) : (
-                          <small>{it.approved ? "출제 대기" : "검토 중"}</small>
+                          <small>{coinStage(it)}</small>
                         )}
                       </span>
                     </VRow>
