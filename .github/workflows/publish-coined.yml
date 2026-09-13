@@ -1,0 +1,132 @@
+# 승인된 작명을 출제 풀로 내보내는 야간 작업
+#
+# 왜 있나: 승인은 자동이 됐는데(말 거르기, lib/wordguard.ts) 그 이름을 실제
+# 출제로 보내려면 여전히 사람이 `npm run export-coined` → 커밋 → 배포를 돌려야
+# 했다. 승인을 자동화해 놓고 그 뒤를 손으로 하면 손품은 그대로 남는다.
+#
+# 왜 런타임에 DB를 읽지 않고 파일에 넣나: 출제 풀은 정적 JSON이고 공식전은
+# (날짜, 구역) 시드로 결정론이어야 한다. 런타임에 DB를 섞으면 같은 날 같은
+# 구역인데 사람마다 문제가 달라져 순위가 뜻을 잃는다.
+#
+# 안전장치 넷
+#   1) 접수 12시간이 지난 이름만 내보낸다. 자동 승인이 켜져 있으므로, 잘못
+#      통과한 이름을 발견하고 반려할 틈이 있어야 한다.
+#   2) 한 번에 30건까지. 무언가 잘못돼 수백 건이 승인돼 있어도 하루에 다
+#      나가지는 않는다.
+#   3) validate-pool이 실패하면 커밋하지 않는다.
+#   4) 넣을 이름이 없으면 커밋도 배포도 안 한다 — 배포 한도(계정 하루 100건)를
+#      빈손으로 쓰지 않는다.
+#
+# 필요한 시크릿
+#   DATABASE_URL        Neon 연결 문자열 (Settings → Secrets → Actions)
+#   VERCEL_DEPLOY_HOOK  기존 배포 훅. 없으면 커밋만 하고 배포는 안 쏜다
+#
+# 배포를 왜 여기서 직접 쏘나: Actions 기본 토큰으로 밀어 넣은 푸시는 다른
+# 워크플로를 깨우지 않는다(무한 루프 방지). vercel-deploy.yml이 안 도니
+# 이 작업이 훅을 직접 호출한다.
+name: publish-coined
+
+on:
+  schedule:
+    # 05:10 KST (20:10 UTC). 사람이 거의 안 쓰는 시간에 돌린다
+    - cron: "10 20 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-coined
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 받기
+        uses: actions/checkout@v4
+        with:
+          ref: claude/apartment-quiz-game-planning-i6rqe9
+
+      - name: 연결 문자열 확인
+        id: guard
+        env:
+          DB: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DB" ]; then
+            echo "::notice::DATABASE_URL 시크릿이 없어 건너뜁니다. Settings → Secrets → Actions에 넣어 주세요."
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Node 준비
+        if: steps.guard.outputs.skip == '0'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: 의존성 설치
+        if: steps.guard.outputs.skip == '0'
+        working-directory: web
+        run: npm ci
+
+      - name: 승인된 작명 내보내기
+        if: steps.guard.outputs.skip == '0'
+        working-directory: web
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/export-coined.mjs --min-age-hours=12 --max=30
+
+      - name: 출제 풀 검증
+        if: steps.guard.outputs.skip == '0'
+        working-directory: web
+        # 검증이 실패하면 여기서 멈춘다. 커밋 단계까지 못 간다
+        run: npm run validate-pool
+
+      - name: 말 거르기 사전 검증
+        if: steps.guard.outputs.skip == '0'
+        working-directory: web
+        # 새로 들어간 이름이 사전에 걸리면 안 된다. 걸리면 자동 승인이 샌 것이다
+        run: npm run check-wordguard
+
+      - name: 바뀐 게 있으면 커밋
+        if: steps.guard.outputs.skip == '0'
+        id: commit
+        run: |
+          if git diff --quiet -- web/data/fake_names.json; then
+            echo "::notice::새로 나갈 이름이 없습니다. 커밋도 배포도 하지 않습니다."
+            echo "changed=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          added=$(git diff --numstat -- web/data/fake_names.json | awk '{print $1}')
+          git config user.name "apt-gam-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add web/data/fake_names.json
+          git commit \
+            -m "chore: 승인된 작명을 출제 풀로 내보낸다 (야간 자동)" \
+            -m "작명소에서 접수돼 승인된 이름을 감별 창구 출제 풀에 넣었다. 승인은 말 거르기가 자동으로 하고(lib/wordguard.ts) 걸린 것만 사람이 본다. 접수 12시간이 지난 것만, 한 번에 30건까지 내보낸다 — 잘못 통과한 이름을 반려할 틈을 두고, 무언가 잘못돼도 하루에 다 나가지 않게 한다." \
+            -m "출제 풀이 정적 JSON인 이유는 공식전이 (날짜, 구역) 시드로 결정론이어야 해서다. 런타임에 DB를 섞으면 같은 날 같은 구역인데 사람마다 문제가 달라진다." \
+            -m ".github/workflows/publish-coined.yml"
+          git push
+          echo "changed=1" >> "$GITHUB_OUTPUT"
+          echo "::notice::출제 풀에 새 이름을 넣고 커밋했습니다 (+$added 줄)."
+
+      - name: 배포 훅 호출
+        if: steps.commit.outputs.changed == '1'
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::notice::VERCEL_DEPLOY_HOOK이 없어 배포는 건너뜁니다. 다음 푸시 때 함께 나갑니다."
+            exit 0
+          fi
+          code=$(curl -s -o /tmp/hook.out -w '%{http_code}' -X POST "$HOOK")
+          echo "deploy hook response: $code"
+          cat /tmp/hook.out
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Deploy Hook 호출 실패 ($code)"
+            exit 1
+          fi
