@@ -11,7 +11,8 @@
     "validate-pool": "node scripts/validate-pool.mjs",
     "collect-kapt": "node scripts/collect-kapt.mjs",
     "check-layout": "node scripts/check-layout.mjs",
-    "export-coined": "node scripts/export-coined.mjs"
+    "export-coined": "node scripts/export-coined.mjs",
+    "check-wordguard": "node --experimental-strip-types scripts/check-wordguard.mts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

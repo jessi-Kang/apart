@@ -42,7 +42,15 @@ export async function POST(req: Request) {
   if (body.check === true || !verdict.ok) return NextResponse.json({ verdict });
 
   const session = await readSession();
-  const saved = await saveCoined({ name, area, uid: session?.uid ?? null });
+  // 통과한 이름은 바로 승인된다. 걸린 말이 있으면 사유를 달아 대기로 보낸다
+  const saved = await saveCoined({
+    name,
+    area,
+    uid: session?.uid ?? null,
+    // 어느 갈래에 걸렸는지 그대로 남긴다. "보류"라고만 적어 두면 심사할 때
+    // 왜 걸렸는지 이름을 다시 뜯어봐야 한다
+    hold: verdict.ok && verdict.screen === "review" ? (verdict.group ?? "확인 필요") : "",
+  });
   if (!saved.ok) {
     // 이미 누가 지어 둔 이름과, 저장 자체가 안 된 것은 다른 일이다.
     // 썼는데 안 들어간 것을 들어간 줄 알면 두 번 잃으므로 실패는 그대로 알린다
