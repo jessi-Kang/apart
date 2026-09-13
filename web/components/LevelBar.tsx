@@ -33,6 +33,29 @@ export function LevelBar({ result }: { result?: XpResult | null }) {
   );
 }
 
+/**
+ * 눈금만. 기록 열람실은 제목이 이미 "Lv.N 직급"이라, 거기서 LevelBar를 쓰면
+ * 같은 줄이 한 화면에 두 번 나온다. 새 정보는 눈금과 남은 점수뿐이다.
+ */
+export function LevelGauge() {
+  const [info, setInfo] = useState<LevelInfo | null>(null);
+  useEffect(() => {
+    const refresh = () => setInfo(currentLevel());
+    refresh();
+    window.addEventListener(SYNC_EVENT, refresh);
+    return () => window.removeEventListener(SYNC_EVENT, refresh);
+  }, []);
+  if (!info) return null;
+  return (
+    <div className="levelbar lv-solo">
+      <div className="gauge">
+        <i style={{ transform: `scaleX(${Math.min(1, info.into / info.need)})` }} />
+      </div>
+      <p className="lv-left">다음 레벨까지 {info.need - info.into}점</p>
+    </div>
+  );
+}
+
 /** 홈 카드용 한 줄 요약 */
 export function LevelChip() {
   const [info, setInfo] = useState<LevelInfo | null>(null);

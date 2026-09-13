@@ -16,6 +16,29 @@ interface Region {
   sido: string;
   label: string;
 }
+/**
+ * 접수 목록 한 쪽에 담는 수.
+ *
+ * 쪽을 넘겨 보므로 이름이 몇 개든 이 화면의 길이는 여기서 더 늘지 않는다.
+ * 20으로 뒀더니 한 쪽이 3,900px이라 넘김의 뜻이 없었다(390px 폭 실측).
+ * 10이면 두 화면 남짓이다.
+ */
+const PAGE = 10;
+type Sort = "fooled" | "recent";
+interface CoinedRow {
+  name: string;
+  area: string;
+  approved: boolean;
+  shown: number;
+  fooled: number;
+}
+interface MyCoined {
+  signedIn: boolean;
+  accepted: number;
+  fooled: number;
+  shown: number;
+  items: CoinedRow[];
+}
 type Verdict =
   | { ok: true }
   | { ok: false; reason: "exists"; near: string }
@@ -41,8 +64,8 @@ type Done = { no?: string; awarded: boolean; points: number; name: string; total
  * 판정(실존 대조)은 서버에서만 한다. 실단지 목록을 내려주면 그것으로 감별
  * 창구의 답을 맞출 수 있다 — 작명소가 정답지를 흘리는 문이 되면 안 된다.
  */
-export function NamingForm({ regions }: { regions: Region[] }) {
-  const [phase, setPhase] = useState<"intro" | "make" | "done">("intro");
+export function NamingForm({ regions, openMine = false }: { regions: Region[]; openMine?: boolean }) {
+  const [phase, setPhase] = useState<"intro" | "make" | "done" | "mine">(openMine ? "mine" : "intro");
   const [area, setArea] = useState("");
   const [groups, setGroups] = useState<PieceGroup[]>([]);
   const [name, setName] = useState("");
@@ -56,6 +79,12 @@ export function NamingForm({ regions }: { regions: Region[] }) {
   const [shuffle, setShuffle] = useState(0);
   /** 지금까지 이 기기에서 접수한 수. 첫 화면에서 내 자리를 보여주는 데만 쓴다 */
   const [mine, setMine] = useState(0);
+  // 접수 목록. 한 쪽씩만 들고 있는다 — 이어 붙이면 이름이 백 개인 사람의
+  // 화면이 백 줄이 되고, 찾기는 스크롤 때문에 오히려 어려워진다
+  const [list, setList] = useState<MyCoined | null>(null);
+  const [page, setPage] = useState(0);
+  const [sort, setSort] = useState<Sort>("fooled");
+  const [listBusy, setListBusy] = useState(false);
 
   // 구역은 서버가 넘겨준다. 지난번에 고른 구역이 있으면 그대로 쓴다
   useEffect(() => {
@@ -104,6 +133,21 @@ export function NamingForm({ regions }: { regions: Region[] }) {
     setVerdict(null);
     setName((prev) => (prev ? `${prev} ${piece}` : piece).slice(0, 20));
   };
+
+  // 접수 목록 한 쪽. 쪽이나 정렬이 바뀔 때만 다시 받는다
+  useEffect(() => {
+    if (phase !== "mine") return;
+    let alive = true;
+    setListBusy(true);
+    fetch(`/api/coined/mine?offset=${page * PAGE}&limit=${PAGE}&sort=${sort}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no"))))
+      .then((d: MyCoined) => alive && setList(d))
+      .catch(() => alive && setList(null))
+      .finally(() => alive && setListBusy(false));
+    return () => {
+      alive = false;
+    };
+  }, [phase, page, sort]);
 
   async function submit() {
     if (busy || !name.trim() || !area) return;
@@ -155,6 +199,7 @@ export function NamingForm({ regions }: { regions: Region[] }) {
 
   // 접수 결과에 붙일 작명 호칭. 점수는 접수 수와 속인 수에서 나온다(lib/coinlevel.ts)
   const coinName = done ? coinLevel(coinScore(done.totals.accepted, done.totals.fooled)) : null;
+  const listName = coinLevel(coinScore(list?.accepted ?? 0, list?.fooled ?? 0));
 
   return (
     <div className="frame">
@@ -212,8 +257,11 @@ export function NamingForm({ regions }: { regions: Region[] }) {
                   <span>
                     한 명 속일 때마다 점수가 올라 <b className="accent">작명 호칭</b>이 붙습니다
                     <small>
-                      감별 직급과 따로 셉니다. 몇 명이 속았는지는 <Link href="/me">기록 열람실</Link>에서 봅니다
-                      {mine > 0 && ` (지금까지 ${mine}개 접수)`}
+                      감별 직급과 따로 셉니다. 몇 명이 속았는지는{" "}
+                      <button type="button" className="linkish" onClick={() => { sfxTap(); setPhase("mine"); }}>
+                        내 접수 목록
+                      </button>
+                      에서 봅니다{mine > 0 && ` (지금까지 ${mine}개 접수)`}
                     </small>
                   </span>
                 </VRow>
@@ -340,6 +388,103 @@ export function NamingForm({ regions }: { regions: Region[] }) {
             </>
           )}
 
+          {phase === "mine" && (
+            <>
+              <DocTitle eyebrow="접수목록" title="내가 지은 이름" />
+              {/* 요약이 먼저다. 목록만 펴 놓으면 내가 지금 어디쯤인지 알 수 없다 */}
+              <VForm>
+                <VRow label="작명 호칭">
+                  <span>
+                    <b>{listName.title}</b> <small className="mono">누적 {listName.score}점</small>
+                    <small>
+                      접수 {list?.accepted ?? 0}개 · 속인 사람 {list?.fooled ?? 0}명
+                      {listName.next && ` · ${listName.next.left}점 더 쌓으면 ${listName.next.title}`}
+                    </small>
+                  </span>
+                </VRow>
+              </VForm>
+
+              {/* 쪽을 넘겨 본다. 이어 붙이지 않으므로 이름이 몇 개든 이 화면의
+                  길이는 한 쪽(20줄)에서 더 늘지 않는다 */}
+              <div className="coin-head">
+                <span>
+                  {list && list.accepted > 0
+                    ? `${page * PAGE + 1}–${Math.min((page + 1) * PAGE, list.accepted)} / ${list.accepted}개`
+                    : "접수한 이름"}
+                </span>
+                <span className="coin-sorts">
+                  <button
+                    className={`btn-mini${sort === "fooled" ? " on" : ""}`}
+                    onClick={() => { sfxTap(); setSort("fooled"); setPage(0); }}
+                  >
+                    잘 속인 순
+                  </button>
+                  <button
+                    className={`btn-mini${sort === "recent" ? " on" : ""}`}
+                    onClick={() => { sfxTap(); setSort("recent"); setPage(0); }}
+                  >
+                    최근 순
+                  </button>
+                </span>
+              </div>
+
+              {listBusy && !list && <p className="center-note">목록을 불러오는 중입니다</p>}
+              {list && list.items.length === 0 && (
+                <p className="center-note">
+                  {list.signedIn
+                    ? "아직 접수한 이름이 없습니다"
+                    : "기록을 보관하지 않으면 지은 이름을 되찾아 드릴 수 없습니다"}
+                </p>
+              )}
+              {list && list.items.length > 0 && (
+                <VForm>
+                  {list.items.map((it, i) => (
+                    <VRow key={it.name} label={`${page * PAGE + i + 1}`}>
+                      <span>
+                        <b>{it.name}</b>
+                        {it.shown > 0 ? (
+                          <small>
+                            {it.shown}번 중 <span className="accent">{it.fooled}명</span> 속음 · 속은 비율{" "}
+                            {Math.round((it.fooled / it.shown) * 100)}%
+                          </small>
+                        ) : (
+                          <small>{it.approved ? "출제 대기" : "검토 중"}</small>
+                        )}
+                      </span>
+                    </VRow>
+                  ))}
+                </VForm>
+              )}
+
+              {list && list.accepted > PAGE && (
+                <div className="coin-pager">
+                  <button className="btn-mini" onClick={() => { sfxTap(); setPage((n) => Math.max(0, n - 1)); }} disabled={page === 0 || listBusy}>
+                    ‹ 이전 쪽
+                  </button>
+                  <span className="mono">
+                    {page + 1} / {Math.max(1, Math.ceil(list.accepted / PAGE))}
+                  </span>
+                  <button
+                    className="btn-mini"
+                    onClick={() => { sfxTap(); setPage((n) => n + 1); }}
+                    disabled={listBusy || (page + 1) * PAGE >= list.accepted}
+                  >
+                    다음 쪽 ›
+                  </button>
+                </div>
+              )}
+
+              <div className="result-actions">
+                <button className="btn btn-next" onClick={() => { sfxTap(); setPhase("make"); }}>
+                  이름 지으러 가기
+                </button>
+                <Link className="btn btn-ghost" href="/">
+                  창구로 돌아가기
+                </Link>
+              </div>
+            </>
+          )}
+
           {phase === "done" && done && coinName && (
             <>
               <DocTitle eyebrow="접수완료" title="작명을 접수했습니다" />
@@ -379,7 +524,11 @@ export function NamingForm({ regions }: { regions: Region[] }) {
                   <span>
                     검토 후 감별 창구에 올립니다
                     <small>
-                      몇 명이 속았는지는 <Link href="/me">기록 열람실</Link>에 이름마다 쌓입니다
+                      몇 명이 속았는지는{" "}
+                      <button type="button" className="linkish" onClick={() => { sfxTap(); setPhase("mine"); }}>
+                        내 접수 목록
+                      </button>
+                      에 이름마다 쌓입니다
                     </small>
                   </span>
                 </VRow>

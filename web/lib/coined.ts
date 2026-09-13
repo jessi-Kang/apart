@@ -139,11 +139,36 @@ export async function myCoinTotals(uid: number): Promise<{ accepted: number; foo
  * 승인 전 이름은 아직 출제되지 않아 shown이 0이다. 0도 그대로 보여준다 —
  * 줄을 감추면 접수한 것이 사라진 줄 안다.
  */
-export async function myCoined(uid: number, limit = 50): Promise<MyCoined> {
+/**
+ * 목록을 어떤 순서로 볼 것인가.
+ * fooled  잘 속인 순 — 자랑거리가 맨 위
+ * recent  최근 접수 순 — 방금 지은 것이 어떻게 됐는지 볼 때
+ */
+export type CoinSort = "fooled" | "recent";
+
+export async function myCoined(
+  uid: number,
+  limit = 20,
+  offset = 0,
+  sort: CoinSort = "fooled",
+): Promise<MyCoined> {
   const empty: MyCoined = { accepted: 0, fooled: 0, shown: 0, items: [] };
   if (!sql) return empty;
   try {
-    const rows = (await sql`
+    // 이름은 계속 쌓인다. 한 번에 다 내려주면 언젠가 응답이 감당 못 할 만큼
+    // 커지므로 처음부터 쪽으로 나눠 준다. 정렬 값은 열거형이라 문자열을
+    // 질의에 끼워 넣지 않는다 — 갈래를 나눠 둘 다 매개변수 질의로 둔다
+    const rows = (sort === "recent"
+      ? await sql`
+      SELECT c.name, c.area, c.approved,
+             COALESCE(s.shown, 0)::int AS shown,
+             COALESCE(s.fooled, 0)::int AS fooled
+      FROM coined_name c
+      LEFT JOIN name_stats s ON s.name = c.name AND s.kind = 'fake'
+      WHERE c.user_id = ${uid}
+      ORDER BY c.created_at DESC, c.id DESC
+      LIMIT ${limit} OFFSET ${offset}`
+      : await sql`
       SELECT c.name, c.area, c.approved,
              COALESCE(s.shown, 0)::int AS shown,
              COALESCE(s.fooled, 0)::int AS fooled
@@ -151,7 +176,7 @@ export async function myCoined(uid: number, limit = 50): Promise<MyCoined> {
       LEFT JOIN name_stats s ON s.name = c.name AND s.kind = 'fake'
       WHERE c.user_id = ${uid}
       ORDER BY COALESCE(s.fooled, 0) DESC, c.created_at DESC
-      LIMIT ${limit}`) as MyCoinedRow[];
+      LIMIT ${limit} OFFSET ${offset}`) as MyCoinedRow[];
     // 합계는 목록과 따로 센다. 목록은 limit에서 잘리므로 거기서 더하면
     // 이름이 많아진 사람의 합계가 조용히 줄어든다
     const totals = await myCoinTotals(uid);
