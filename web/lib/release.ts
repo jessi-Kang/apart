@@ -22,14 +22,22 @@ export interface GameDef {
   desc: string;
   /** 전원에게 열렸는가. false면 운영자에게만 보인다 */
   released: boolean;
+  /**
+   * 공식전이 있는 창구인가.
+   *
+   * 대장의 현황 칸이 이걸 보고 갈린다. 감별 셋은 같은 10문제로 겨룰 수 있어
+   * 공식전이 성립하지만, 작명소는 답이 없는 창구라 점수로 줄 세울 것이 없다.
+   * 없는 창구에까지 "출전하기"를 걸어 두면 눌러도 갈 데가 없다.
+   */
+  official: boolean;
 }
 
 export const GAMES: GameDef[] = [
-  { key: "ox", label: "감별 O/X", href: "/o", desc: "이름 하나를 보고 진짜/가짜", released: true },
-  { key: "assemble", label: "이름 조립", href: "/a", desc: "힌트로 단지명 조립", released: true },
-  { key: "findreal", label: "진짜 찾기", href: "/f", desc: "넷 중 진짜는 하나", released: true },
+  { key: "ox", label: "감별 O/X", href: "/o", desc: "이름 하나를 보고 진짜/가짜", released: true, official: true },
+  { key: "assemble", label: "이름 조립", href: "/a", desc: "힌트로 단지명 조립", released: true, official: true },
+  { key: "findreal", label: "진짜 찾기", href: "/f", desc: "넷 중 진짜는 하나", released: true, official: true },
   // 아직 전개 전이다. 운영자에게만 보이고, 확인이 끝나면 released를 true로 바꾼다
-  { key: "naming", label: "작명소", href: "/n", desc: "가짜 단지명 직접 짓기", released: false },
+  { key: "naming", label: "작명소", href: "/n", desc: "가짜 단지명 직접 짓기", released: false, official: false },
 ];
 
 export const gameByKey = (key: string): GameDef | undefined => GAMES.find((g) => g.key === key);

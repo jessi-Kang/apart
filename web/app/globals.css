@@ -215,6 +215,8 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
   content: ""; position: absolute; inset: 2px; border: 0.8px solid currentColor;
 }
 .chop.off { color: var(--ink-soft); border-style: dashed; transform: none; font-weight: 500; }
+/* 현황 칸의 도장이 링크일 때 (작명소 → 기록 열람실). 밑줄이 그어지면 도장이 아니라 글자로 읽힌다 */
+a.chop { text-decoration: none; }
 /* 전개 전 창구 표시 (운영자에게만 보인다) */
 .unreleased {
   font-style: normal; margin-left: 6px; padding: 1px 5px; vertical-align: 2px;
