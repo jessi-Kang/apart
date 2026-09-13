@@ -1147,3 +1147,29 @@ a.chop { text-decoration: none; }
   .btn, .tile, .slot, .chop, .mode-chip, .share-link, .area-tab, .ledger .tt, .ledger .dd,
   .ledger-head, .area-k, .idb-lv, .sound-btn, .foot-install { user-select: none; -webkit-user-select: none; }
 }
+
+/* 기록 열람실의 직급 눈금 (제목 아래 홀로 놓일 때). LevelBar와 달리
+   "Lv.N 직급" 줄이 없다 — 제목이 이미 그 말을 한다 */
+.lv-solo { max-width: 260px; margin: 10px auto 0; }
+.lv-solo .lv-left { margin-top: 5px; text-align: center; font-size: 11.5px; color: var(--ink-soft); }
+
+/* 글자 안에 섞이는 단추. 링크처럼 보이되 자리를 옮기지 않는다 */
+.linkish {
+  background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer;
+  text-decoration: underline; text-decoration-color: var(--stamp);
+  text-underline-offset: 2px; text-decoration-thickness: 1px;
+}
+.linkish:active { color: var(--stamp); }
+/* 서식 아래 안내 줄 안의 링크도 같은 차림이다. 기본 파란 밑줄이 나오면
+   종이 서류 위에 혼자 웹 링크로 뜬다 */
+.center-note a {
+  color: inherit; text-decoration: underline; text-decoration-color: var(--stamp);
+  text-underline-offset: 2px; text-decoration-thickness: 1px;
+}
+/* 접수 목록: 정렬 전환과 쪽 넘김 */
+.coin-sorts { display: inline-flex; gap: 6px; }
+.btn-mini.on { color: var(--stamp); border-color: currentColor; font-weight: 700; }
+.coin-pager {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin-top: 12px; font-size: 12px; color: var(--ink-soft);
+}

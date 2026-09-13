@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DocTitle, MiniGrid, VForm, VRow } from "@/components/VerdictForm";
-import { LevelBar } from "@/components/LevelBar";
+import { LevelGauge } from "@/components/LevelBar";
 import { GoogleMark } from "@/components/GoogleMark";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
@@ -48,6 +48,15 @@ interface DailyRun {
   area: string;
   topPct: number | null;
 }
+
+/**
+ * 열람실에 펴는 이름 수.
+ *
+ * 여기는 요약하는 자리다. 이어 붙이는 "더 보기"를 달면 이름이 백 개인 사람의
+ * 열람실이 백 줄짜리 목록이 된다 — 스크롤만 길어질 뿐 찾기는 더 어려워진다.
+ * 잘 속인 셋만 자랑으로 걸고, 전체는 작명소의 접수 목록에서 쪽을 넘겨 본다.
+ */
+const COIN_TOP = 3;
 
 const DAILY_KEYS = { ox: "aptgam:result", assemble: "aptgam:assemble", findreal: "aptgam:findreal" } as const;
 const GAMES = [
@@ -126,7 +135,7 @@ export default function RecordPage() {
     // 작명소가 아직 전개 전이면 404다. 그때는 칸을 아예 그리지 않는다 —
     // 안 열린 창구의 기록 칸이 먼저 보이면 그 창구가 있다는 것을 알려 주는 셈이다
     setCoinedHere(coinedCount());
-    fetch("/api/coined/mine")
+    fetch(`/api/coined/mine?limit=${COIN_TOP}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: MyCoined | null) => setCoined(d))
       .catch(() => undefined);
@@ -180,6 +189,9 @@ export default function RecordPage() {
           <p className="stamp-sub">
             {loaded ? `누적 ${level?.xp ?? 0}점 · 연속 출전 ${Math.max(streak.count, 0)}일` : "기록을 불러오는 중"}
           </p>
+          {/* 직급 눈금은 제목 바로 아래다. 아래쪽 표에 따로 칸을 두면 같은
+              "Lv.N 직급"이 한 화면에 두 번 나온다 */}
+          {loaded && <LevelGauge />}
 
           {/* 위는 판을 거듭하며 쌓이는 것, 아래는 오늘 하루짜리다. 이름표가
               없으면 둘 다 그냥 "내 기록"으로 읽혀 오늘 성적이 누적으로 보인다 */}
@@ -217,7 +229,7 @@ export default function RecordPage() {
               const areaName = (run?.area ?? "").replace(/특별자치시$|특별시$|광역시$/, "");
               const rank = ranks?.daily?.[g.mode];
               return (
-                <VRow key={g.mode} label={`${g.label} 공식전`}>
+                <VRow key={g.mode} label={g.label}>
                   {run ? (
                     <>
                       <MiniGrid
@@ -242,14 +254,17 @@ export default function RecordPage() {
                       </span>
                     </>
                   ) : (
-                    <>
-                      미출전 <small>접수 대장의 현황 칸에서 신청합니다</small>
-                    </>
+                    <>미출전</>
                   )}
                 </VRow>
               );
             })}
           </VForm>
+          {/* 같은 안내를 행마다 되풀이하면 표가 안내문이 된다. 아직 안 친 창구가
+              있을 때만, 표 아래에 한 번 */}
+          {GAMES.some((g) => !daily[g.mode]) && (
+            <p className="center-note">공식전 신청은 접수 대장의 현황 칸에서</p>
+          )}
 
           {/* 작명소 칸. 창구가 전개 전이면 응답이 404라 coined가 null이고 칸이 통째로 없다.
               작명소 첫 화면이 "몇 명이 속았는지 세어 알려 드린다"고 약속하므로,
@@ -258,7 +273,7 @@ export default function RecordPage() {
             <>
               <div className="cut" />
               <p className="sec-cap">
-                내가 지은 이름<small>작명소 · 속인 사람 수만큼 호칭이 오릅니다</small>
+                내가 지은 이름<small>잘 속인 순 {COIN_TOP}개 · 속인 사람 수만큼 호칭이 오릅니다</small>
               </p>
               <VForm>
                 <VRow label="작명 호칭">
@@ -281,7 +296,7 @@ export default function RecordPage() {
                 </VRow>
                 {/* 이름은 값 칸에 둔다. 이름표 칸은 폭이 고정이라 긴 단지명을 넣으면
                     옆 칸 글자 위로 넘어간다(실제로 겹쳤다). 대장처럼 순번을 이름표로 쓴다 */}
-                {coined.items.slice(0, 10).map((it, i) => (
+                {coined.items.map((it, i) => (
                   <VRow key={it.name} label={`${i + 1}`}>
                     <span>
                       <b>{it.name}</b>
@@ -291,7 +306,9 @@ export default function RecordPage() {
                           {Math.round((it.fooled / it.shown) * 100)}%
                         </small>
                       ) : (
-                        <small>{it.approved ? "출제 대기" : "검토 중"} · 감별 창구에 올라가면 그때부터 셉니다</small>
+                        // 뒷말("감별 창구에 올라가면 그때부터 셉니다")은 줄마다 되풀이하지
+                        // 않는다. 검토 중인 이름이 여럿이면 같은 문장이 그 수만큼 쌓인다
+                        <small>{it.approved ? "출제 대기" : "검토 중"}</small>
                       )}
                     </span>
                   </VRow>
@@ -307,24 +324,22 @@ export default function RecordPage() {
                   </VRow>
                 )}
               </VForm>
-              {coined.items.length > 10 && (
-                <p className="center-note">많이 속인 이름 10개만 보여 드립니다 (접수 {coined.accepted}개)</p>
+              {coined.accepted > coined.items.length && (
+                <p className="center-note">
+                  <Link href="/n?mine=1">접수한 이름 {coined.accepted}개 전부 보기</Link>
+                </p>
               )}
             </>
           )}
 
-          {/* 직급과 계정은 오늘 성적이 아니라 이 사람에 대한 것이다. 공식전 표
-              안에 같이 두면 "오늘의 공식전" 이름표가 셋을 다 덮어 버린다 */}
-          <p className="sec-cap">
-            감별사 정보<small>직급 · 계정</small>
-          </p>
-          <VForm>
-            <VRow label="직급">
-              <LevelBar />
-            </VRow>
-            {me?.configured && (
-              <VRow label="계정">
-                <span className="acct-line">
+          {/* 계정은 오늘 성적이 아니라 이 사람에 대한 것이라 제 칸을 갖는다.
+              직급 칸은 없앴다 — 제목과 그 아래 눈금이 이미 같은 말을 한다 */}
+          {me?.configured && (
+            <>
+              <p className="sec-cap">계정</p>
+              <VForm>
+                <VRow label="보관">
+                  <span className="acct-line">
                   {me.user ? (
                     <>
                       <GoogleMark />
@@ -354,10 +369,11 @@ export default function RecordPage() {
                       <small>지금까지 친 기록도 그대로 이어집니다</small>
                     </>
                   )}
-                </span>
-              </VRow>
-            )}
-          </VForm>
+                  </span>
+                </VRow>
+              </VForm>
+            </>
+          )}
 
           {/* 여기서 나가는 길은 접수 창구 하나다. 전에는 이 단추가 감별 O/X로
               바로 넘어갔는데, 열람실에서 나오는 사람이 무엇을 하고 싶은지는
