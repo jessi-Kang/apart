@@ -74,6 +74,36 @@ async function req(pathname, { cookie, method = "GET", body, headers = {} } = {}
   return { status: res.status, text, json, headers: res.headers };
 }
 
+/**
+ * 쿠키를 이어 주는 요청기. 서버가 판 진행 상태를 쿠키로 들고 있어서,
+ * 한 판을 흉내 내려면 받은 쿠키를 되돌려 보내야 한다.
+ */
+function jar(initial = "") {
+  let cookie = initial;
+  return {
+    get cookie() {
+      return cookie;
+    },
+    drop() {
+      cookie = initial;
+    },
+    async req(pathname, opts = {}) {
+      const r = await req(pathname, { ...opts, cookie: cookie || undefined });
+      const set = r.headers.get("set-cookie");
+      if (set) {
+        // 여러 쿠키가 한 줄로 합쳐져 오기도 한다. 이름=값만 추려 이어 붙인다
+        const parts = set.split(/,(?=[^;]+?=)/).map((c) => c.split(";")[0].trim());
+        const map = new Map(
+          (cookie ? cookie.split("; ") : []).filter(Boolean).map((c) => [c.split("=")[0], c]),
+        );
+        for (const pcookie of parts) map.set(pcookie.split("=")[0], pcookie);
+        cookie = [...map.values()].join("; ");
+      }
+      return r;
+    },
+  };
+}
+
 const sess = (t) => (t ? `aptgam_session=${t}` : undefined);
 const kstToday = () => new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
 
@@ -260,20 +290,60 @@ async function answer() {
     ok("[정답] 흔적 없이 정답을 캐는 스위치", "판정 라우트 3곳에 집계 우회 스위치 없음");
   }
 
-  // 같은 문제를 몇 번이고 다시 받아 주는가. 받아 준다면 정답표를 만들 수 있다
-  const first = await req("/api/quiz/answer", { method: "POST", body: { date, no, choice: "real" } });
-  const again = await req("/api/quiz/answer", { method: "POST", body: { date, no, choice: "fake" } });
-  if (first.status === 200 && again.status === 200) {
+  // 한 판 안에서 답을 바꿀 수 있는가.
+  //
+  // 즉시 정답 공개가 설계라 "첫 답에 정답이 드러나는 것"은 못 막는다. 막아야
+  // 하는 건 알고 나서 답을 바꾸는 쪽이라, 거절(409)이 아니라 첫 답 고정이
+  // 통과 조건이다 — 네트워크가 끊겨 같은 요청이 두 번 가는 일이 실제로 있고,
+  // 그때 막아 버리면 정직하게 친 사람이 문제를 잃는다.
+  const run = jar();
+  const a1 = await run.req("/api/quiz/answer", { method: "POST", body: { date, no, choice: "real" } });
+  const a2 = await run.req("/api/quiz/answer", { method: "POST", body: { date, no, choice: "fake" } });
+  if (a1.status !== 200 || a2.status !== 200) {
+    unknown("[정답] 한 판에서 답을 바꿀 수 있는가", `판정이 안 돌아온다 (${a1.status}, ${a2.status})`);
+  } else if (a2.json?.replay === true && a2.json?.correct === a1.json?.correct) {
+    ok("[정답] 한 판에서 답을 바꿀 수 있는가", "두 번째 답은 첫 판정 그대로 (replay)");
+  } else {
     bad(
-      "[정답] 같은 문제를 다시 받아 주는가",
-      "한 문제에 양쪽 답을 다 눌러 정답을 알아낼 수 있다(둘 다 200).\n" +
-        "         즉시 정답 공개가 설계라 판정 자체는 막을 수 없지만, 공식전 순위가 실력을\n" +
-        "         뜻하려면 판을 서버가 들고 한 문제당 한 번만 받아야 한다. 지금은 집계에\n" +
-        "         전부 남으므로 조용한 부정은 아니다 — 순위를 걸기 전에 정할 일이다.",
+      "[정답] 한 판에서 답을 바꿀 수 있는가",
+      `real로 ${a1.json?.correct} 받은 뒤 fake로 바꾸니 ${a2.json?.correct}가 됐다.\n` +
+        "         한 문제에 양쪽을 다 눌러 보면 그날 공식전을 만점으로 칠 수 있다.",
+    );
+  }
+
+  // 쿠키를 버리고 와도 첫 답이 남는가. 로그인한 사람은 DB에도 남아야 한다
+  const owner = token({ own: true });
+  if (!owner) {
+    unknown("[정답] 쿠키를 버려도 첫 답이 남는가", "AUTH_SECRET이 없어 로그인 분기를 못 만든다");
+  } else if (process.env.REDTEAM_DB !== "1") {
+    // .env.local에 연결 문자열이 있는 것과 "지금 띄운 서버가 DB에 붙어 있는
+    // 것"은 다르다. 파일만 보고 판단했다가 DB 없이 띄운 서버를 두고 방어가
+    // 뚫렸다고 잘못 적은 적이 있다. 계정 쪽 잠금은 DB를 붙인 별도 실행에서만 잰다
+    unknown(
+      "[정답] 쿠키를 버려도 첫 답이 남는가",
+      "이 점검은 DB를 떼고 돌린다. 계정 쪽 잠금은 DB를 붙여 띄운 뒤 REDTEAM_DB=1로 따로 잰다",
     );
   } else {
-    ok("[정답] 같은 문제를 다시 받아 주는가", `두 번째 시도 ${again.status}`);
+    const no2 = today.json.items[1]?.no ?? no;
+    const c = sess(owner);
+    const b1 = await req("/api/quiz/answer", { method: "POST", cookie: c, body: { date, no: no2, choice: "real" } });
+    const b2 = await req("/api/quiz/answer", { method: "POST", cookie: c, body: { date, no: no2, choice: "fake" } });
+    if (b2.json?.replay === true && b2.json?.correct === b1.json?.correct) {
+      ok("[정답] 쿠키를 버려도 첫 답이 남는가", "계정에 첫 답이 남아 판정이 안 바뀐다");
+    } else {
+      bad(
+        "[정답] 쿠키를 버려도 첫 답이 남는가",
+        "판 쿠키 없이 다시 답했더니 판정이 바뀌었다. 쿠키를 지우면 그만인 방어다.",
+      );
+    }
   }
+
+  // 비회원이 판을 새로 열면 여전히 한 문제씩 캘 수 있다. 못 막는 것을
+  // 막았다고 적어 두지 않는다 — 판을 계정에 묶기 전까지 남는 구멍이다
+  unknown(
+    "[정답] 비회원이 판을 새로 열어 캐는 것",
+    "쿠키를 버리고 다시 열면 한 문제씩은 캘 수 있다. 판을 계정에 묶어야 닫힌다",
+  );
 }
 
 /* ---------- 4. 입력 검증 ---------- */
