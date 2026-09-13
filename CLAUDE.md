@@ -62,12 +62,32 @@
 - **화면 경로는 한 글자다**: 감별 O/X `/o`, 이름 조립 `/a`, 진짜 찾기 `/f`, 작명소 `/n`, 기록 열람실 `/me`, 구역 명부 `/top`. 주소창에 게임 속내를 다 적어 두지 않으려고 줄였다. 옛 경로(`/play`·`/assemble`·`/findreal`·`/record`·`/ranking`)는 `next.config.mjs`의 `MOVED`가 308로 넘긴다(질의 문자열도 따라간다) — 이미 밖에 나간 링크와 설치해 둔 앱의 시작 주소가 있어서 지우지 않는다. 창구를 새로 만들면 글자 하나를 더 잡고 `lib/release.ts`의 `href`에 적는다. **순번(`/1`·`/2`)은 쓰지 않는다** — 대장의 번호는 보여 주는 순서라 창구가 늘거나 자리가 바뀌면 링크가 통째로 어긋난다.
 - **작명소(`/n`)는 사람이 가짜를 짓는 창구다.** 감별 셋과 방향이 반대라 첫 화면이 "왜 하는가"부터 말한다. 구역을 먼저 고르게 하고(아파트 이름의 절반은 동네 이름이다) 그 구역의 실제 동 이름을 조각으로 준다. 조각 어휘는 지어내지 않고 실단지에서 실제로 쓰이는 것을 세어 뽑았다(`lib/naming.ts`). **실존 대조는 서버에서만 한다** — 실단지 목록을 내려주면 그걸로 감별 창구의 답을 맞출 수 있다. 임계값은 `validate-pool`과 같아야 한다. 지은 이름은 `coined_name`에 쌓이고 **승인(approved)해야 출제 풀에 오른다** — 형식 검사만으로는 욕설·비하를 다 거르지 못한다. 접수 목록은 `/report`에서 본다. 작명 한 건 12점, 하루 다섯 건까지.
 - 출제 풀: `lib/data.ts`의 `ADMIN_NOISE`가 관리 단위 행(`201동`·`제2관리사무소`·`임대` 등)을 출제 전에 뺀다. 규칙을 바꾸면 `scripts/validate-pool.mjs`의 같은 정규식도 같이 고친다.
+- **목록은 쪽으로 나눈다.** 이름·기록처럼 계속 쌓이는 것을 "더 보기"로 이어 붙이면 화면만 길어지고 찾기는 오히려 어려워진다. 기록 열람실은 **요약하는 자리**라 잘 속인 셋만 걸고, 전체는 작명소의 접수 목록에서 한 쪽 10개씩 넘겨 본다(정렬은 잘 속인 순·최근 순). 한 쪽 20개로 뒀더니 390px에서 3,900px이 나와 넘김의 뜻이 없었다. API도 처음부터 `limit`·`offset`·`sort`를 받는다 — 정렬 값은 열거형으로 걸러 질의에 문자열을 끼워 넣지 않는다.
 - **작명 호칭은 감별 직급과 갈라 둔다**(`lib/coinlevel.ts`). 합치면 이름을 많이 지은 사람이 감별 직급으로 올라가고, 직급은 구역 명부 순위의 기준이라 감별 순위가 작명으로 오염된다. 작명 점수 = 접수 한 건(`COIN_POINTS`) + 그 이름이 속인 사람 수 1명당 1점이고, 호칭 사다리는 감별 직급과 말이 겹치지 않게 짓는다(화면에서 어느 쪽 호칭인지 구별이 안 된다). 내가 지은 이름과 속은 수는 기록 열람실(`/me`)의 '내가 지은 이름' 칸에서 본다(`/api/coined/mine`, `coined_name`과 `name_stats`를 이름으로 맞춰 붙인다) — 작명소 첫 화면이 그렇게 약속하므로 약속을 지킬 자리가 있어야 한다.
 - 게임 구조: **무한 모드가 본편** — 창구 진입 즉시 무한 세션 시작, 경쟁은 누적 기록(레벨·최고 연속·콤보)과 판 단위(세션 종료 시 최근 7일 익명 백분위, `endless_runs`). 데일리 10문제는 "제N호 공식전"으로 강등 — 홈 대장에서 선택 참가하는 랭킹전(question_stats·score_dist 집계는 공식전만)이고, 출전한 뒤에는 같은 칸이 "성적표" 도장이 되어 저장된 결과를 다시 연다. 무한 판은 결과를 안 보고 떠나도(공식전 전환·로고 클릭) 집계와 경험치에 접수된다.
 - 집계 DB: Neon Postgres (프로젝트 frosty-term-36707081, DB `aptgam`, 테이블 question_stats·score_dist·endless_runs·app_user·user_state·name_stats·bug_report·coined_name). **로컬에서 쓰기 경로를 테스트할 때는 `DATABASE_URL=`을 비워서 띄운다** — `.env.local`에 운영 연결 문자열이 있어서 그냥 띄우면 테스트 기록이 운영 집계에 섞인다(실제로 한 번 섞여 지웠다). 연결 문자열은 `web/.env.local`(로컬)과 Vercel 배포의 env로만 주입하고 절대 커밋하지 않는다.
 - 계정: 구글 OAuth 코드 플로우 직접 구현(의존성 0, `lib/auth.ts` HMAC 세션 쿠키). 필요 env: `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`·`AUTH_SECRET`(모두 `web/.env.local` + Vercel, 절대 커밋 금지) — 하나라도 없으면 로그인 UI가 자동으로 숨고 비회원 모드만 동작한다. 기록 동기화 규약·병합은 `lib/sync.ts`(서버·클라 공용), 클라이언트 훅은 `lib/cloud.ts`(로그인 시에만 push/pull). 리디렉션 URI는 프로덕션에서 `https://apt-game.app/api/auth/callback` 하나로 고정된다(`requestOrigin`이 VERCEL_ENV=production일 때 정식 도메인을 반환하고, `middleware.ts`가 다른 호스트를 308로 넘긴다). 로컬은 요청 origin을 그대로 쓰므로 `http://localhost:3000/api/auth/callback`도 콘솔에 등록해 둔다. **주소를 늘리지 않는다** — 한때 옛 베르셀 주소(`apt-gam-jessikang.vercel.app`)가 살아 있어 그때 설치한 PWA가 그 주소로 로그인을 요청했고 `redirect_uri_mismatch`로 막혔다. 콘솔에 주소를 추가하는 대신 주소를 하나로 모으는 쪽으로 고쳤다(주소가 둘이면 세션 쿠키와 로컬 기록도 둘로 갈린다).
 - 배포: Vercel 프로젝트 `apt-gam` → **https://apt-game.app** (프로덕션 도메인, `apt-gam.vercel.app`은 307 리디렉션). Root Directory는 `web`, `DATABASE_URL`은 프로젝트 환경변수(Secret). 배포는 `.github/workflows/vercel-deploy.yml`이 푸시마다 Vercel Deploy Hook을 호출하는 한 경로로만 돈다 — 훅 URL은 Actions 시크릿 `VERCEL_DEPLOY_HOOK`, 깃 웹훅 경로는 `web/vercel.json`의 `{"git":{"deploymentEnabled":false}}`로 꺼 두었다(이중 배포 = 한도 2배 소모).
 - **배포 한도(중요)**: Hobby는 하루 100건이고 이 한도는 프로젝트가 아니라 **계정 전체 합산**이다. 넘으면 훅은 201을 돌려주지만 빌드가 아예 생성되지 않아 "푸시했는데 배포가 없다"로 보인다 — 세 번 겪었고 앞의 두 번은 웹훅 유실로 오진했다(대시보드 Create Deployment가 듣지 않고 `api-deployments-free-per-day` 에러가 뜨면 이것이다). 대책은 배포를 아끼는 것뿐이다: 작업 단계를 묶어 푸시하고, 검증은 로컬 `npm run build && npm start`로 끝낸 뒤 올린다. 한도는 24시간 롤링이라 오래된 배포가 빠지면서 풀린다.
+
+## 보안 점검
+
+UI나 문구가 아니라 **막아 둔 것이 실제로 막혔는지**를 볼 때는 `/redteam`
+스킬(`.claude/skills/redteam`)을 돌린다. 세션 위조·창구 가드·정답 유출·입력
+검증·비밀 유출·헤더 여섯 갈래를 공격자 입장에서 찔러 본다.
+
+```bash
+cd web && npm run build && DATABASE_URL= npm start &
+node .claude/skills/redteam/scripts/redteam.mjs all
+```
+
+- **로컬에만 대고 돌린다.** 운영 사이트에 같은 짓을 하면 점검이 아니라 공격이다.
+- `DATABASE_URL=`을 비운다. 일부러 쓰레기 값을 밀어 넣는 점검이라 운영 집계에 섞인다.
+- 인증·집계·운영자 가드를 직접 구현한 만큼 남이 대신 검증해 주는 부분이 없다.
+  로그인·집계·가드·사용자 입력을 건드리면 이 스킬을 같이 돌린다.
+- 판정 라우트에 "집계에 넣지 말라" 스위치를 두지 않는다. 한때 `practice: true`가
+  그 문을 열어 두고 있었고, 어느 화면도 보낸 적이 없는데 API만 받아 줘서 아무나
+  흔적 없이 그날의 정답표를 만들 수 있었다.
 
 ## 문서 최신화
 
