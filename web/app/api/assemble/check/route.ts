@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /** 조립 판정. 본편과 동일하게 서버에서만 정답을 안다. */
 export async function POST(req: Request) {
-  let body: { date?: string; no?: number; guess?: unknown; area?: unknown; practice?: boolean };
+  let body: { date?: string; no?: number; guess?: unknown; area?: unknown };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -23,8 +23,11 @@ export async function POST(req: Request) {
   const area = normalizeArea(body.area);
   const result = checkAssemble(today, body.no!, body.guess as string[], area);
   if (!result) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
-  // 조립 공식전도 집계한다. 예전에는 감별만 기록해서 조립·찾기는 정답률이 아예 없었다
-  if (body.practice !== true) await recordAnswer(today, body.no!, result.correct, area, "assemble");
+  // 조립 공식전도 집계한다. 예전에는 감별만 기록해서 조립·찾기는 정답률이 아예 없었다.
+  // practice 같은 "집계에 넣지 말라" 스위치는 두지 않는다. 어느 화면도 보낸
+  // 적이 없는데 API만 받아 주고 있었고, 그 결과 아무나 흔적 없이 오늘의 정답을
+  // 열 번 물어 표를 만들 수 있었다(레드팀 점검에서 실제로 만들어 봤다).
+  await recordAnswer(today, body.no!, result.correct, area, "assemble");
   const { rate, sample } = await answerRate(today, body.no!, 100, area, "assemble");
   return NextResponse.json({ ...result, rate, sample });
 }

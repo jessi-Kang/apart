@@ -10,7 +10,6 @@ interface Body {
   date?: string;
   no?: number;
   choice?: "real" | "fake" | "timeout"; // timeout = 시간 초과 (무조건 오답)
-  practice?: boolean; // 판정만 하고 집계에 넣지 않는다
   area?: unknown; // 구역별 공식전. 모르는 값은 전국으로 떨어진다
 }
 
@@ -31,13 +30,14 @@ export async function POST(req: Request) {
   const area = normalizeArea(body.area);
   const item = quizForDate(today, area)[no! - 1];
   const correct = choice === item.kind;
-  if (body.practice !== true) {
-    await recordAnswer(today, no!, correct, area, "ox");
-    // 이름별 집계: 어떤 이름에 사람들이 잘 속는지. 시간 초과는 판단이 아니라
-    // 판단하지 못한 것이므로 속았다고 세지 않는다
-    const shownName = item.kind === "real" ? item.real!.name : item.fake!.name;
-    if (choice !== "timeout") await recordName(shownName, item.kind, !correct);
-  }
+  // practice 같은 "집계에 넣지 말라" 스위치는 두지 않는다. 어느 화면도 보낸
+  // 적이 없는데 API만 받아 주고 있었고, 그 결과 아무나 흔적 없이 오늘의 정답을
+  // 열 번 물어 표를 만들 수 있었다(레드팀 점검에서 실제로 만들어 봤다).
+  await recordAnswer(today, no!, correct, area, "ox");
+  // 이름별 집계: 어떤 이름에 사람들이 잘 속는지. 시간 초과는 판단이 아니라
+  // 판단하지 못한 것이므로 속았다고 세지 않는다
+  const shownName = item.kind === "real" ? item.real!.name : item.fake!.name;
+  if (choice !== "timeout") await recordName(shownName, item.kind, !correct);
   const { rate, sample } = await answerRate(today, no!, 100, area, "ox");
 
   if (item.kind === "real") {
