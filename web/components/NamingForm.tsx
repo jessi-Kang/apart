@@ -6,8 +6,8 @@ import { DocTitle, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { SoundToggle } from "@/components/SoundToggle";
-import { addXp } from "@/lib/level";
-import { areaPref, setAreaPref } from "@/lib/local";
+import { areaPref, bumpCoined, coinedCount, setAreaPref } from "@/lib/local";
+import { coinLevel, coinScore } from "@/lib/coinlevel";
 import { sfxPiece, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 import type { PieceGroup } from "@/lib/naming";
 import { AWARD_PER_DAY, COIN_POINTS } from "@/lib/coinrule";
@@ -20,7 +20,12 @@ type Verdict =
   | { ok: true }
   | { ok: false; reason: "exists"; near: string }
   | { ok: false; reason: "format"; message: string };
-type Done = { no?: string; awarded: boolean; points: number; name: string } | null;
+/** 작명 점수의 두 갈래 — 접수한 이름 수와 그 이름들이 속인 사람 수 */
+interface Totals {
+  accepted: number;
+  fooled: number;
+}
+type Done = { no?: string; awarded: boolean; points: number; name: string; totals: Totals } | null;
 
 /**
  * 작명소.
@@ -49,11 +54,14 @@ export function NamingForm({ regions }: { regions: Region[] }) {
   // 묶음마다 몇 개만 뽑아 보여주고 다시 뽑게 한다 — 고르는 일이 훨씬 가볍고,
   // 다시 뽑을 때마다 안 보던 조각이 나와서 계속 새 이름이 나온다
   const [shuffle, setShuffle] = useState(0);
+  /** 지금까지 이 기기에서 접수한 수. 첫 화면에서 내 자리를 보여주는 데만 쓴다 */
+  const [mine, setMine] = useState(0);
 
   // 구역은 서버가 넘겨준다. 지난번에 고른 구역이 있으면 그대로 쓴다
   useEffect(() => {
     const pref = areaPref();
     if (pref && regions.some((r) => r.sido === pref)) setArea(pref);
+    setMine(coinedCount());
   }, [regions]);
 
   // 구역을 고르면 그 구역의 조각을 받아 온다
@@ -111,16 +119,32 @@ export function NamingForm({ regions }: { regions: Region[] }) {
         setFailed(res.status === 503 ? "접수하지 못했습니다. 잠시 뒤 다시 시도해 주세요" : "확인하지 못했습니다");
         return;
       }
-      const data = (await res.json()) as { verdict: Verdict; no?: string; awarded?: boolean; points?: number };
+      const data = (await res.json()) as {
+        verdict: Verdict;
+        no?: string;
+        awarded?: boolean;
+        points?: number;
+        mine?: Totals | null;
+      };
       setVerdict(data.verdict);
       if (!data.verdict.ok) {
         sfxStampWrong();
         return;
       }
-      if (data.awarded && data.points) addXp(data.points);
+      // 작명 점수는 감별 XP에 넣지 않는다. 직급은 구역 명부 순위의 기준이라,
+      // 이름을 많이 지었다고 감별 순위가 오르면 명부가 실력을 말하지 않게 된다
+      const local = bumpCoined();
       sfxStampRight();
       sfxResult();
-      setDone({ no: data.no, awarded: Boolean(data.awarded), points: data.points ?? 0, name });
+      setDone({
+        no: data.no,
+        awarded: Boolean(data.awarded),
+        points: data.points ?? 0,
+        name,
+        // 로그인한 사람의 진짜 숫자는 서버가 센다. 비회원은 이 기기 기록뿐이라
+        // 속은 횟수를 되찾을 길이 없어 접수 수만 센다
+        totals: data.mine ?? { accepted: local, fooled: 0 },
+      });
       setPhase("done");
     } catch {
       setFailed("확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요");
@@ -128,6 +152,9 @@ export function NamingForm({ regions }: { regions: Region[] }) {
       setBusy(false);
     }
   }
+
+  // 접수 결과에 붙일 작명 호칭. 점수는 접수 수와 속인 수에서 나온다(lib/coinlevel.ts)
+  const coinName = done ? coinLevel(coinScore(done.totals.accepted, done.totals.fooled)) : null;
 
   return (
     <div className="frame">
@@ -176,14 +203,18 @@ export function NamingForm({ regions }: { regions: Region[] }) {
                 {/* 무엇을 얻는지를 앞에 둔다. 절차만 늘어놓으면 왜 하는지 모른 채 닫는다 */}
                 <VRow label="얻는 것">
                   <span>
-                    <b className="accent">{COIN_POINTS}점</b>, 그리고 내 이름이 감별 창구에 걸립니다
+                    <b className="accent">작명 점수 {COIN_POINTS}점</b>, 그리고 내 이름이 감별 창구에 걸립니다
                     <small>하루 {AWARD_PER_DAY}건까지 점수가 붙습니다</small>
                   </span>
                 </VRow>
-                <VRow label="자랑">
+                {/* 칸을 늘리지 않는다. 호칭이 오르는 길과 그걸 보는 곳은 같은 이야기다 */}
+                <VRow label="호칭">
                   <span>
-                    <b>몇 명이 속았는지</b> 이름마다 세어 알려 드립니다
-                    <small>많이 속인 이름을 지은 사람에게는 따로 호칭이 붙습니다</small>
+                    한 명 속일 때마다 점수가 올라 <b className="accent">작명 호칭</b>이 붙습니다
+                    <small>
+                      감별 직급과 따로 셉니다. 몇 명이 속았는지는 <Link href="/me">기록 열람실</Link>에서 봅니다
+                      {mine > 0 && ` (지금까지 ${mine}개 접수)`}
+                    </small>
                   </span>
                 </VRow>
                 <VRow label="확인">
@@ -309,7 +340,7 @@ export function NamingForm({ regions }: { regions: Region[] }) {
             </>
           )}
 
-          {phase === "done" && done && (
+          {phase === "done" && done && coinName && (
             <>
               <DocTitle eyebrow="접수완료" title="작명을 접수했습니다" />
               {/* 도장은 끝난 일에만 찍는다 */}
@@ -325,17 +356,31 @@ export function NamingForm({ regions }: { regions: Region[] }) {
                 )}
                 <VRow label="사례">
                   {done.awarded ? (
-                    <span className="accent">{done.points}점</span>
+                    <span className="accent">작명 점수 {done.points}점</span>
                   ) : (
                     <span>
                       없음 <small>오늘 사례는 다 나갔거나 기록을 보관하지 않으셨습니다</small>
                     </span>
                   )}
                 </VRow>
+                {/* 호칭은 접수한 자리에서 바로 보여준다. 다음 호칭까지 얼마 남았는지를
+                    같이 적어야 한 번 더 지을 이유가 생긴다 */}
+                <VRow label="작명 호칭">
+                  <span>
+                    <b>{coinName.title}</b> <small className="mono">누적 {coinName.score}점</small>
+                    {coinName.next && (
+                      <small>
+                        {coinName.next.left}점 더 쌓으면 {coinName.next.title}
+                      </small>
+                    )}
+                  </span>
+                </VRow>
                 <VRow label="다음">
                   <span>
                     검토 후 감별 창구에 올립니다
-                    <small>사람들이 얼마나 속았는지는 나중에 알려 드립니다</small>
+                    <small>
+                      몇 명이 속았는지는 <Link href="/me">기록 열람실</Link>에 이름마다 쌓입니다
+                    </small>
                   </span>
                 </VRow>
               </VForm>

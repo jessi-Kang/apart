@@ -195,3 +195,31 @@ export function setAreaPref(area: string) {
   schedulePush();
 }
 
+
+/**
+ * 이 기기에서 접수한 작명 수.
+ *
+ * 서버에도 남지만(coined_name), 누가 지었는지는 로그인한 사람만 안다.
+ * 비회원도 자기가 몇 개 지었는지는 볼 수 있어야 해서 여기 따로 센다.
+ * 계정 동기화에는 넣지 않는다 — 로그인한 사람의 진짜 숫자는 서버가 세고,
+ * 양쪽을 합치면 같은 접수를 두 번 세게 된다.
+ */
+const COINED_KEY = "aptgam:coined";
+
+export function coinedCount(): number {
+  try {
+    return Math.max(0, Number(localStorage.getItem(COINED_KEY) ?? 0) || 0);
+  } catch {
+    return 0;
+  }
+}
+
+export function bumpCoined(): number {
+  const n = coinedCount() + 1;
+  try {
+    localStorage.setItem(COINED_KEY, String(n));
+  } catch {
+    /* 저장 실패는 접수를 막지 않는다 */
+  }
+  return n;
+}
