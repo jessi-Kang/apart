@@ -685,16 +685,28 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .vk {
   padding: 13px 12px; font-size: 12px; color: var(--ink-soft); background: var(--paper);
   border-right: 1px solid var(--line); display: flex; align-items: flex-start; line-height: 1.5;
+  /* 이름표 칸은 폭이 고정이다. 긴 말이 들어오면 줄을 바꿔서라도 칸 안에 머문다 */
+  overflow-wrap: anywhere;
 }
 .vv {
   padding: 12px 14px; font-size: 14.5px; font-weight: 600; line-height: 1.5;
   display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; min-width: 0;
+  /* 사용자가 지은 단지명이 값으로 들어온다. 띄어쓰기 없는 긴 한글은 keep-all에
+     걸려 한 줄로 뻗다가 칸을 넘는다(실측 284px > 236px) — 넘칠 때만 꺾는다 */
+  overflow-wrap: anywhere;
 }
 .vv small { font-weight: 400; color: var(--ink-soft); font-size: 12px; }
 /* 값 안에서 한 겹 더 싸인 설명은 제 줄을 갖는다. 값이 한 문장일 때
    그대로 이어 붙으면 "대조합니다진짜로 있는 이름이면"처럼 붙어 읽힌다 */
 .vv > span > small { display: block; margin-top: 3px; line-height: 1.55; }
 .vv .accent { color: var(--stamp); }
+/* 서식 칸 안의 링크. 손대지 않으면 브라우저 기본 파란 밑줄이 나와
+   종이 서류 위에 혼자 웹 링크로 뜬다 (계정 칸은 제 스타일이 따로 있다) */
+.vv a:not(.acct-line a) {
+  color: inherit; text-decoration: underline; text-decoration-color: var(--stamp);
+  text-underline-offset: 2px; text-decoration-thickness: 1px;
+}
+.vv a:not(.acct-line a):active { color: var(--stamp); }
 /* 기록 열람실: 기록 옆에 붙는 순위 조각 (줄이 좁으면 다음 줄로 넘어간다) */
 .vr-rank { font-weight: 500; font-size: 12.5px; color: var(--ink-soft); }
 .vr-rank::before { content: "·"; margin-right: 8px; color: var(--line); }
