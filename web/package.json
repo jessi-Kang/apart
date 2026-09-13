@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "validate-pool": "node scripts/validate-pool.mjs",
     "collect-kapt": "node scripts/collect-kapt.mjs",
-    "check-layout": "node scripts/check-layout.mjs"
+    "check-layout": "node scripts/check-layout.mjs",
+    "export-coined": "node scripts/export-coined.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
