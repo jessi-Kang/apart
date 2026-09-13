@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { AWARD_PER_DAY, COIN_POINTS } from "./coinrule";
+import { AWARD_PER_DAY, COIN_POINTS, SUBMIT_PER_DAY } from "./coinrule";
 import { fakeNames } from "./data";
 
 /**
@@ -27,7 +27,7 @@ const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
 const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
 const livePool = new Set(fakeNames.map((f) => norm(f.name)));
 
-export { COIN_POINTS, AWARD_PER_DAY } from "./coinrule";
+export { COIN_POINTS, AWARD_PER_DAY, SUBMIT_PER_DAY } from "./coinrule";
 
 export interface CoinResult {
   ok: boolean;
@@ -88,6 +88,23 @@ async function canAward(uid: number | null): Promise<boolean> {
  *
  * 명백한 말은 여기까지 오지 않는다. judgeName이 접수 단계에서 막는다.
  */
+/**
+ * 오늘 이 계정이 몇 건 접수했나.
+ * 상한은 접수 자체에 건다 — 점수 상한만으로는 점수 없이 쏟아붓는 것을 못 막는다.
+ */
+export async function todayCount(uid: number): Promise<number> {
+  if (!sql) return 0;
+  try {
+    const rows = (await sql`
+      SELECT COUNT(*)::int AS n FROM coined_name
+      WHERE user_id = ${uid} AND created_at > now() - interval '1 day'`) as { n: number }[];
+    return Number(rows[0]?.n ?? 0);
+  } catch {
+    // 셀 수 없으면 막지 않는다. 세는 일이 안 된다고 짓는 일까지 멈출 이유는 없다
+    return 0;
+  }
+}
+
 export async function saveCoined(input: {
   name: string;
   area: string;
