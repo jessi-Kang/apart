@@ -3,7 +3,7 @@ import { readSession } from "@/lib/auth";
 import { blockIfUnreleased } from "@/lib/guard";
 import { normalizeArea } from "@/lib/areaparam";
 import { judgeName, piecesFor } from "@/lib/naming";
-import { myCoinTotals, saveCoined } from "@/lib/coined";
+import { myCoinTotals, saveCoined, todayCount, SUBMIT_PER_DAY } from "@/lib/coined";
 
 export const dynamic = "force-dynamic";
 
@@ -38,15 +38,40 @@ export async function POST(req: Request) {
   const area = normalizeArea(body.area);
   if (!area) return NextResponse.json({ error: "area_required" }, { status: 400 });
 
+  /**
+   * 작명소는 로그인한 사람만 쓴다.
+   *
+   * 감별 셋은 비회원도 친다. 거기는 **소비**라 남에게 나가는 것이 없다.
+   * 작명은 **생산**이다 — 지은 이름이 자동 승인을 거쳐 남들의 문제로 나간다.
+   * 셋이 걸려 있다.
+   *   약속   "몇 명이 속았는지 알려 드린다"는 약속은 누가 지었는지 알아야 지킨다.
+   *          비회원이 지은 이름은 user_id가 비어 되찾아 줄 길이 없다.
+   *   상한   계정이 없으면 하루 몇 건인지 셀 수가 없다. 실제로 비회원은 무제한
+   *          이었고, 자동 출제가 붙은 뒤로는 그게 곧장 출제 풀로 흘러갔다.
+   *   책임   공개되는 콘텐츠라 누가 넣었는지 남아야 한다.
+   */
+  const session = await readSession();
+  if (!session?.uid) {
+    return NextResponse.json({ error: "login_required" }, { status: 401 });
+  }
+
   const verdict = judgeName(name);
   if (body.check === true || !verdict.ok) return NextResponse.json({ verdict });
 
-  const session = await readSession();
+  // 점수 상한(AWARD_PER_DAY)은 점수만 막는다. 접수 자체에도 상한이 있어야
+  // 점수를 포기하고 쏟아붓는 길이 막힌다
+  const today = await todayCount(session.uid);
+  if (today >= SUBMIT_PER_DAY) {
+    return NextResponse.json(
+      { error: "daily_limit", limit: SUBMIT_PER_DAY },
+      { status: 429 },
+    );
+  }
   // 통과한 이름은 바로 승인된다. 걸린 말이 있으면 사유를 달아 대기로 보낸다
   const saved = await saveCoined({
     name,
     area,
-    uid: session?.uid ?? null,
+    uid: session.uid,
     // 어느 갈래에 걸렸는지 그대로 남긴다. "보류"라고만 적어 두면 심사할 때
     // 왜 걸렸는지 이름을 다시 뜯어봐야 한다
     hold: verdict.ok && verdict.screen === "review" ? (verdict.group ?? "확인 필요") : "",
@@ -61,6 +86,6 @@ export async function POST(req: Request) {
   }
   // 접수하자마자 작명 호칭이 어디까지 왔는지 보여준다. 호칭은 감별 직급과
   // 갈라진 축이라(lib/coinlevel.ts) 이 숫자를 화면이 따로 받아야 한다
-  const mine = session?.uid ? await myCoinTotals(session.uid) : null;
+  const mine = await myCoinTotals(session.uid);
   return NextResponse.json({ verdict, ...saved, mine });
 }

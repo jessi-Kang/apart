@@ -11,7 +11,7 @@ import { coinLevel, coinScore } from "@/lib/coinlevel";
 import { coinStage } from "@/lib/coinstatus";
 import { sfxPiece, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 import type { PieceGroup } from "@/lib/naming";
-import { AWARD_PER_DAY, COIN_POINTS } from "@/lib/coinrule";
+import { AWARD_PER_DAY, COIN_POINTS, SUBMIT_PER_DAY } from "@/lib/coinrule";
 
 interface Region {
   sido: string;
@@ -67,7 +67,19 @@ type Done = { no?: string; awarded: boolean; points: number; name: string; total
  * 판정(실존 대조)은 서버에서만 한다. 실단지 목록을 내려주면 그것으로 감별
  * 창구의 답을 맞출 수 있다 — 작명소가 정답지를 흘리는 문이 되면 안 된다.
  */
-export function NamingForm({ regions, openMine = false }: { regions: Region[]; openMine?: boolean }) {
+export function NamingForm({
+  regions,
+  openMine = false,
+  signedIn = false,
+  canLogIn = false,
+}: {
+  regions: Region[];
+  openMine?: boolean;
+  /** 작명소는 로그인한 사람만 쓴다 (app/api/naming/route.ts에 이유를 적어 뒀다) */
+  signedIn?: boolean;
+  /** 로그인 자체가 가능한 환경인가 (구글 환경변수가 없으면 로그인 UI가 숨는다) */
+  canLogIn?: boolean;
+}) {
   const [phase, setPhase] = useState<"intro" | "make" | "done" | "mine">(openMine ? "mine" : "intro");
   const [area, setArea] = useState("");
   const [groups, setGroups] = useState<PieceGroup[]>([]);
@@ -163,7 +175,12 @@ export function NamingForm({ regions, openMine = false }: { regions: Region[]; o
         body: JSON.stringify({ name, area }),
       });
       if (!res.ok) {
-        setFailed(res.status === 503 ? "접수하지 못했습니다. 잠시 뒤 다시 시도해 주세요" : "확인하지 못했습니다");
+        // 왜 안 됐는지를 그대로 말한다. "확인하지 못했습니다"로 뭉뚱그리면
+        // 다시 눌러 보는 것 말고 할 수 있는 일이 없다
+        if (res.status === 401) setFailed("기록을 보관해야 접수할 수 있습니다. 다시 로그인해 주세요");
+        else if (res.status === 429) setFailed(`하루 ${SUBMIT_PER_DAY}건까지 접수할 수 있습니다. 내일 이어서 지어 주세요`);
+        else if (res.status === 503) setFailed("접수하지 못했습니다. 잠시 뒤 다시 시도해 주세요");
+        else setFailed("확인하지 못했습니다");
         return;
       }
       const data = (await res.json()) as {
@@ -275,11 +292,29 @@ export function NamingForm({ regions, openMine = false }: { regions: Region[]; o
                   </span>
                 </VRow>
               </VForm>
-              <div className="result-actions">
-                <button className="btn btn-next" onClick={() => { sfxTap(); setPhase("make"); }}>
-                  이름 지으러 가기
-                </button>
-              </div>
+              {/* 조각을 다 눌러 이름을 지어 놓고 마지막에 막히면 그때까지 한 일이
+                  날아간다. 못 하는 일은 첫 화면에서 말한다 */}
+              {signedIn ? (
+                <div className="result-actions">
+                  <button className="btn btn-next" onClick={() => { sfxTap(); setPhase("make"); }}>
+                    이름 지으러 가기
+                  </button>
+                </div>
+              ) : canLogIn ? (
+                <>
+                  <div className="result-actions">
+                    <a className="btn btn-next full" href="/api/auth/login">
+                      기록을 보관하고 시작하기
+                    </a>
+                  </div>
+                  <p className="center-note">
+                    지은 이름이 남들의 문제로 나가는 창구라 보관이 필요합니다. 그래야 몇 명이
+                    속았는지 되찾아 알려 드릴 수 있습니다.
+                  </p>
+                </>
+              ) : (
+                <p className="center-note">지금은 접수를 받지 않습니다</p>
+              )}
             </>
           )}
 
