@@ -1,4 +1,5 @@
 import { apartments, isArea } from "./data";
+import { BLOCK_MESSAGE, screenName, type Verdict as WordVerdict } from "./wordguard";
 import fakesJson from "@/data/fake_names.json";
 
 /**
@@ -23,8 +24,6 @@ const ALLOWED = /^[가-힣A-Za-z0-9 ]+$/;
 export const MIN_LEN = 4;
 export const MAX_LEN = 20;
 
-/** 지역 비하·비속어 계열. 운영하며 늘린다 (validate-pool과 같은 시드) */
-const BLACKLIST = ["촌동네", "달동네", "빈민", "서민만"];
 
 /** 관리 단위로 읽히는 이름은 출제에서 빠지므로 애초에 못 짓게 한다 */
 const ADMIN_NOISE =
@@ -121,7 +120,7 @@ const placeOnly = (() => {
 })();
 
 export type NameVerdict =
-  | { ok: true }
+  | { ok: true; screen: WordVerdict; group?: string }
   /** 이미 있는 이름이거나 사실상 같은 이름 */
   | { ok: false; reason: "exists"; near: string }
   | { ok: false; reason: "format"; message: string };
@@ -161,8 +160,10 @@ export function judgeName(raw: string): NameVerdict {
     return { ok: false, reason: "format", message: "한글·영문·숫자와 띄어쓰기만 쓸 수 있습니다" };
   if (ADMIN_NOISE.test(name))
     return { ok: false, reason: "format", message: "동·호수나 관리 단위가 들어간 이름은 출제할 수 없습니다" };
-  for (const w of BLACKLIST)
-    if (name.includes(w)) return { ok: false, reason: "format", message: "쓸 수 없는 말이 들어 있습니다" };
+  // 명백한 말은 접수 자체를 막는다. 나중에 반려하면 지은 사람은 왜 안 나오는지
+  // 모른 채 기다리지만, 그 자리에서 막으면 고쳐서 다시 지으면 된다
+  const screened = screenName(name);
+  if (screened.verdict === "block") return { ok: false, reason: "format", message: BLOCK_MESSAGE };
 
   const nf = norm(name);
   // 지역 이름 하나만 적는 것은 단지명이 아니다("부산광역시", "해운대").
@@ -178,5 +179,5 @@ export function judgeName(raw: string): NameVerdict {
     if (editDistance(nf, nr) <= limit) return { ok: false, reason: "exists", near: r.name };
     if (tokenOverlap(name, r.name) >= 0.8) return { ok: false, reason: "exists", near: r.name };
   }
-  return { ok: true };
+  return { ok: true, screen: screened.verdict, group: screened.group };
 }

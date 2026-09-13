@@ -26,6 +26,7 @@ interface Coined {
   created_at: string;
   approved: boolean;
   rejected: boolean;
+  hold_reason: string;
 }
 type CoinStatus = "pending" | "approved" | "rejected";
 const statusOf = (c: Coined): CoinStatus => (c.rejected ? "rejected" : c.approved ? "approved" : "pending");
@@ -203,7 +204,7 @@ export default function ReportPage() {
           <div className="rep-head">
             <b>접수된 작명</b>
             <small>
-              대기 {cmeta.pending} / 전체 {cmeta.total} · 승인 뒤 내보내야 출제됩니다
+              대기 {cmeta.pending} / 전체 {cmeta.total} · 말 거르기에 걸린 것만 세워 둡니다
             </small>
           </div>
           <div className="coin-head">
@@ -237,6 +238,8 @@ export default function ReportPage() {
                       <span>{new Date(c.created_at).toLocaleString("ko-KR")}</span>
                       <span>{c.user_id ? `계정 ${c.user_id}` : "비회원"}</span>
                       <span className={`cstat cstat-${st}`}>{STATUS_LABEL[st]}</span>
+                      {/* 왜 세워 뒀는지. 자동 통과한 이름은 애초에 이 목록에 없다 */}
+                      {st === "pending" && c.hold_reason && <span className="chold">{c.hold_reason}</span>}
                     </div>
                     <div className="btext">{c.name}</div>
                     {/* 판단한 것도 되돌릴 수 있어야 한다. 잘못 누른 것을 고치려고

@@ -46,6 +46,8 @@ export interface CoinedRow {
   user_id: number | null;
   created_at: string;
   approved: boolean;
+  /** 왜 사람이 봐야 하는가. 자동 통과한 이름은 빈 값이다 */
+  hold_reason: string;
   /**
    * 보고 안 쓰기로 한 것.
    *
@@ -76,13 +78,30 @@ async function canAward(uid: number | null): Promise<boolean> {
   }
 }
 
-export async function saveCoined(input: { name: string; area: string; uid: number | null }): Promise<CoinResult> {
+/**
+ * 지은 이름을 접수한다.
+ *
+ * 말 거르기(lib/wordguard.ts)를 통과한 이름은 **자동으로 승인**된다. 전부
+ * 사람이 읽으면 손이 끝없이 들고, 그 손품은 사전이 약한 것을 사람이 메우는
+ * 일이었다. 걸리는 말이 하나라도 있으면 승인하지 않고 사유와 함께 세워 둔다 —
+ * 조금이라도 우려되는 것은 사람이 본다는 뜻이다.
+ *
+ * 명백한 말은 여기까지 오지 않는다. judgeName이 접수 단계에서 막는다.
+ */
+export async function saveCoined(input: {
+  name: string;
+  area: string;
+  uid: number | null;
+  /** "pass"면 자동 승인, "review"면 사유를 달아 대기 */
+  hold?: string;
+}): Promise<CoinResult> {
   if (!sql) return { ok: false, reason: "store", awarded: false, points: 0 };
   try {
     const awarded = await canAward(input.uid);
+    const hold = input.hold ?? "";
     const rows = (await sql`
-      INSERT INTO coined_name (name, area, user_id, awarded)
-      VALUES (${input.name}, ${input.area}, ${input.uid}, ${awarded})
+      INSERT INTO coined_name (name, area, user_id, awarded, approved, hold_reason)
+      VALUES (${input.name}, ${input.area}, ${input.uid}, ${awarded}, ${hold === ""}, ${hold})
       ON CONFLICT (name) DO NOTHING
       RETURNING id`) as { id: number }[];
     // 같은 이름이 이미 접수돼 있으면 새 행이 안 생긴다. 아직 출제 풀에 오르지
@@ -119,13 +138,13 @@ export async function recentCoined(
       FROM coined_name`) as { total: number; pending: number }[];
     const rows = (onlyPending
       ? await sql`
-      SELECT id, name, area, user_id, created_at, approved, rejected
+      SELECT id, name, area, user_id, created_at, approved, rejected, hold_reason
       FROM coined_name
       WHERE NOT approved AND NOT rejected
       ORDER BY created_at DESC
       LIMIT ${limit} OFFSET ${offset}`
       : await sql`
-      SELECT id, name, area, user_id, created_at, approved, rejected
+      SELECT id, name, area, user_id, created_at, approved, rejected, hold_reason
       FROM coined_name
       ORDER BY (approved OR rejected), created_at DESC
       LIMIT ${limit} OFFSET ${offset}`) as CoinedRow[];

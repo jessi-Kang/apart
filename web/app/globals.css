@@ -1179,3 +1179,5 @@ a.chop { text-decoration: none; }
 .cstat-approved { color: var(--stamp); }
 .cstat-rejected { color: var(--ink-soft); text-decoration: line-through; }
 .cact { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+/* 보류 사유 (운영 화면). 심사할 때 왜 걸렸는지 바로 보여야 한다 */
+.chold { color: var(--stamp); font-weight: 700; }
