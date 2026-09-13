@@ -10,8 +10,18 @@
  *   1) /report에서 승인 표시   2) npm run export-coined   3) validate-pool
  *   4) data/fake_names.json 커밋 → 배포
  *
+ * 이 네 걸음은 .github/workflows/publish-coined.yml이 매일 대신 돈다. 손으로
+ * 돌릴 일은 급히 내보내고 싶을 때뿐이다.
+ *
  * 승인했다고 무조건 넣지 않는다. 승인 뒤에 실단지가 늘어나 겹치게 된 이름이
  * 있을 수 있어서, 넣기 전에 judgeName과 같은 잣대로 다시 한 번 거른다.
+ *
+ * 옵션
+ *   --min-age-hours=N  접수된 지 N시간 지난 것만 내보낸다. 자동 승인이 켜져
+ *                      있으므로, 잘못 통과한 이름을 발견하고 반려할 틈을 준다.
+ *                      이 틈이 없으면 접수 몇 분 뒤 바로 출제로 나간다.
+ *   --max=N            한 번에 넣을 수 있는 최대 건수. 무언가 잘못돼 수백 건이
+ *                      승인돼 있어도 한 번에 다 나가지는 않게 막는다.
  *
  * 연결 문자열은 web/.env.local의 DATABASE_URL을 쓴다(커밋 금지).
  */
@@ -38,6 +48,14 @@ function envValue(key) {
 }
 
 const norm = (s) => s.replace(/\s+/g, "").toLowerCase();
+
+/** --이름=값 꼴의 인자 하나 */
+function flag(name, fallback) {
+  const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
+  if (!hit) return fallback;
+  const n = Number(hit.split("=")[1]);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
 
 /** validate-pool·lib/naming.ts와 같은 잣대 (셋이 어긋나면 승인 못 할 이름을 넣게 된다) */
 const ADMIN_NOISE =
@@ -78,12 +96,16 @@ async function main() {
     return m ? Math.max(max, Number(m[1])) : max;
   }, 0);
 
+  const minAge = flag("min-age-hours", 0);
+  const max = flag("max", 1000);
+
   const sql = neon(url);
   const rows = await sql`
     SELECT name FROM coined_name
     WHERE approved AND NOT rejected
+      AND created_at < now() - (${minAge} * interval '1 hour')
     ORDER BY created_at`;
-  console.log(`승인된 작명 ${rows.length}건`);
+  console.log(`승인된 작명 ${rows.length}건${minAge ? ` (접수 ${minAge}시간 경과분만)` : ""}`);
 
   const added = [];
   const skipped = [];
@@ -110,6 +132,10 @@ async function main() {
     if (clash) {
       // 승인한 뒤에 실단지가 늘어나 겹치게 된 경우가 여기로 온다
       skipped.push([name, `실단지와 겹친다: ${clash.name}`]);
+      continue;
+    }
+    if (added.length >= max) {
+      skipped.push([name, `한 번에 ${max}건까지만 내보낸다`]);
       continue;
     }
     seen.add(nf);

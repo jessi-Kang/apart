@@ -77,25 +77,42 @@ const bad = (line: string) => {
   failed++;
 };
 
-/* 1. 오탐 — 실단지와 기존 가짜는 전부 통과해야 한다 */
-for (const [label, file] of [
-  ["실단지", "apartments.json"],
-  ["가짜", "fake_names.json"],
-] as const) {
-  const rows = read(file);
-  const hits = rows
-    .map((r) => ({ name: r.name, s: screenName(r.name) }))
-    .filter((x) => x.s.verdict !== "pass");
-  if (hits.length) {
-    bad(`[오탐] ${label} ${rows.length}건 중 ${hits.length}건이 걸렸다`);
-    for (const h of hits.slice(0, 20)) {
-      console.log(`        ${h.name} → ${h.s.verdict} (${h.s.group}: ${h.s.hit})`);
-    }
-    if (hits.length > 20) console.log(`        … 그 밖 ${hits.length - 20}건`);
-  } else {
-    console.log(`  OK  [오탐] ${label} ${rows.length}건 전부 통과`);
+/*
+ * 1. 오탐 — 출제 풀에 있는 이름이 사전에 걸리는가.
+ *
+ * 잣대가 셋으로 갈린다.
+ *   실단지            전부 pass여야 한다. 실제로 있는 이름이 걸리면 사전 잘못이다.
+ *   AI가 지은 가짜    전부 pass여야 한다. 생성 단계에서 걸러진 것들이다.
+ *   사람이 지은 가짜  block만 아니면 된다. review에 걸리는 말이 든 이름을
+ *                     사람이 보고 승인한 경우라, 여기서 실패로 치면 손으로
+ *                     승인한 이름이 야간 작업을 통째로 막는다(coined: true).
+ */
+const strict = (rows: { name: string }[]) =>
+  rows.map((r) => ({ name: r.name, s: screenName(r.name) })).filter((x) => x.s.verdict !== "pass");
+const blockOnly = (rows: { name: string }[]) =>
+  rows.map((r) => ({ name: r.name, s: screenName(r.name) })).filter((x) => x.s.verdict === "block");
+
+const show = (label: string, hits: { name: string; s: ReturnType<typeof screenName> }[], total: number) => {
+  if (!hits.length) {
+    console.log(`  OK  [오탐] ${label} ${total}건 전부 통과`);
+    return;
   }
-}
+  bad(`[오탐] ${label} ${total}건 중 ${hits.length}건이 걸렸다`);
+  for (const h of hits.slice(0, 20)) console.log(`        ${h.name} → ${h.s.verdict} (${h.s.group}: ${h.s.hit})`);
+  if (hits.length > 20) console.log(`        … 그 밖 ${hits.length - 20}건`);
+};
+
+const reals = read("apartments.json");
+show("실단지", strict(reals), reals.length);
+
+const fakes = JSON.parse(fs.readFileSync(path.join(WEB, "data/fake_names.json"), "utf8")).items as {
+  name: string;
+  coined?: boolean;
+}[];
+const machine = fakes.filter((f) => !f.coined);
+const human = fakes.filter((f) => f.coined);
+show("AI가 지은 가짜", strict(machine), machine.length);
+if (human.length) show("사람이 지은 가짜", blockOnly(human), human.length);
 
 /* 2. 미탐 — 막아야 할 것이 막히는가 */
 for (const [want, samples] of [
