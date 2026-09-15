@@ -88,12 +88,14 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 /* 링크는 밑줄 대신 진한 잉크로 구분하고, 포커스·호버에서 인주색으로 반응.
    호버는 마우스가 있는 기기에서만 건다 — 터치에서는 탭한 뒤에도 :hover가 남아서
    눌렀던 것이 계속 붉게 보이고, 인주색은 이 서류에서 도장의 색이라 오류처럼 읽힌다 */
-.sheet-footer .copyright a,
+/* 푸터 안 링크는 전부 같은 모양이다. 예전에는 .copyright 안쪽만 잡아서,
+   출처 줄에 링크를 걸었더니 그것만 파란 기본 링크로 튀었다 */
+.sheet-footer .foot-text a,
 .foot-install {
   color: var(--ink); font-weight: 500; text-decoration: none; transition: color 0.12s ease;
 }
 .foot-install { font-size: inherit; font-family: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
-.sheet-footer .copyright a:focus-visible,
+.sheet-footer .foot-text a:focus-visible,
 .foot-install:focus-visible { color: var(--stamp); }
 /* 브라우저가 설치 다이얼로그를 안 내줄 때만 나오는 수동 경로 안내 */
 .install-tip {
@@ -1127,7 +1129,7 @@ a.chop { text-decoration: none; }
 
 /* 마우스가 있는 기기에서만 거는 호버. 터치에서는 탭 뒤에도 :hover가 남는다 */
 @media (hover: hover) {
-  .sheet-footer .copyright a:hover,
+  .sheet-footer .foot-text a:hover,
   .foot-install:hover,
   .sound-btn:hover,
   .idb-main:hover .idb-go,
