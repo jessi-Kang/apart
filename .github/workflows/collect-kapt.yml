@@ -102,6 +102,16 @@ jobs:
           set -o pipefail
           node scripts/promote-apartments.mjs 2>&1 | tee /tmp/promote.log
 
+      # 실단지가 늘면 가짜가 줄어든다(사실상 실존이 된 것이 빠진다). 같은 밤에
+      # 채워 넣어야 가짜 풀이 줄기만 하는 것을 막고, 커밋과 배포도 한 번에 끝난다
+      - name: 가짜 이름 채우기
+        if: steps.guard.outputs.skip == '0'
+        id: generate
+        working-directory: web
+        run: |
+          set -o pipefail
+          npm run generate-fakes -- --max=60 --target=2000 2>&1 | tee /tmp/generate.log
+
       - name: 출제 풀 검증
         if: steps.guard.outputs.skip == '0'
         working-directory: web
@@ -117,18 +127,19 @@ jobs:
         if: steps.guard.outputs.skip == '0'
         id: commit
         run: |
-          if git diff --quiet -- web/data/apartments.json; then
-            echo "::notice::새로 받은 단지가 없습니다. 커밋도 배포도 하지 않습니다."
+          if git diff --quiet -- web/data/apartments.json web/data/fake_names.json; then
+            echo "::notice::새로 받은 단지도 새로 지은 가짜도 없습니다. 커밋도 배포도 하지 않습니다."
             echo "changed=0" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name "apt-gam-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add web/data/apartments.json web/data/apartments.collected.json
+          git add web/data/apartments.json web/data/apartments.collected.json web/data/fake_names.json
           git commit \
-            -m "chore: 단지 데이터를 받아 출제 풀에 넣는다 (야간 자동)" \
+            -m "chore: 단지를 받고 가짜를 채운다 (야간 자동)" \
             -m "수집은 하루 5,000건 쿼터에 걸려 한 번에 다 못 받는다. 쿼터가 매일 초기화되니 매일 밤 조금씩 받는다. 적게 남은 곳부터 끝내는 순서(부산 → 대구 → 인천 → 경기)인데, 경기를 먼저 걸면 몇 주 내내 경기만 받다가 나머지가 얇은 채로 남기 때문이다." \
             -m "승격은 덮어쓰기가 아니라 더하기다. apartments.json에는 수집본에 없는 단지가 손으로 들어가 있어서, 복사로 만들면 매일 밤 그것들이 조용히 사라진다." \
+            -m "같은 밤에 가짜도 채운다. 실단지가 늘면 사실상 실존이 된 가짜가 빠지므로, 안 채우면 가짜 풀은 줄기만 한다. 짓는 틀은 실단지를 토막 내 배운 것이라 모양만 보고는 가릴 수 없다." \
             -m ".github/workflows/collect-kapt.yml"
           git pull --rebase origin "$BRANCH"
           git push origin HEAD:"$BRANCH"
