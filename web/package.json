@@ -12,7 +12,8 @@
     "collect-kapt": "node scripts/collect-kapt.mjs",
     "check-layout": "node scripts/check-layout.mjs",
     "export-coined": "node scripts/export-coined.mjs",
-    "check-wordguard": "node --experimental-strip-types scripts/check-wordguard.mts"
+    "check-wordguard": "node --experimental-strip-types scripts/check-wordguard.mts",
+    "generate-fakes": "node --experimental-strip-types scripts/generate-fakes.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

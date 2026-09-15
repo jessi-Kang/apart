@@ -40,7 +40,7 @@ echo "" >> "$OUT"
 
 # 각 단계가 남긴 기록을 그대로 붙인다. 요약하지 않는다 — 요약하다 빠뜨린
 # 한 줄이 대개 원인이다
-for pair in "수집:/tmp/collect.log" "승격:/tmp/promote.log" "내보내기:/tmp/export.log"; do
+for pair in "수집:/tmp/collect.log" "승격:/tmp/promote.log" "가짜 채우기:/tmp/generate.log" "내보내기:/tmp/export.log"; do
   label="${pair%%:*}"
   file="${pair#*:}"
   [ -s "$file" ] || continue
