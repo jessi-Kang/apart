@@ -3138,6 +3138,41 @@
       "name": "단계해오름",
       "hint": "지역명에 흔한 한글 이름을 붙였습니다",
       "difficulty": "mid"
+    },
+    {
+      "id": "c001",
+      "name": "석촌 시티 리슈빌",
+      "hint": "감별사가 작명소에서 직접 지은 이름입니다",
+      "difficulty": "mid",
+      "coined": true
+    },
+    {
+      "id": "c002",
+      "name": "신서 더샵 더 원",
+      "hint": "감별사가 작명소에서 직접 지은 이름입니다",
+      "difficulty": "mid",
+      "coined": true
+    },
+    {
+      "id": "c003",
+      "name": "학정 블루밍 맨션",
+      "hint": "감별사가 작명소에서 직접 지은 이름입니다",
+      "difficulty": "mid",
+      "coined": true
+    },
+    {
+      "id": "c004",
+      "name": "청담 하늘채 테라스",
+      "hint": "감별사가 작명소에서 직접 지은 이름입니다",
+      "difficulty": "mid",
+      "coined": true
+    },
+    {
+      "id": "c005",
+      "name": "중랑 그란데 상아",
+      "hint": "감별사가 작명소에서 직접 지은 이름입니다",
+      "difficulty": "mid",
+      "coined": true
     }
   ]
 }
