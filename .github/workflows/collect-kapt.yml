@@ -1,0 +1,163 @@
+# 단지 데이터를 매일 새벽 받아 출제 풀에 넣는 야간 작업
+#
+# 왜 있나: 수집은 하루 5,000건 쿼터에 걸려 한 번에 다 못 받는다. 손으로
+# 돌리면 "오늘 돌렸던가"를 사람이 기억해야 하고, 실제로 며칠씩 비었다.
+# 쿼터가 매일 초기화되니 매일 밤 알아서 조금씩 받는 것이 맞다.
+#
+# 왜 02:00(KST)인가: 사람이 거의 안 쓰는 시간이고, 05:10에 도는
+# publish-coined와 세 시간 떨어져 있어 같은 브랜치에 동시에 밀지 않는다.
+#
+# 받는 순서: 26 부산 → 27 대구 → 28 인천 → 41 경기.
+# 적게 남은 곳부터 **끝내는** 순서다. 경기(4,300건 남음)를 먼저 걸면 몇 주
+# 내내 경기만 받다가 나머지 셋이 계속 얇은 채로 남는다. 한 곳씩 끝나면
+# 그 구역의 감별·조립·찾기가 한꺼번에 제 노릇을 한다.
+# 광주(29)·전남(46)은 목록 API가 계속 0건이라 뺐다.
+#
+# 안전장치
+#   1) 승격은 덮어쓰기가 아니라 더하기다(promote-apartments.mjs). 손으로 넣은
+#      단지가 매일 밤 조용히 사라지면 안 된다.
+#   2) validate-pool·check-wordguard가 실패하면 커밋하지 않는다.
+#   3) 새로 받은 것이 없으면 커밋도 배포도 안 한다 — 배포 한도(계정 하루
+#      100건)를 빈손으로 쓰지 않는다.
+#   4) 결과는 성공이든 실패든 이슈에 남긴다. 조용히 며칠 헛도는 것이
+#      제일 나쁘다.
+#
+# 필요한 시크릿
+#   KAPT_API_KEY        공공데이터포털 인증키 (Settings → Secrets → Actions)
+#   VERCEL_DEPLOY_HOOK  기존 배포 훅. 없으면 커밋만 하고 배포는 안 쏜다
+name: collect-kapt
+
+on:
+  schedule:
+    # 02:00 KST (17:00 UTC 전날)
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: data-push
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  BRANCH: claude/apartment-quiz-game-planning-i6rqe9
+  SIDO: "26 27 28 41"
+  # 일일 쿼터 5,000건에서 여유를 둔다. 손으로 급히 한 번 더 돌릴 자리
+  LIMIT: "4000"
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 받기
+        uses: actions/checkout@v4
+        with:
+          ref: claude/apartment-quiz-game-planning-i6rqe9
+
+      - name: 인증키 확인
+        id: guard
+        env:
+          KEY: ${{ secrets.KAPT_API_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::notice::KAPT_API_KEY 시크릿이 없어 건너뜁니다. Settings → Secrets → Actions에 넣어 주세요."
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Node 준비
+        if: steps.guard.outputs.skip == '0'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: 의존성 설치
+        if: steps.guard.outputs.skip == '0'
+        working-directory: web
+        run: npm ci
+
+      - name: 단지 수집
+        if: steps.guard.outputs.skip == '0'
+        id: collect
+        working-directory: web
+        env:
+          KAPT_API_KEY: ${{ secrets.KAPT_API_KEY }}
+        run: |
+          set -o pipefail
+          node scripts/collect-kapt.mjs $SIDO 2>&1 | tee /tmp/collect.log
+        continue-on-error: true
+
+      - name: 출제 풀로 승격
+        if: steps.guard.outputs.skip == '0'
+        id: promote
+        working-directory: web
+        # 수집이 중간에 죽어도 그때까지 받은 것은 저장돼 있다(중간 저장).
+        # 그래서 수집 실패와 무관하게 승격을 시도한다
+        run: |
+          set -o pipefail
+          node scripts/promote-apartments.mjs 2>&1 | tee /tmp/promote.log
+
+      - name: 출제 풀 검증
+        if: steps.guard.outputs.skip == '0'
+        working-directory: web
+        run: npm run validate-pool
+
+      - name: 말 거르기 사전 검증
+        if: steps.guard.outputs.skip == '0'
+        working-directory: web
+        # 새로 들어온 실단지가 사전에 걸리면 안 된다. 걸리면 사전이 잘못된 것이다
+        run: npm run check-wordguard
+
+      - name: 바뀐 게 있으면 커밋
+        if: steps.guard.outputs.skip == '0'
+        id: commit
+        run: |
+          if git diff --quiet -- web/data/apartments.json; then
+            echo "::notice::새로 받은 단지가 없습니다. 커밋도 배포도 하지 않습니다."
+            echo "changed=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "apt-gam-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add web/data/apartments.json web/data/apartments.collected.json
+          git commit \
+            -m "chore: 단지 데이터를 받아 출제 풀에 넣는다 (야간 자동)" \
+            -m "수집은 하루 5,000건 쿼터에 걸려 한 번에 다 못 받는다. 쿼터가 매일 초기화되니 매일 밤 조금씩 받는다. 적게 남은 곳부터 끝내는 순서(부산 → 대구 → 인천 → 경기)인데, 경기를 먼저 걸면 몇 주 내내 경기만 받다가 나머지가 얇은 채로 남기 때문이다." \
+            -m "승격은 덮어쓰기가 아니라 더하기다. apartments.json에는 수집본에 없는 단지가 손으로 들어가 있어서, 복사로 만들면 매일 밤 그것들이 조용히 사라진다." \
+            -m ".github/workflows/collect-kapt.yml"
+          git pull --rebase origin "$BRANCH"
+          git push origin HEAD:"$BRANCH"
+          echo "changed=1" >> "$GITHUB_OUTPUT"
+
+      - name: 배포 훅 호출
+        if: steps.commit.outputs.changed == '1'
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::notice::VERCEL_DEPLOY_HOOK이 없어 배포는 건너뜁니다."
+            exit 0
+          fi
+          code=$(curl -s -o /tmp/hook.out -w '%{http_code}' -X POST "$HOOK")
+          echo "deploy hook response: $code"
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Deploy Hook 호출 실패 ($code)"
+            exit 1
+          fi
+
+      # 성공이든 실패든 결과를 남긴다. 조용히 며칠 헛도는 것이 제일 나쁘다
+      - name: 결과 알리기
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SKIP: ${{ steps.guard.outputs.skip }}
+          CHANGED: ${{ steps.commit.outputs.changed }}
+          COLLECT: ${{ steps.collect.outcome }}
+          JOB: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash .github/scripts/report-nightly.sh "단지 수집"

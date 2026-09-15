@@ -33,11 +33,12 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: publish-coined
+  group: data-push
   cancel-in-progress: false
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   publish:
@@ -78,7 +79,9 @@ jobs:
         working-directory: web
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node scripts/export-coined.mjs --min-age-hours=12 --max=30
+        run: |
+          set -o pipefail
+          node scripts/export-coined.mjs --min-age-hours=12 --max=30 2>&1 | tee /tmp/export.log
 
       - name: 출제 풀 검증
         if: steps.guard.outputs.skip == '0'
@@ -130,3 +133,14 @@ jobs:
             echo "::error::Deploy Hook 호출 실패 ($code)"
             exit 1
           fi
+
+      # 성공이든 실패든 결과를 남긴다. 조용히 며칠 헛도는 것이 제일 나쁘다
+      - name: 결과 알리기
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SKIP: ${{ steps.guard.outputs.skip }}
+          CHANGED: ${{ steps.commit.outputs.changed }}
+          JOB: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash .github/scripts/report-nightly.sh "작명 출제"
