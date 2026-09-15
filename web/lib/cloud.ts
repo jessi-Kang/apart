@@ -19,6 +19,7 @@ const K = {
   findreal: "aptgam:findreal",
   endlessOx: "aptgam:endless:ox",
   endlessAssemble: "aptgam:endless:assemble",
+  coined: "aptgam:coined",
 };
 
 /** 동기화 후 화면 갱신용 이벤트 (홈 칩들이 듣는다) */
@@ -66,6 +67,14 @@ export function collectLocal(): SyncState {
   } catch {
     /* storage 불가 환경 */
   }
+  try {
+    // 서버가 값을 못 내려보낼 때(DB가 흔들릴 때) 이 기기가 아는 수라도 남긴다.
+    // 서버는 올라온 이 값을 버리므로 부풀려도 저장되지 않는다
+    const coined = Number(localStorage.getItem(K.coined) ?? 0) || 0;
+    if (coined > 0) out.coined = coined;
+  } catch {
+    /* storage 불가 환경 */
+  }
   const streak = readJson<{ lastDate: string; count: number }>(K.streak);
   if (streak?.lastDate) out.streak = streak;
   const combo = readJson<SyncState["combo"]>(K.combo);
@@ -92,6 +101,7 @@ function write(key: string, value: unknown) {
 
 function applyMerged(merged: SyncState) {
   if (merged.xp !== undefined) write(K.xp, String(merged.xp));
+  if (merged.coined !== undefined) write(K.coined, String(merged.coined));
   if (merged.area) write("aptgam:area", merged.area);
   if (merged.areaXp) write("aptgam:xp-area", merged.areaXp);
   if (merged.streak) write(K.streak, merged.streak);

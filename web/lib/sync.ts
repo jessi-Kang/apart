@@ -35,6 +35,18 @@ export interface SyncState {
    * 키는 구역 이름, 빈 문자열은 전국.
    */
   areaXp?: Record<string, number>;
+  /**
+   * 지금까지 접수한 작명 건수.
+   *
+   * 다른 칸과 달리 **서버만 채운다**. 기기의 세는 값을 믿으면 홈 대장이
+   * 거짓말을 한다 — 다른 기기에서 지은 이름은 이 기기 localStorage에 없어서
+   * 다섯 개를 지어 놓고도 "접수 전"으로 보였다. 서버는 coined_name에 누가
+   * 무엇을 지었는지 다 가지고 있으니 그것을 내려보낸다.
+   *
+   * 올라오는 쪽(PUT 본문)에서는 일부러 버린다(sanitizeState). 클라이언트가
+   * 정하는 값이 아니라 서버가 아는 값이다.
+   */
+  coined?: number;
   streak?: { lastDate: string; count: number };
   combo?: SyncCombo;
   endless?: { ox?: SyncEndless; assemble?: SyncEndless };
@@ -71,6 +83,9 @@ export function sanitizeState(x: unknown): SyncState {
 
   const xp = num(s.xp);
   if (xp !== null) out.xp = xp;
+
+  // coined는 여기서 일부러 읽지 않는다. 서버가 DB에서 세어 내려보내는 값이라
+  // 클라이언트가 보낸 수를 받아 저장하면 아무 수나 적어 넣을 수 있다
 
   // 구역은 값 자체를 믿지 않는다. 길이만 자르고, 아는 구역인지는
   // 서버가 lib/areaparam.ts로 한 번 더 거른다(모르는 값은 전국으로 떨어진다)
@@ -148,6 +163,11 @@ export function mergeStates(a: SyncState, b: SyncState): SyncState {
 
   const xp = Math.max(a.xp ?? 0, b.xp ?? 0);
   if (xp > 0) out.xp = xp;
+
+  // 작명 건수는 큰 쪽이 아니라 서버 쪽이다(b가 내려온 쪽). 반려된 이름이
+  // 빠지면 수가 줄 수도 있는데, 큰 쪽을 남기면 줄어든 것이 영영 반영되지 않는다
+  const coined = b.coined ?? a.coined;
+  if (coined) out.coined = coined;
 
   // 구역만은 "큰 쪽"이 아니라 "나중 쪽"이다. 방금 다른 구역으로 옮긴 사람을
   // 옛 구역에 붙들어 두면 명부가 남의 동네를 보여준다. b가 들어온 쪽이다
