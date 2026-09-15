@@ -11,7 +11,15 @@ export function SheetFooter() {
   return (
     <footer className="sheet-footer">
       <div className="foot-text">
-        <span>단지 정보 출처: 공공데이터포털 K-apt</span>
+        <span>
+          {/* 출처는 표기 의무이기도 하지만, 같은 데이터를 어디서 받았는지
+              확인하고 싶은 사람이 실제로 있다. 글자만 적어 두면 검색해야 한다 */}
+          단지 정보 출처:{" "}
+          <a href="https://www.data.go.kr" target="_blank" rel="noopener noreferrer">
+            공공데이터포털
+          </a>{" "}
+          K-apt
+        </span>
         <span className="copyright">
           © 2026 <a href="mailto:jihyun.kang@me.com">Jessi</a> ·{" "}
           <a href="https://vibelog-orcin.vercel.app/log" target="_blank" rel="noopener noreferrer">
