@@ -101,7 +101,7 @@ function difficultyOf(name) {
  *  인증키 오류나 쿼터 초과는 다시 걸어도 같은 답이 오므로 그대로 올린다. */
 function worthRetry(err) {
   const m = String(err?.message ?? err);
-  if (/HTTP 5\d\d/.test(m)) return true;
+  if (/HTTP 5\d\d/.test(m) || /APPLICATION_ERROR/.test(m)) return true;
   return /fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up|DNS|resolver|network/i.test(m);
 }
 
@@ -112,7 +112,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * 예전에는 목록 첫 호출에서 DNS가 한 번 튕긴 것만으로 통째로 죽어, 그날 수집이
  * 통째로 날아갔다(예약 루틴이 헛돌았다). 잠깐 기다렸다 다시 건다.
  */
-async function getJson(url, tries = 4) {
+async function getJson(url, tries = 6) {
   for (let i = 1; ; i++) {
     try {
       const res = await fetch(url);
@@ -124,7 +124,9 @@ async function getJson(url, tries = 4) {
       return JSON.parse(text);
     } catch (e) {
       if (i >= tries || !worthRetry(e)) throw e;
-      const wait = 2 ** i * 1000; // 2초 → 4초 → 8초
+      // 2 → 4 → 8 → 16 → 32초. 예전에는 8초에서 끝나 총 14초만 버텼는데,
+      // 포털이 그보다 오래 흔들리는 일이 실제로 있었다(목록 500이 세 번 연속).
+      const wait = Math.min(2 ** i * 1000, 32_000);
       console.error(`재시도 ${i}/${tries - 1} (${wait / 1000}초 뒤): ${String(e.message ?? e).slice(0, 120)}`);
       await sleep(wait);
     }
@@ -168,9 +170,41 @@ if (fs.existsSync(OUT)) {
 
 let scanned = 0;
 let calls = 0;
+/** 목록을 못 받은 시도. 보고에 남긴다 — 조용히 건너뛰면 왜 안 늘었는지 모른다 */
+const failedSido = [];
+
+/**
+ * 지금까지 모은 것을 파일에 쓴다.
+ *
+ * 예전에는 맨 끝에 한 번만 썼다. 수천 번 호출하는 긴 작업이라 중간에 죽는 일이
+ * 반드시 생기는데, 그러면 그때까지 쓴 **쿼터까지 같이 날아간다**(하루 5,000건이
+ * 이 작업의 진짜 제약이다). 그래서 일정 간격으로 저장해 둔다 — 다시 돌리면
+ * 이미 받은 kaptCode를 건너뛰므로 쿼터를 다시 쓰지 않는다.
+ */
+function save() {
+  fs.writeFileSync(
+    OUT,
+    JSON.stringify(
+      { _note: `K-apt 수집본 ${new Date().toISOString().slice(0, 10)}. 검토 후 apartments.json으로 승격.`, items: [...seen.values()] },
+      null,
+      2,
+    ),
+  );
+}
+const SAVE_EVERY = 200;
+let sinceSave = 0;
 
 for (const sido of SIDO_CODES) {
-  const list = await listSido(sido);
+  let list;
+  try {
+    list = await listSido(sido);
+  } catch (e) {
+    // 한 시도가 안 된다고 나머지까지 포기하지 않는다. 부산 목록이 500을 뱉은
+    // 탓에 대구·인천·경기가 시작도 못 하고 그날 밤이 통째로 날아간 적이 있다
+    console.error(`시도 ${sido}: 목록 실패 — 건너뛴다 (${String(e.message ?? e).slice(0, 150)})`);
+    failedSido.push(sido);
+    continue;
+  }
   console.error(`시도 ${sido}: 목록 ${list.length}건`);
   for (const row of list) {
     if (calls >= LIMIT) break;
@@ -204,6 +238,11 @@ for (const sido of SIDO_CODES) {
       difficulty: difficultyOf(name),
     });
     if (seen.size % 100 === 0) console.error(`정제 통과 ${seen.size}건 (스캔 ${scanned}, 호출 ${calls})`);
+    if (++sinceSave >= SAVE_EVERY) {
+      save();
+      sinceSave = 0;
+      console.error(`중간 저장 ${seen.size}건`);
+    }
   }
   if (calls >= LIMIT) {
     console.error(`호출 상한 ${LIMIT}건 도달 — 내일 이어서 실행하면 이어붙는다`);
@@ -211,14 +250,10 @@ for (const sido of SIDO_CODES) {
   }
 }
 
-const items = [...seen.values()];
-fs.writeFileSync(
-  OUT,
-  JSON.stringify(
-    { _note: `K-apt 수집본 ${new Date().toISOString().slice(0, 10)}. 검토 후 apartments.json으로 승격.`, items },
-    null,
-    2,
-  ),
-);
-console.error(`완료: ${items.length}건 → ${OUT} (기본정보 호출 ${calls}건)`);
+save();
+console.error(`완료: ${seen.size}건 → ${OUT} (기본정보 호출 ${calls}건)`);
+if (failedSido.length) console.error(`목록을 못 받은 시도: ${failedSido.join(", ")} — 다음 실행에서 다시 시도한다`);
 console.error("다음: node scripts/validate-pool.mjs 로 대조 검증 후 apartments.json 교체");
+// 목록을 하나도 못 받았으면 실패로 끝낸다. 야간 작업이 "성공"으로 보이는데
+// 아무것도 안 늘어난 상태가 제일 나쁘다 — 며칠 헛돌아도 모른다
+if (failedSido.length === SIDO_CODES.length) process.exit(1);
