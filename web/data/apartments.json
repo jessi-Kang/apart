@@ -158370,6 +158370,16 @@
       "builtYear": 1998,
       "households": 610,
       "difficulty": "easy"
+    },
+    {
+      "id": "kA10019910",
+      "name": "동래반도유보라",
+      "sido": "부산광역시",
+      "sigungu": "동래구",
+      "dong": "낙민동",
+      "builtYear": 2026,
+      "households": 400,
+      "difficulty": "easy"
     }
   ]
 }
