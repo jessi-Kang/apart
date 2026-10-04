@@ -8069,6 +8069,366 @@
       "name": "잠실코오롱",
       "hint": "실단지에 없는 조합입니다",
       "difficulty": "hard"
+    },
+    {
+      "id": "g841",
+      "name": "소담우방",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g842",
+      "name": "효자한보",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g843",
+      "name": "서초두산",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g844",
+      "name": "양산레이크",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g845",
+      "name": "마전신성",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g846",
+      "name": "범물한신",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g847",
+      "name": "쌍문동아",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g848",
+      "name": "화서풍림",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g849",
+      "name": "옥련자이",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g850",
+      "name": "연경SK",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g851",
+      "name": "범어태영",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g852",
+      "name": "거제신안",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g853",
+      "name": "선학블루밍",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g854",
+      "name": "구로태영",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g855",
+      "name": "수택대림",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g856",
+      "name": "송파월드",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g857",
+      "name": "인후동프라디움",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "mid"
+    },
+    {
+      "id": "g858",
+      "name": "율하한신",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g859",
+      "name": "백석신안",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g860",
+      "name": "남산스퀘어",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g861",
+      "name": "신대방금호",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g862",
+      "name": "하계 대우",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g863",
+      "name": "야음쌍용",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g864",
+      "name": "용산하이츠파크",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "g865",
+      "name": "동대퍼스트파크",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "g866",
+      "name": "신정더샵",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g867",
+      "name": "용산어울림",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g868",
+      "name": "창신위브",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g869",
+      "name": "송파우방",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g870",
+      "name": "광장현대",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g871",
+      "name": "상도유원",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g872",
+      "name": "길음리더스",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g873",
+      "name": "한솔래미안파크리버",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "g874",
+      "name": "호매실그린타운",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "g875",
+      "name": "박달자이",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g876",
+      "name": "쌍문금호",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g877",
+      "name": "잠실월드",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g878",
+      "name": "평화동극동",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g879",
+      "name": "화서효성",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g880",
+      "name": "천호하이츠",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g881",
+      "name": "염창청구",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g882",
+      "name": "평택아이유쉘더퍼스트",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "g883",
+      "name": "정자하늘채",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g884",
+      "name": "개금수자인",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g885",
+      "name": "성정목련",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g886",
+      "name": "다운파크",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g887",
+      "name": "동성비발디",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g888",
+      "name": "신곡래미안",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g889",
+      "name": "고덕금호",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g890",
+      "name": "래미안이화",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g891",
+      "name": "문화진흥",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g892",
+      "name": "계양자이",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g893",
+      "name": "용강두산",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g894",
+      "name": "양산 파크 에일린의뜰",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "g895",
+      "name": "서신대우",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g896",
+      "name": "천호주공",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g897",
+      "name": "상계센트럴",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g898",
+      "name": "e편한세상천호리버",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "easy"
+    },
+    {
+      "id": "g899",
+      "name": "두정벽산",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
+    },
+    {
+      "id": "g900",
+      "name": "호매실건영",
+      "hint": "실단지에 없는 조합입니다",
+      "difficulty": "hard"
     }
   ]
 }
