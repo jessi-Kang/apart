@@ -276,7 +276,13 @@ for (const sido of SIDO_CODES) {
       console.error(`기본정보 실패 ${row.kaptCode}: ${e.message}`);
       continue;
     }
-    if (!info) continue;
+    if (!info) {
+      // 기본정보가 아예 없는 단지. 경기 목록 5,665건 중 2,248건이 이랬다 — 적어 두지
+      // 않으면 이것도 매일 밤 다시 받는다(결측보다 이쪽이 훨씬 많았다)
+      skipped.set(String(row.kaptCode), today);
+      sinceSave++;
+      continue;
+    }
     const households = Math.round(Number(info.kaptdaCnt ?? 0));
     const useDate = String(info.kaptUsedate ?? ""); // YYYYMMDD
     const builtYear = Number(useDate.slice(0, 4));

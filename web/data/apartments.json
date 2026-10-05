@@ -158380,6 +158380,16 @@
       "builtYear": 2026,
       "households": 400,
       "difficulty": "easy"
+    },
+    {
+      "id": "kA10019949",
+      "name": "평택 화양서희스타힐스 센트럴파크",
+      "sido": "경기도",
+      "sigungu": "평택시",
+      "dong": "현덕면",
+      "builtYear": 2026,
+      "households": 1554,
+      "difficulty": "hard"
     }
   ]
 }
