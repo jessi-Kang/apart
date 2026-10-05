@@ -7,8 +7,12 @@ export const dynamic = "force-dynamic";
 
 /** 무한 감별: GET = 랜덤 문제(?area=자치구면 그 구역만), POST = 판정 (집계 미반영) */
 export function GET(req: Request) {
-  const area = new URL(req.url).searchParams.get("area");
-  return NextResponse.json(randomOx(area));
+  const url = new URL(req.url);
+  const area = url.searchParams.get("area");
+  // 최근 문제의 정체. r/f 여덟 자까지만 받는다 — 그 밖의 값은 없는 것으로 친다
+  const raw = url.searchParams.get("recent") ?? "";
+  const recent = /^[rf]{0,8}$/.test(raw) ? raw : "";
+  return NextResponse.json(randomOx(area, recent));
 }
 
 export async function POST(req: Request) {

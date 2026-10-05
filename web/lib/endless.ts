@@ -29,9 +29,23 @@ function metaOf(a: Apartment) {
 
 /* ---------- 감별 O/X ---------- */
 
-export function randomOx(area?: string | null): { name: string } {
+/**
+ * 무한 감별 문제 하나.
+ *
+ * recent는 최근에 낸 문제의 정체를 앞에서부터 적은 것("rffff" = 진짜 하나 뒤
+ * 가짜 넷). 문제마다 따로 동전을 던지면 같은 쪽이 대여섯 번 연달아 나오는 구간이
+ * 생긴다 — 실제로 가짜가 줄줄이 나와 "AI가 만든 것밖에 안 나오나" 싶게 만들었다.
+ * 그래서 같은 쪽이 셋 이상 이어지면 반대쪽이 나올 확률을 올린다. 완전히 막지는
+ * 않는다 — "셋 연속이면 다음은 무조건 반대"가 되면 그걸로 맞힌다.
+ */
+export function randomOx(area?: string | null, recent = ""): { name: string } {
   const { reals, fakes } = poolOf(area);
-  const real = Math.random() < 0.5;
+  let run = 0;
+  const last = recent[recent.length - 1];
+  for (let i = recent.length - 1; i >= 0 && recent[i] === last; i--) run++;
+  let pReal = 0.5;
+  if (run >= 3) pReal = last === "f" ? 0.8 : 0.2;
+  const real = Math.random() < pReal;
   return { name: real ? pick(reals).name : pick(fakes).name };
 }
 
