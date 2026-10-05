@@ -229,12 +229,14 @@ const realsNear = (len) => {
   return out;
 };
 
-function build() {
-  const key = weighted(shapeChoices);
+function build(forcedKey) {
+  const key = forcedKey ?? weighted(shapeChoices);
   const kinds = key.split(">");
   const rec = shapes.get(key);
-  const words = kinds.map((kind) => {
-    const list = byKind.get(kind);
+  const words = kinds.map((kind, i) => {
+    // 마지막 칸은 "끝에 오는 말"의 분포를 따른다. 가운데 칸과 끝 칸은 쓰임이
+    // 달라서, 같은 무게로 고르면 끝 낱말 분포가 실단지와 어긋난다
+    const list = i === kinds.length - 1 ? endWeightByKind.get(kind) : byKind.get(kind);
     return list && list.length ? weighted(list) : null;
   });
   if (words.some((w) => !w)) return null;
@@ -295,76 +297,110 @@ for (const a of reals) {
 }
 const realEndTotal = reals.length;
 
-/*
- * 길이와 끝 낱말을 **번갈아 여러 번** 맞춘다.
+/**
+ * 끝 낱말을 **뽑을 때부터** 실단지 비율로 고른다.
  *
- * 한 번씩만 맞추면 둘이 서로를 밀어낸다. 끝 낱말을 깎아 놓으면 "…아파트" 같은
- * 긴 이름이 줄고, 그러면 길이 보정이 그것을 다시 끌어올린다. 실제로 끝 낱말만
- * 한 번 깎았을 때 53%에서 32%까지만 내려갔다(실단지는 15.3%).
- *
- * 그래서 재고-고치고를 몇 번 되풀이한다. 매번 지금 쓰고 있는 거름을 그대로
- * 적용한 뒤의 분포를 다시 재므로, 두 비율이 같이 제자리를 찾는다.
- *
- * 왜 이렇게까지 하나: 모양 한 가지가 쏠리면 그것 하나로 가짜를 가려낼 수 있다.
- * 띄어쓰기가 그랬고(49.6% 대 15.9%), 길이가 그랬고(4.8자 대 8.1자), 끝 낱말이
- * 그랬다. 이름을 읽지 않고 겉모양만 세는 길을 남겨 두면 안 된다.
+ * 버리는 것만으로는 모자란 쪽을 못 채운다. 아무리 다 받아 줘도 뽑히는 만큼
+ * 밖에 안 나온다 — 실제로 "…아파트"를 100% 받아 주는데도 8.4%에 머물렀다
+ * (실단지 36.3%). 그래서 마지막 칸은 그 종류 안에서 **실단지가 그 낱말로
+ * 끝나는 횟수**를 무게로 삼아 고른다.
  */
-const PROBE = 6000;
-const ROUNDS = 8;
-let ratio = new Map();
-let ratioMax = 1;
-let endOk = new Map();
-
-for (let round = 0; round < ROUNDS; round++) {
-  const lenSeen = new Map();
-  const endSeen = new Map();
-  let n = 0;
-  for (let i = 0; i < PROBE; i++) {
-    const m = build();
-    if (!m) continue;
-    const tail = m.words[m.words.length - 1];
-    // 지금 쓰는 거름을 그대로 먹여 본다 (첫 바퀴에는 아무것도 안 걸러진다)
-    if (rand() > (endOk.get(tail) ?? 1)) continue;
-    const l = norm(m.name).length;
-    if (ratio.size && rand() > (ratio.get(l) ?? 0) / ratioMax) continue;
-    n++;
-    lenSeen.set(l, (lenSeen.get(l) ?? 0) + 1);
-    endSeen.set(tail, (endSeen.get(tail) ?? 0) + 1);
+/**
+ * 틀을 고르는 무게를 "무엇으로 끝나는가"에 맞춘다.
+ *
+ * 끝 낱말을 낱말 단위로만 맞춰서는 36.3%인 "…아파트"가 15.5%까지밖에 안 올랐다.
+ * 우리말로 끝나는 **틀 자체**가 배운 것 중에 드물어서다. 토막내기가 긴 이름을
+ * 자주 놓치는데 긴 이름일수록 우리말로 끝나니, 놓친 것이 고스란히 비는 칸이 됐다.
+ *
+ * 그래서 틀의 무게에 (실단지가 그 종류로 끝나는 비율 ÷ 배운 틀이 그 종류로
+ * 끝나는 비율)을 곱한다. 배운 것이 모자란 쪽을 그만큼 더 자주 고르게 된다.
+ */
+function reweightShapesByEnding() {
+  const realLastKind = new Map();
+  const kindOf = new Map(LEX);
+  for (const a of reals) {
+    const bare = norm(a.name);
+    const tail = LEX_BY_LEN.find((w) => bare.endsWith(w.toLowerCase()));
+    if (tail) realLastKind.set(kindOf.get(tail), (realLastKind.get(kindOf.get(tail)) ?? 0) + 1);
   }
-  if (!n) break;
-
-  // 끝 낱말: 목표 ÷ 지금 나오는 비율. 이미 걸러진 뒤의 비율이라 누적으로 곱한다
-  for (const [w, c] of endSeen) {
-    const want = (realEnd.get(w) ?? 0) / realEndTotal;
-    const have = c / n;
-    const prev = endOk.get(w) ?? 1;
-    // 한 바퀴에 다 고치지 않고 절반만 움직인다(제곱근). 한 번에 고치면 지나쳐서
-    // 다음 바퀴에 반대로 넘어가고, 그렇게 출렁이다 통과량만 깎인다 — 실제로
-    // "아파트"가 53% → 0%로 넘어갔다
-    if (have > 0) endOk.set(w, prev * Math.sqrt(want / have));
+  const realTotal = [...realLastKind.values()].reduce((x, y) => x + y, 0) || 1;
+  const haveTotal = shapeChoices.reduce((x, [, w]) => x + w, 0) || 1;
+  const have = new Map();
+  for (const [key, w] of shapeChoices) {
+    const last = key.split(">").pop();
+    have.set(last, (have.get(last) ?? 0) + w);
   }
-  // 가장 큰 값을 1로 맞춘다. 중요한 것은 낱말끼리의 비율이지 절대값이 아니다 —
-  // 정규화하지 않으면 바퀴를 돌 때마다 모두의 확률이 같이 내려가서, 비율은
-  // 맞는데 통과량만 무너진다(40건 뽑으려다 8건에서 멈췄다)
-  const endMax = Math.max(...endOk.values(), 1e-9);
-  for (const [w, v] of endOk) endOk.set(w, v / endMax);
-  // 길이: 같은 방법
-  const next = new Map();
-  for (const [l, w] of lenWeight) {
-    const have = (lenSeen.get(l) ?? 0) / n;
-    if (have > 0) next.set(l, (ratio.get(l) ?? 1) * Math.sqrt(w / have));
-  }
-  if (next.size) {
-    ratio = next;
-    ratioMax = Math.max(...ratio.values(), 1e-9);
+  for (const c of shapeChoices) {
+    const last = c[0].split(">").pop();
+    const want = (realLastKind.get(last) ?? 0) / realTotal;
+    const now = (have.get(last) ?? 0) / haveTotal;
+    if (now > 0 && want > 0) c[1] = c[1] * (want / now);
   }
 }
-console.log(
-  `모양 맞추기 ${ROUNDS}바퀴: 목표 평균 ${[...lenWeight.entries()].reduce((s2, [l, w]) => s2 + l * w, 0).toFixed(1)}자`,
-);
+reweightShapesByEnding();
+
+const endWeightByKind = new Map();
+for (const [w, kind] of LEX) {
+  if (!endWeightByKind.has(kind)) endWeightByKind.set(kind, []);
+  // 실단지에서 그 낱말로 끝난 적이 없으면 아주 작은 무게만 준다 (아주 없애지는
+  // 않는다 — 그러면 끝 낱말이 몇 개로 굳어 그것대로 티가 난다)
+  endWeightByKind.get(kind).push([w, (realEnd.get(w) ?? 0) + 0.5]);
+}
+
+/*
+ * 길이를 먼저 정하고 그 길이가 나오는 틀로 짓는다.
+ *
+ * 앞서 쓴 방식(마구 뽑은 뒤 비율이 맞을 때까지 버리기)을 걷어냈다. 버리기는
+ * 많은 것을 줄일 뿐 없는 것을 만들지 못한다. 11자 이상이 실단지에서는 18.7%인데
+ * 아무리 다 받아 줘도 0%였다 — 11자가 나오는 틀을 애초에 배우지 못해서다
+ * (토막내기가 긴 이름을 자주 놓치고, 그래서 배운 틀은 2~3칸짜리뿐이다).
+ *
+ * 그래서 순서를 뒤집는다. 실단지 길이 분포에서 목표 길이를 먼저 뽑고, 그 길이가
+ * 나오는 틀 중에서 고른다. 틀이 모자라면 칸을 이어 붙여 길이를 맞춘다.
+ * 바퀴를 돌리며 수렴시키던 것이 통째로 없어져 계산도 코드도 줄었다.
+ */
+const lenPick = [...lenWeight.entries()];
+
+/** 틀마다 실제로 어떤 길이가 나오는지 미리 재 둔다 */
+const shapeLen = new Map();
+for (let i = 0; i < 4000; i++) {
+  const m = build();
+  if (!m) continue;
+  const rec = shapeLen.get(m.shape) ?? { sum: 0, n: 0 };
+  rec.sum += norm(m.name).length;
+  rec.n++;
+  shapeLen.set(m.shape, rec);
+}
+/** 목표 길이 → 그 길이를 낼 만한 틀들 */
+function shapesFor(target) {
+  const out = [];
+  for (const [key, w] of shapeChoices) {
+    const rec = shapeLen.get(key);
+    if (!rec || !rec.n) continue;
+    const mean = rec.sum / rec.n;
+    if (Math.abs(mean - target) <= 2) out.push([key, w]);
+  }
+  return out;
+}
+const shapeCache = new Map();
+
+/** 목표 길이에 맞는 이름 하나. 못 맞추면 null */
+function buildAt(target) {
+  if (!shapeCache.has(target)) shapeCache.set(target, shapesFor(target));
+  const choices = shapeCache.get(target);
+  if (!choices.length) return null;
+  // 길이마다 넉넉히 시도한다. 적게 시도하면 맞추기 어려운 길이(긴 쪽)만
+  // 자주 실패하고, 실패한 만큼 쉬운 길이(짧은 쪽)로 쏠린다 — 목표 길이를
+  // 제대로 뽑아 놓고도 6자 이하가 54.5%가 됐다(실단지 27.8%)
+  for (let t = 0; t < 60; t++) {
+    const m = build(weighted(choices));
+    if (m && norm(m.name).length === target) return m;
+  }
+  return null;
+}
 
 const added = [];
-const why = { 짧거나긺: 0, 길이분포: 0, 관리단위: 0, 이미있음: 0, 실단지와가까움: 0, 가짜와가까움: 0, 말거르기: 0 };
+const why = { 짧거나긺: 0, 관리단위: 0, 이미있음: 0, 실단지와가까움: 0, 가짜와가까움: 0, 말거르기: 0 };
 let tries = 0;
 const room = Math.max(0, Math.min(MAX, TARGET - fakeFile.items.length));
 
@@ -372,15 +408,11 @@ const { screenName } = room ? await import("../lib/wordguard.ts") : { screenName
 
 while (added.length < room && tries < room * 1500) {
   tries++;
-  const made = build();
+  const made = buildAt(weighted(lenPick));
   if (!made) continue;
   const { name, shape, words } = made;
-  // 끝 낱말이 실단지보다 흔하게 나오면 그만큼 깎는다
-  if (rand() > (endOk.get(words[words.length - 1]) ?? 1)) { why.끝낱말쏠림 = (why.끝낱말쏠림 ?? 0) + 1; continue; }
   const bare = norm(name);
   if (bare.length < 4 || bare.length > 20) { why.짧거나긺++; continue; }
-  // 목표 ÷ 제안 비율로 받아들인다. 내가 잘 뽑는 길이는 깎고, 못 뽑는 길이는 다 받는다
-  if (rand() > (ratio.get(bare.length) ?? 0) / ratioMax) { why.길이분포++; continue; }
   if (ADMIN_NOISE.test(name)) { why.관리단위++; continue; }
   if (seen.has(bare)) { why.이미있음++; continue; }
   if (screenName(name).verdict !== "pass") { why.말거르기++; continue; }
