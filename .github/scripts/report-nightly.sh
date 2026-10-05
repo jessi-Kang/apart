@@ -38,6 +38,21 @@ else
 fi
 echo "" >> "$OUT"
 
+# 제목 줄만 보고 넘어가도 알아야 하는 것은 제목 바로 밑에 올린다.
+#
+# 왜: 수집이 13일 연속 인천·경기를 한 건도 못 받는 동안, 같은 밤에 가짜는
+# 늘고 있어서 제목이 매번 "새로 나갔습니다"였다. 실패한 줄("시도 41: 목록
+# 0건")은 접힌 기록 안에 있었고 아무도 안 읽었다. 제목이 좋은 소식을 말하면
+# 나쁜 소식은 묻힌다.
+if [ -s /tmp/collect.log ]; then
+  bad=$(grep -E "목록 실패|목록이 0건|목록 0건" /tmp/collect.log | head -5)
+  if [ -n "$bad" ]; then
+    echo "> **받지 못한 시도가 있습니다.**" >> "$OUT"
+    echo "$bad" | sed 's/^/> /' >> "$OUT"
+    echo "" >> "$OUT"
+  fi
+fi
+
 # 각 단계가 남긴 기록을 그대로 붙인다. 요약하지 않는다 — 요약하다 빠뜨린
 # 한 줄이 대개 원인이다
 for pair in "수집:/tmp/collect.log" "승격:/tmp/promote.log" "가짜 채우기:/tmp/generate.log" "내보내기:/tmp/export.log"; do

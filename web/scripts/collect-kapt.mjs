@@ -133,15 +133,30 @@ async function getJson(url, tries = 6) {
   }
 }
 
+/**
+ * 시도 하나의 단지 목록.
+ *
+ * **0건은 성공이 아니다.** 예전에는 빈 응답을 그대로 받아들여 "시도 41: 목록
+ * 0건"을 찍고 넘어갔다. 그 바람에 인천과 경기가 13일 연속 한 건도 못 받았는데
+ * 야간 작업은 매번 "성공"으로 보고했다 — 조용히 헛도는 것이 제일 나쁘다고
+ * 적어 놓고 정확히 그 일이 일어났다.
+ *
+ * 그래서 0건이면 예외를 던져 바깥의 재시도를 타게 한다. 한 쪽을 300건으로
+ * 줄인 것도 같은 이유다 — 1000건은 응답이 2.2초로 느려 포털이 중간에 끊을
+ * 여지가 크고, 300건은 0.27초다(실측).
+ */
 async function listSido(sidoCode) {
   const items = [];
+  const SIZE = 300;
   for (let page = 1; ; page++) {
-    const url = `${BASE_LIST}?serviceKey=${KEY}&sidoCode=${sidoCode}&pageNo=${page}&numOfRows=1000&_type=json`;
+    const url = `${BASE_LIST}?serviceKey=${KEY}&sidoCode=${sidoCode}&pageNo=${page}&numOfRows=${SIZE}&_type=json`;
     const json = await getJson(url);
     const body = json?.response?.body;
     const rows = body?.items?.item ?? body?.items ?? [];
-    items.push(...(Array.isArray(rows) ? rows : [rows]));
-    if (page * 1000 >= Number(body?.totalCount ?? 0)) break;
+    const list = Array.isArray(rows) ? rows : rows ? [rows] : [];
+    if (page === 1 && !list.length) throw new Error("목록이 0건이다 (포털이 빈 응답을 돌려줬다)");
+    items.push(...list);
+    if (page * SIZE >= Number(body?.totalCount ?? 0) || !list.length) break;
   }
   return items;
 }
@@ -197,7 +212,23 @@ let sinceSave = 0;
 for (const sido of SIDO_CODES) {
   let list;
   try {
-    list = await listSido(sido);
+    // 빈 응답은 잠시 뒤 다시 부르면 받히는 일이 많다. getJson의 재시도는 한
+    // 호출 안의 것이고, 이건 목록 전체를 처음부터 다시 부르는 것이다
+    let lastErr = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        list = await listSido(sido);
+        lastErr = null;
+        break;
+      } catch (e2) {
+        lastErr = e2;
+        if (attempt < 3) {
+          console.error(`시도 ${sido}: ${String(e2.message ?? e2).slice(0, 80)} — ${attempt * 20}초 뒤 다시`);
+          await sleep(attempt * 20_000);
+        }
+      }
+    }
+    if (lastErr) throw lastErr;
   } catch (e) {
     // 한 시도가 안 된다고 나머지까지 포기하지 않는다. 부산 목록이 500을 뱉은
     // 탓에 대구·인천·경기가 시작도 못 하고 그날 밤이 통째로 날아간 적이 있다
