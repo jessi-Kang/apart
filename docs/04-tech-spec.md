@@ -13,15 +13,15 @@
 | 출제 데이터 | **정적 JSON 2개** (`web/data/*.json`) | 번들에 포함. 조회 지연·쿼리 비용 0 |
 | OG 이미지 | **`next/og`의 `ImageResponse`** | `app/r/[slug]/opengraph-image.tsx` 1종 |
 | 공유 이미지 | **Canvas 2D 직접 드로잉** (`lib/sharecard.ts`) | 1080×1350 접수증. 라이브러리 없음 |
-| 배치(수집·검증) | Node 스크립트 (`web/scripts/*.mjs`) | 수동 실행. CI 배치는 미구현 |
-| 관리 화면 | **미구현** | 검수 큐·편성 도구는 [03 문서](03-content-pipeline.md#4-검수-프로세스-사람) 참조 |
+| 배치(수집·생성·검증) | Node 스크립트 (`web/scripts/*.mjs`) | GitHub Actions 야간 작업 둘이 돌린다(02:00 수집·가짜 채우기, 05:10 작명 출제) |
+| 운영 화면 | `/report` (운영자만) | 작명 승인·반려, 버그 제보 열람, 감별 리포트 |
 
 ## 2. 데이터 모델
 
 ### 2-1. 출제 풀 (정적 파일, DB 아님)
 
 ```jsonc
-// web/data/apartments.json — K-apt 실데이터 12,121건 (서울 전수 + 시도 14곳 표본)
+// web/data/apartments.json — K-apt 실데이터 15,839건 (시도 15곳)
 { "items": [{
   "id": "kA10021295",        // "k" + kaptCode
   "name": "경희궁의아침4단지",
@@ -30,7 +30,7 @@
   "difficulty": "easy"       // easy | mid | hard (수집 시 규칙 라벨)
 }] }
 
-// web/data/fake_names.json — LLM 배치 생성 262건
+// web/data/fake_names.json — 가짜 2,000건. id 앞글자가 출처다: f 초기 생성 · g 생성기 · c 작명소(coined: true)
 { "items": [{
   "id": "f01",
   "name": "e편한세상 더 프라임 노블",
@@ -39,17 +39,29 @@
 }] }
 ```
 
-- `apartments.collected.json`은 수집 직후 원본이며, 검토 후 `apartments.json`으로 승격한다.
+- `apartments.collected.json`은 수집 원본이며 `promote-apartments.mjs`가 더하기로 승격한다. `skipped`에 받아 보고 버린 kaptCode와 날짜가 있어 90일 동안 다시 받지 않는다. `name_pieces.json`은 작명소와 생성기가 같이 쓰는 조각 어휘다.
 - **`daily_quizzes` 테이블은 없다.** 일일 문제는 KST 날짜를 시드로 한 결정적 생성(§4)이라 저장할 것이 없다. `excluded`·`last_used_at` 같은 출제 이력 필드도 아직 없다(90일 재출제 금지 미구현).
 
 ### 2-2. Postgres (Neon, 집계·계정)
 
 ```sql
--- 공식전 문항별 익명 집계 (lib/stats.ts)
-question_stats (date, no, answered, correct)        -- PK (date, no)
+-- 공식전 문항별 익명 집계 (lib/stats.ts). 구역·창구별로 따로 센다 (전국은 area = '')
+question_stats (date, area, mode, no, answered, correct)   -- PK (date, area, mode, no)
 
 -- 공식전 점수 분포, 상위 % 산출용 (lib/stats.ts)
-score_dist     (date, score, cnt)                   -- PK (date, score)
+score_dist     (date, area, mode, score, cnt)              -- PK (date, area, mode, score)
+
+-- 공식전 첫 답 고정 (lib/officialrun.ts). 로그인한 사람은 쿠키를 지워도 첫 답이 남는다
+official_answer (user_id, date, area, mode, no, correct)
+
+-- 이름별 집계: 몇 번 나왔고 몇 명을 속였나 (lib/namestats.ts)
+name_stats     (name, kind, shown, fooled)
+
+-- 작명소 접수 (lib/coined.ts). approved·rejected·hold_reason으로 단계가 갈린다
+coined_name    (id, user_id, name, area, approved, rejected, hold_reason, created_at)
+
+-- 버그 제보 (lib/bugreport.ts)
+bug_report     (id, user_id, page, text, created_at)
 
 -- 무한 세션 판 기록 (lib/runstats.ts)
 endless_runs   (mode, date, best, hits, cnt, avg_ms, created_at)
@@ -60,10 +72,10 @@ app_user       (id, google_sub UNIQUE, email, name)
 user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncState
 ```
 
-- 집계에 개인 식별자는 없다. `question_stats`·`score_dist`는 **공식전(데일리 O/X)만** 쌓는다. 조립·진짜 찾기의 공식전과 무한 모드는 전국 정답률 비교가 무의미하거나 문제가 제각각이라 문항 집계를 하지 않고, 무한 세션만 판 단위로 `endless_runs`에 들어간다.
+- `question_stats`·`score_dist`는 **공식전만** 쌓고 세 창구를 `mode`로 가른다. 무한은 판 단위로 `endless_runs`에, 이름별 속은 수는 `name_stats`에 들어간다(무한에서 가장 많이 쌓인다).
 - `DATABASE_URL`이 없으면 `lib/stats.ts`가 로컬 JSON 파일 스토어(`.data/stats.json`)로 자동 강등된다. 개발용이며 서버리스 다중 인스턴스에서는 쓰지 않는다.
 - DB 오류는 전부 삼켜 "집계 중"(null)으로 강등한다. 집계 실패가 게임 진행이나 로그인을 막지 않는다.
-- 2단계 작명소 모드용 `submissions`·`votes`는 계획 단계이며 아직 만들지 않았다.
+- 작명소는 `coined_name` 한 테이블로 돈다. 투표는 두지 않았다 — 속은 사람 수(`name_stats`)가 그 자리를 대신한다.
 
 ## 3. API
 
@@ -72,14 +84,14 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 | 엔드포인트 | 메서드 | 내용 |
 |---|---|---|
 | `/api/quiz/today` | GET | 공식전 10문제. `{no, name}`만 + `date`·`episode` |
-| `/api/quiz/answer` | POST | `{date, no, choice, practice?}` → 정답 여부 + 실단지 메타/가짜 힌트 + 전국 정답률. `choice:"timeout"`은 무조건 오답, `practice:true`면 집계 제외 |
+| `/api/quiz/answer` | POST | `{date, no, choice, area?}` → 정답 여부 + 실단지 메타/가짜 힌트 + 정답률. `choice:"timeout"`은 무조건 오답. 같은 문제를 다시 보내면 첫 판정을 그대로 돌려주고 집계에 넣지 않는다(`replay: true`). 집계 제외 스위치는 두지 않는다 |
 | `/api/quiz/finish` | POST | `{date, score}` → 점수 분포 +1, 상위 % 반환 |
 | `/api/assemble/today` | GET | 조립 10문제. 조각·정답 길이·힌트(위치·연도·세대수) |
 | `/api/assemble/check` | POST | `{date, no, guess[]}` → 정답 여부 + 정답·메타 공개 |
 | `/api/assemble/hint` | GET | `?no&tier` → 초성 힌트 마스크 (최대 3글자까지만) |
 | `/api/findreal/today` | GET | 진짜 찾기 10라운드, 섞인 보기 4개 |
 | `/api/findreal/check` | POST | `{date, no, pick \| timeout}` → 정답 여부 + 진짜·메타 공개 |
-| `/api/endless/ox` | GET / POST | 랜덤 1문제 / `{name, choice}` 판정 |
+| `/api/endless/ox` | GET / POST | 랜덤 1문제(`?recent=rffr` 최근 정체로 같은 쪽 연속을 누른다) / `{name, choice}` 판정 |
 | `/api/endless/find` | GET / POST | 랜덤 4지선다 / `{options, pick}` 판정 (조작된 보기는 거부) |
 | `/api/endless/assemble` | GET / POST | 랜덤 퍼즐 / `{id, guess[]}` 판정 |
 | `/api/endless/assemble/hint` | GET | `?id&tier` → 초성 힌트 마스크 |
@@ -88,20 +100,24 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 | `/api/auth/callback` | GET | 코드 교환 → 사용자 upsert → 세션 쿠키 |
 | `/api/auth/me` | GET | `{configured, user}` — 로그인 기능 on/off와 현재 세션 |
 | `/api/auth/logout` | POST | 세션 쿠키 삭제 (CSRF 방지로 POST만) |
-| `/api/state` | GET / PUT | 서버 보관 기록 조회 / 기기 기록 업로드 후 병합 (본문 8KB 제한) |
+| `/api/state` | GET / PUT | 서버 보관 기록 조회 / 기기 기록 업로드 후 병합 (본문 8KB 제한). 작명 건수 `coined`는 서버가 `coined_name`에서 세어 채우고 올라온 값은 버린다 |
+| `/api/naming` | GET / POST | 작명소 조각 / 이름 접수 (로그인 필수, 하루 20건, 말 거르기) |
+| `/api/coined` | GET / PATCH | 접수 목록(쪽 넘김) / 승인·반려·되돌리기 (운영자만) |
+| `/api/coined/mine` | GET | 내가 지은 이름과 속은 수 |
 
-페이지 라우트: `/`(접수 대장 홈), `/play`(감별 O/X), `/assemble`(이름 조립), `/findreal`(진짜 찾기), `/r/{date}-{score}-{grid}`(공유 결과 + OG), `/manifest.webmanifest`.
+페이지 라우트는 한 글자다: `/`(접수 대장 홈), `/o`(감별 O/X), `/a`(이름 조립), `/f`(진짜 찾기), `/n`(작명소, 비공개), `/me`(기록 열람실), `/top`(구역 명부), `/bug`, `/report`(운영자), `/r/{date}-{score}-{grid}`(공유 결과 + OG). 옛 경로(`/play`·`/assemble`·`/findreal`·`/record`·`/ranking`)는 `next.config.mjs`가 308로 넘긴다.
 
 - **정답을 클라이언트에 미리 내려주지 않는 이유**: 소스 보기로 만점 치팅 방지. 판정은 서버에서만. 자동화 치팅은 여전히 가능하지만 순위 경쟁이 없어 방어 비용을 더 들이지 않는다.
 - 캐시: `today` 계열만 `max-age=60`, 나머지는 `no-store` 또는 기본값. 문제 자체가 시드 생성이라 CDN 장시간 캐시의 이득이 크지 않다.
-- 구역 출제: `/api/endless/ox`와 `/api/endless/find`가 `?area=<자치구>`를 받는다. 알 수 없는 값은 무시하고 서울 전체로 낸다.
+- 구역 출제: 창구 API가 `?area=<시·도>`를 받는다(`lib/areaparam.ts`가 아는 값만 통과시키고 나머지는 전국). 공식전 시드에도 구역이 섞여 같은 (날짜, 구역)이면 같은 10문제다.
+- 전개 전 창구는 `requireReleased()`(화면)와 `blockIfUnreleased()`(API)가 404로 막는다(`lib/release.ts`의 `GAMES`).
 - 미구현: `/api/quiz/yesterday`(어제 문제 열람), `/admin/*`.
 
 ## 4. 출제 로직
 
 - `lib/daily.ts`: KST 날짜 문자열(`YYYY-MM-DD`)을 숫자 시드로 바꿔 mulberry32 난수를 돌린다. 진짜:가짜 4:6~6:4, 난이도 커브 `easy, easy, mid×5, hard×3`. 회차 번호(`제N호`)는 기준일(2026-09-10 = 1호)로부터의 경과일.
 - `lib/assemble.ts`·`lib/findreal.ts`: 같은 날짜 시드에 오프셋(777000000 / 555000000)을 더해 모드별로 문제가 겹치지 않게 한다.
-- `lib/endless.ts`: 무한 모드는 시드 없이 매 요청 `Math.random()`으로 풀에서 뽑는다. 판정은 이름/단지 id를 되돌려 받아 서버 사전에서 조회하는 방식이라 클라이언트가 진짜/가짜를 유추할 값이 없다.
+- `lib/endless.ts`: 무한은 시드 없이 매 요청 `Math.random()`으로 풀에서 뽑는다. 감별 O/X는 같은 쪽이 셋 이상 이어지면 반대쪽 확률을 0.8로 올려 연속 구간을 누른다. 판정은 이름/단지 id를 되돌려 받아 서버 사전에서 조회하는 방식이라 클라이언트가 진짜/가짜를 유추할 값이 없다.
 - 시간대: 모든 날짜 판정은 KST 고정(UTC + 9h 후 앞 10자리).
 
 ## 5. 계정·기록 동기화
@@ -126,6 +142,7 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 ## 8. 배포
 
 - **경로는 하나뿐이다**: 푸시 → GitHub Actions(`.github/workflows/vercel-deploy.yml`) → Vercel Deploy Hook(`VERCEL_DEPLOY_HOOK` 시크릿) → 배포. 깃 웹훅 경로는 `web/vercel.json`의 `{"git":{"deploymentEnabled":false}}`로 꺼져 있다(이중 배포 방지).
+- **야간 작업 둘**은 Actions 기본 토큰으로 푸시하므로 다른 워크플로를 깨우지 않는다. 그래서 배포 훅을 직접 쏜다. `collect-kapt.yml`(02:00 KST, 시크릿 `KAPT_API_KEY`)과 `publish-coined.yml`(05:10 KST, 시크릿 `DATABASE_URL`)이며, 같은 `concurrency` 묶음(`data-push`)이라 동시에 밀지 않는다. 둘 다 끝나면 `.github/scripts/report-nightly.sh`가 이슈 `야간 작업 일지`에 결과를 댓글로 남긴다(성공이든 실패든).
 - 워크플로에 `concurrency`를 걸어 연달아 푸시하면 마지막 것만 훅을 쏜다. Actions 탭의 수동 실행(`workflow_dispatch`) 버튼으로 빈 커밋 없이 재배포할 수 있다.
 - **주의 이력**: 배포가 조용히 멈춘 적이 있는데 원인은 웹훅 유실이 아니라 **계정 단위 일일 배포 한도**였다. 프로젝트별이 아니라 계정 전체 합산이며, 한도를 넘으면 훅이 201을 돌려주고 빌드만 생기지 않아 유실처럼 보인다. 현재는 Pro 플랜.
 - 비밀 값은 전부 `web/.env.local`(로컬)과 Vercel 환경변수로만 주입한다. 커밋 금지 대상: `DATABASE_URL`, `KAPT_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`.
@@ -137,7 +154,7 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 |---|---|
 | 호스팅/DB/OG | Vercel + Neon 무료~Pro 티어. 쓰기는 카운터 증가뿐이라 캐시 중심 구조로 버팀 |
 | LLM 생성 | 배치 생성만, 런타임 호출 0 |
-| K-apt API | 공공데이터 무료 (기본정보 일일 5,000건 쿼터) |
+| K-apt API | 공공데이터 무료 (기본정보 일일 5,000건 쿼터). 버린 단지를 적어 둬 같은 호출을 되풀이하지 않는다 |
 | 도메인 | 연 1~2만 원 |
 
 고정비가 사실상 도메인뿐이라 실패해도 매몰비용이 없고, 성공하면 트래픽 수익화를 붙일 여유가 있다.
