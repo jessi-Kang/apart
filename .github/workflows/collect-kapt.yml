@@ -110,7 +110,7 @@ jobs:
         working-directory: web
         run: |
           set -o pipefail
-          npm run generate-fakes -- --max=60 --target=2000 2>&1 | tee /tmp/generate.log
+          npm run generate-fakes -- --max=120 --target=2000 2>&1 | tee /tmp/generate.log
 
       - name: 출제 풀 검증
         if: steps.guard.outputs.skip == '0'
