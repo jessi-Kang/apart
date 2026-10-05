@@ -94,6 +94,23 @@ function tooClose(candidate, other) {
 const ADMIN_NOISE =
   /관리사무소|\d{3,}\s*동|제\s*\d|\d+\s*구역|임대|\d+\s*호(?!반|텔)|주택도시공사|도시개발공사|SH공사/;
 
+/**
+ * 난이도. collect-kapt.mjs의 difficultyOf와 **같아야 한다.**
+ *
+ * 처음에는 글자 수로 대충 매겼다(6자 이하면 hard). 그랬더니 생성분 900건의
+ * 88%가 hard로 몰렸고, 출제가 난이도를 보고 뽑으니(lib/daily.ts) 어려움 칸이
+ * 82% 생성분으로 들어찼다. 실단지와 가짜를 다른 자로 재면 난이도 칸마다
+ * 한쪽 출처만 쌓인다.
+ */
+const PET_NAMES = ["포레", "에듀", "노블", "퍼스티지", "센트럴", "리버", "레이크", "파크", "어반", "블리스", "그랑", "스카이", "뷰", "시티", "베뉴", "포레스트", "클래스"];
+function difficultyOf(name) {
+  const tokens = name.trim().split(/\s+/);
+  const petCount = PET_NAMES.filter((p) => name.includes(p)).length;
+  if (petCount >= 2 || tokens.length >= 4) return "hard";
+  if (petCount === 1 || tokens.length === 3) return "mid";
+  return "easy";
+}
+
 /* ---------- 재료 ---------- */
 const pieces = read("name_pieces.json");
 const reals = read("apartments.json").items;
@@ -108,6 +125,8 @@ for (const a of reals) {
   const d = String(a.dong ?? "").replace(/(\d+)?(동|읍|면|가)$/, "").trim();
   if (d.length >= 2 && d.length <= 4 && /^[가-힣]+$/.test(d)) areaWords.set(d, (areaWords.get(d) ?? 0) + 1);
 }
+// 동 이름으로는 안 잡히는 지역어(시·군 이름, 큰 생활권 이름). 실단지에서 캐냈다
+for (const w of pieces.areaExtra ?? []) if (!areaWords.has(w)) areaWords.set(w, 1);
 
 /** 사전. 긴 낱말부터 맞춰야 "센트럴파크"가 "센트럴"+"파크"로 쪼개진다 */
 const LEX = [
@@ -186,9 +205,8 @@ if (!shapeChoices.length) {
 
 const lenChoices = [...lenDist.entries()].filter(([l]) => l >= 4 && l <= 20);
 const lenTotal = lenChoices.reduce((s, [, n]) => s + n, 0);
-/** 그 길이가 실단지에서 얼마나 흔한가 (0~1). 뽑은 뒤 이 확률로 받아들인다 */
+/** 그 길이가 실단지에서 얼마나 흔한가 (0~1) */
 const lenWeight = new Map(lenChoices.map(([l, n]) => [l, n / lenTotal]));
-const lenMax = Math.max(...lenWeight.values());
 
 /* ---------- 2. 뽑는다 ---------- */
 const existingFakes = fakeFile.items.map((f) => f.name);
@@ -222,6 +240,10 @@ function build() {
   if (words.some((w) => !w)) return null;
   // 같은 낱말이 두 번 들어간 이름은 실단지에 거의 없다
   if (new Set(words).size !== words.length) return null;
+  // 동네 이름은 이름당 하나다. 실단지에 "천안…황성"처럼 서로 먼 두 동네를
+  // 같이 이고 있는 이름은 없다. 자유로운 이음매가 지역이라, 사이에 회사가
+  // 끼면 지역이 둘 들어가는 길이 열려 있었다
+  if (kinds.filter((k) => k === "지역").length > 1) return null;
   // 맨 앞·맨 뒤 자리는 실단지에서 그 자리에 와 본 낱말만 쓴다. "아이파크 동삼 더"처럼
   // 접두사로만 쓰이는 말("더")로 이름이 끝나는 것을 막는다
   if (!initialSeen.has(words[0]) || !finalSeen.has(words[words.length - 1])) return null;
@@ -238,8 +260,108 @@ function build() {
   }
   // 띄어쓰기도 그 틀의 실제 비율대로. 이걸 안 하면 공백만 세도 가짜가 드러난다
   const spaced = rand() < rec.spaced / rec.n;
-  return { name: spaced ? words.join(" ") : words.join(""), shape: key };
+  return { name: spaced ? words.join(" ") : words.join(""), shape: key, words };
 }
+
+/*
+ * 길이 맞추기.
+ *
+ * 처음에는 "실단지에서 흔한 길이일수록 잘 받아들인다"로 했는데 그게 틀렸다.
+ * 그렇게 하면 **원래 많이 나오던 것을 줄이기만 할 뿐, 적게 나오던 것을 늘리지는
+ * 못한다.** 결과가 어땠냐면, 야간 생성분 900건의 62%가 4자 "동네+회사"
+ * (동삼금강·남산SK·고덕한신)가 됐다 — 실단지는 4자가 8%인데. 가짜 풀의 64%가
+ * 그런 이름이 되니 같은 모양만 되풀이해 보였다.
+ *
+ * 왜 짧은 것만 나왔나. 틀은 실단지를 토막 내 배우는데, 긴 이름일수록 사전에
+ * 없는 글자가 남아 토막내기에 실패하고 통째로 빠진다. 그래서 배운 틀 자체가
+ * 짧은 쪽(지역+제조사, 지역+브랜드)으로 쏠려 있었다.
+ *
+ * 받아들일 확률은 **목표 ÷ 제안**이어야 한다. 그래서 먼저 아무 거름 없이
+ * 몇천 번 뽑아 내가 실제로 뽑아 내는 길이 분포(제안)를 재고, 그 비율로 받는다.
+ */
+/*
+ * 실단지가 어떤 낱말로 끝나는가.
+ *
+ * **실단지 전체**에서 센다. 처음에는 토막내기에 성공한 이름만 셌는데, "아파트"를
+ * 어휘에 넣고 나니 그런 이름이 성공 쪽에 몰려 비율이 부풀었다(실제 15.3%).
+ * 성공한 것만 보면 성공하게 만든 낱말이 과대평가된다.
+ */
+const realEnd = new Map();
+const LEX_BY_LEN = LEX.map(([w]) => w).sort((a, b) => b.length - a.length);
+for (const a of reals) {
+  const bare = norm(a.name);
+  const tail = LEX_BY_LEN.find((w) => bare.endsWith(w.toLowerCase()));
+  if (tail) realEnd.set(tail, (realEnd.get(tail) ?? 0) + 1);
+}
+const realEndTotal = reals.length;
+
+/*
+ * 길이와 끝 낱말을 **번갈아 여러 번** 맞춘다.
+ *
+ * 한 번씩만 맞추면 둘이 서로를 밀어낸다. 끝 낱말을 깎아 놓으면 "…아파트" 같은
+ * 긴 이름이 줄고, 그러면 길이 보정이 그것을 다시 끌어올린다. 실제로 끝 낱말만
+ * 한 번 깎았을 때 53%에서 32%까지만 내려갔다(실단지는 15.3%).
+ *
+ * 그래서 재고-고치고를 몇 번 되풀이한다. 매번 지금 쓰고 있는 거름을 그대로
+ * 적용한 뒤의 분포를 다시 재므로, 두 비율이 같이 제자리를 찾는다.
+ *
+ * 왜 이렇게까지 하나: 모양 한 가지가 쏠리면 그것 하나로 가짜를 가려낼 수 있다.
+ * 띄어쓰기가 그랬고(49.6% 대 15.9%), 길이가 그랬고(4.8자 대 8.1자), 끝 낱말이
+ * 그랬다. 이름을 읽지 않고 겉모양만 세는 길을 남겨 두면 안 된다.
+ */
+const PROBE = 6000;
+const ROUNDS = 8;
+let ratio = new Map();
+let ratioMax = 1;
+let endOk = new Map();
+
+for (let round = 0; round < ROUNDS; round++) {
+  const lenSeen = new Map();
+  const endSeen = new Map();
+  let n = 0;
+  for (let i = 0; i < PROBE; i++) {
+    const m = build();
+    if (!m) continue;
+    const tail = m.words[m.words.length - 1];
+    // 지금 쓰는 거름을 그대로 먹여 본다 (첫 바퀴에는 아무것도 안 걸러진다)
+    if (rand() > (endOk.get(tail) ?? 1)) continue;
+    const l = norm(m.name).length;
+    if (ratio.size && rand() > (ratio.get(l) ?? 0) / ratioMax) continue;
+    n++;
+    lenSeen.set(l, (lenSeen.get(l) ?? 0) + 1);
+    endSeen.set(tail, (endSeen.get(tail) ?? 0) + 1);
+  }
+  if (!n) break;
+
+  // 끝 낱말: 목표 ÷ 지금 나오는 비율. 이미 걸러진 뒤의 비율이라 누적으로 곱한다
+  for (const [w, c] of endSeen) {
+    const want = (realEnd.get(w) ?? 0) / realEndTotal;
+    const have = c / n;
+    const prev = endOk.get(w) ?? 1;
+    // 한 바퀴에 다 고치지 않고 절반만 움직인다(제곱근). 한 번에 고치면 지나쳐서
+    // 다음 바퀴에 반대로 넘어가고, 그렇게 출렁이다 통과량만 깎인다 — 실제로
+    // "아파트"가 53% → 0%로 넘어갔다
+    if (have > 0) endOk.set(w, prev * Math.sqrt(want / have));
+  }
+  // 가장 큰 값을 1로 맞춘다. 중요한 것은 낱말끼리의 비율이지 절대값이 아니다 —
+  // 정규화하지 않으면 바퀴를 돌 때마다 모두의 확률이 같이 내려가서, 비율은
+  // 맞는데 통과량만 무너진다(40건 뽑으려다 8건에서 멈췄다)
+  const endMax = Math.max(...endOk.values(), 1e-9);
+  for (const [w, v] of endOk) endOk.set(w, v / endMax);
+  // 길이: 같은 방법
+  const next = new Map();
+  for (const [l, w] of lenWeight) {
+    const have = (lenSeen.get(l) ?? 0) / n;
+    if (have > 0) next.set(l, (ratio.get(l) ?? 1) * Math.sqrt(w / have));
+  }
+  if (next.size) {
+    ratio = next;
+    ratioMax = Math.max(...ratio.values(), 1e-9);
+  }
+}
+console.log(
+  `모양 맞추기 ${ROUNDS}바퀴: 목표 평균 ${[...lenWeight.entries()].reduce((s2, [l, w]) => s2 + l * w, 0).toFixed(1)}자`,
+);
 
 const added = [];
 const why = { 짧거나긺: 0, 길이분포: 0, 관리단위: 0, 이미있음: 0, 실단지와가까움: 0, 가짜와가까움: 0, 말거르기: 0 };
@@ -248,15 +370,17 @@ const room = Math.max(0, Math.min(MAX, TARGET - fakeFile.items.length));
 
 const { screenName } = room ? await import("../lib/wordguard.ts") : { screenName: () => ({ verdict: "pass" }) };
 
-while (added.length < room && tries < room * 400) {
+while (added.length < room && tries < room * 1500) {
   tries++;
   const made = build();
   if (!made) continue;
-  const { name, shape } = made;
+  const { name, shape, words } = made;
+  // 끝 낱말이 실단지보다 흔하게 나오면 그만큼 깎는다
+  if (rand() > (endOk.get(words[words.length - 1]) ?? 1)) { why.끝낱말쏠림 = (why.끝낱말쏠림 ?? 0) + 1; continue; }
   const bare = norm(name);
   if (bare.length < 4 || bare.length > 20) { why.짧거나긺++; continue; }
-  // 실단지 길이 분포를 따른다. 흔한 길이는 잘 받고, 드문 길이는 드물게 받는다
-  if (rand() > (lenWeight.get(bare.length) ?? 0) / lenMax) { why.길이분포++; continue; }
+  // 목표 ÷ 제안 비율로 받아들인다. 내가 잘 뽑는 길이는 깎고, 못 뽑는 길이는 다 받는다
+  if (rand() > (ratio.get(bare.length) ?? 0) / ratioMax) { why.길이분포++; continue; }
   if (ADMIN_NOISE.test(name)) { why.관리단위++; continue; }
   if (seen.has(bare)) { why.이미있음++; continue; }
   if (screenName(name).verdict !== "pass") { why.말거르기++; continue; }
@@ -313,7 +437,7 @@ for (const a of added) {
     // 정답 공개 화면에 그대로 뜬다. 어떤 틀로 지었는지는 밝히지 않는다 —
     // 틀을 알려 주면 그다음부터는 틀을 외워서 맞힌다
     hint: "실단지에 없는 조합입니다",
-    difficulty: norm(a.name).length <= 6 ? "hard" : a.shape.split(">").length >= 3 ? "easy" : "mid",
+    difficulty: difficultyOf(a.name),
   });
   console.log(`  + ${a.name}  (${a.shape})`);
 }
