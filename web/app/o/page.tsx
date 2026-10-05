@@ -43,6 +43,8 @@ const fmtSec = (ms: number | null | undefined) =>
   ms == null ? null : `${(ms / 1000).toFixed(1)}초`;
 
 export default function PlayPage() {
+  /** 최근 문제의 정체(r/f). 서버가 같은 쪽 연속을 누르는 데 쓴다 */
+  const recentKinds = useRef("");
   const [quiz, setQuiz] = useState<TodayResponse | null>(null);
   // 처음 온 사람에게는 이용 안내를 덮어서 먼저 보여준다 (그동안 제한 시간은 멈춘다)
   const guide = useGuide("ox");
@@ -111,7 +113,12 @@ export default function PlayPage() {
 
   async function fetchEndless() {
     const a = areaPref();
-    const res = await fetch(`/api/endless/ox${a ? `?area=${encodeURIComponent(a)}` : ""}`);
+    const q = new URLSearchParams();
+    if (a) q.set("area", a);
+    // 최근 문제의 정체를 같이 보낸다. 같은 쪽이 줄줄이 나오는 구간을 서버가 눌러 준다
+    if (recentKinds.current) q.set("recent", recentKinds.current);
+    const qs = q.toString();
+    const res = await fetch(`/api/endless/ox${qs ? `?${qs}` : ""}`);
     if (!res.ok) throw new Error("endless_failed");
     setEq(((await res.json()) as { name: string }).name);
   }
@@ -222,6 +229,7 @@ export default function PlayPage() {
         });
         if (!res.ok) throw new Error("answer_failed");
         const data = (await res.json()) as AnswerResponse;
+        recentKinds.current = (recentKinds.current + (data.kind === "real" ? "r" : "f")).slice(-8);
         setReveal(data);
         setTimedOut(choice === "timeout");
         setECount((c) => c + 1);
