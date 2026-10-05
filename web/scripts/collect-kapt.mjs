@@ -170,6 +170,21 @@ async function basisInfo(kaptCode) {
 // 기존 수집본이 있으면 이어서 (kaptCode 기준 재호출 방지)
 const seen = new Map(); // familyKey → item
 const doneCodes = new Set();
+/**
+ * 받아 봤지만 정제에 걸려 버린 단지. kaptCode → 버린 날짜.
+ *
+ * 왜 적어 두나. 세대수나 준공년도가 비어 있어 버린 단지는 수집본에 안 남는다.
+ * 그래서 **매일 밤 같은 것을 다시 받아 왔다.** 부산·대구만 해도 목록과 수집본의
+ * 차이가 241건이고, 그만큼의 호출이 매일 버려졌다 — 하루 5,000건 쿼터가 이
+ * 작업의 유일한 제약인데 그 중 일부를 결과가 뻔한 일에 쓰고 있었다.
+ *
+ * 영영 안 보지는 않는다. 비어 있던 값이 나중에 채워지는 일이 있어서 90일이
+ * 지나면 다시 본다. 영구히 막으면 고쳐진 것을 영영 못 받는다.
+ */
+const skipped = new Map();
+const SKIP_DAYS = 90;
+const today = new Date().toISOString().slice(0, 10);
+const daysBetween = (a, b) => Math.abs(new Date(a) - new Date(b)) / 86400000;
 if (fs.existsSync(OUT)) {
   try {
     const prev = JSON.parse(fs.readFileSync(OUT, "utf8"));
@@ -177,7 +192,10 @@ if (fs.existsSync(OUT)) {
       seen.set(familyKey(it.name), it);
       doneCodes.add(it.id.replace(/^k/, ""));
     }
-    console.error(`기존 수집본 ${seen.size}건에서 이어서 수집`);
+    for (const [code, when] of Object.entries(prev.skipped ?? {})) {
+      if (daysBetween(today, when) < SKIP_DAYS) skipped.set(code, when);
+    }
+    console.error(`기존 수집본 ${seen.size}건에서 이어서 수집 (다시 안 볼 단지 ${skipped.size}건)`);
   } catch {
     /* 손상 시 새로 시작 */
   }
@@ -200,7 +218,12 @@ function save() {
   fs.writeFileSync(
     OUT,
     JSON.stringify(
-      { _note: `K-apt 수집본 ${new Date().toISOString().slice(0, 10)}. 검토 후 apartments.json으로 승격.`, items: [...seen.values()] },
+      {
+        _note: `K-apt 수집본 ${new Date().toISOString().slice(0, 10)}. 검토 후 apartments.json으로 승격.`,
+        // 받아 보고 버린 것. 매일 다시 받지 않으려고 적어 둔다 (90일 뒤 다시 본다)
+        skipped: Object.fromEntries([...skipped.entries()].sort()),
+        items: [...seen.values()],
+      },
       null,
       2,
     ),
@@ -243,6 +266,8 @@ for (const sido of SIDO_CODES) {
     const name = normalizeName(String(row.kaptName ?? ""));
     // 20자 초과는 카드 UI가 깨지고 검증기 형식 규칙에도 걸린다 — 풀에서 제외
     if (!name || name.length > 20 || seen.has(familyKey(name)) || doneCodes.has(String(row.kaptCode))) continue;
+    // 지난번에 받아 보고 버린 것은 다시 받지 않는다 (90일 뒤 다시 본다)
+    if (skipped.has(String(row.kaptCode))) continue;
     calls++;
     let info;
     try {
@@ -255,7 +280,12 @@ for (const sido of SIDO_CODES) {
     const households = Math.round(Number(info.kaptdaCnt ?? 0));
     const useDate = String(info.kaptUsedate ?? ""); // YYYYMMDD
     const builtYear = Number(useDate.slice(0, 4));
-    if (!households || !builtYear) continue; // 결측 제외
+    if (!households || !builtYear) {
+      // 결측 제외. 적어 두어 내일 또 받지 않는다
+      skipped.set(String(row.kaptCode), today);
+      sinceSave++;
+      continue;
+    }
     // V5는 as1~as3 대신 kaptAddr("서울특별시 송파구 방이동 89 …")만 준다
     const addr = String(info.kaptAddr ?? "").split(/\s+/);
     seen.set(familyKey(name), {
@@ -282,7 +312,7 @@ for (const sido of SIDO_CODES) {
 }
 
 save();
-console.error(`완료: ${seen.size}건 → ${OUT} (기본정보 호출 ${calls}건)`);
+console.error(`완료: ${seen.size}건 → ${OUT} (기본정보 호출 ${calls}건, 다시 안 볼 단지 ${skipped.size}건)`);
 if (failedSido.length) console.error(`목록을 못 받은 시도: ${failedSido.join(", ")} — 다음 실행에서 다시 시도한다`);
 console.error("다음: node scripts/validate-pool.mjs 로 대조 검증 후 apartments.json 교체");
 // 목록을 하나도 못 받았으면 실패로 끝낸다. 야간 작업이 "성공"으로 보이는데

@@ -28,9 +28,23 @@ function answersForDate(date: string, area?: string | null): Apartment[] {
   return seededShuffle(assemblePoolOf(area).reals, rng).slice(0, 10);
 }
 
-/** 함정 조각 풀: 같은 구역 가짜 이름의 토큰 (중복 제거) */
+/**
+ * 함정 조각 풀: 같은 구역 가짜 이름의 토큰 (중복 제거).
+ *
+ * 길이를 2~6자로 자른다. 정답 조각은 띄어쓴 실단지명을 쪼갠 것이라 늘 그 안에
+ * 드는데, 가짜는 붙여 쓴 것이 많아 "옥련롯데캐슬퍼스트파크"처럼 한 덩어리가
+ * 통째로 조각 하나가 된다. 그러면 두 가지가 한꺼번에 나빠진다 — 칩이 너무 넓어
+ * 격자가 한 줄씩 밀리고(320x568에서 주 동작이 33px 잘렸다), 길이만 봐도
+ * 함정인 것이 드러나 함정 구실을 못 한다.
+ */
 function decoyPool(area?: string | null): string[] {
-  return [...new Set(assemblePoolOf(area).fakes.flatMap((f) => f.name.split(" ")))];
+  return [
+    ...new Set(
+      assemblePoolOf(area)
+        .fakes.flatMap((f) => f.name.split(" "))
+        .filter((t) => t.length >= 2 && t.length <= 6),
+    ),
+  ];
 }
 
 export function assembleForDate(date: string, area?: string | null): AssemblePuzzle[] {

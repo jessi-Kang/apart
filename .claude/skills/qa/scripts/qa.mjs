@@ -307,6 +307,43 @@ function data() {
     const fakes = JSON.parse(read("data/fake_names.json")).items;
     ok("출제 풀", `검증 통과 — 실단지 ${items.length}건, 가짜 ${fakes.length}건`);
 
+    /*
+     * 겉모양만 세서 가짜를 찍을 수 있는가.
+     *
+     * 이름을 읽지 않고도 맞힐 수 있는 길이 세 번 열렸다. 띄어쓰기(가짜 49.6%
+     * 대 실단지 15.9% — 공백만 세도 76%), 글자 수(생성분 평균 4.8자 대 8.1자),
+     * 끝 낱말("…아파트"가 60% 대 15.3%). 셋 다 눈으로 40건 훑어서는 안 보였고,
+     * 세 주를 돌고 나서 사람이 찾았다.
+     *
+     * 재는 법: 문제는 진짜:가짜가 반반이므로(lib/daily.ts), 어떤 특징을 가진
+     * 이름을 무조건 가짜라고 찍었을 때의 적중률은 가짜비율 ÷ (가짜비율 +
+     * 실단지비율)이다. 50%면 아무 정보가 없는 것이고, 높을수록 공짜 힌트다.
+     * 65%를 넘으면 실패로 본다 — 열 문제 중 서넛을 읽지 않고 맞히는 셈이다.
+     */
+    const bare = (n) => n.replace(/\s+/g, "");
+    const rn = items.map((a) => a.name);
+    const fn = fakes.map((f) => f.name);
+    const rate = (arr, f) => arr.filter(f).length / (arr.length || 1);
+    const topEnd = ["아파트", "마을", "타운", "맨션"];
+    const feats = [
+      ["띄어쓰기 있음", (n) => /\s/.test(n)],
+      ["6자 이하", (n) => bare(n).length <= 6],
+      ["11자 이상", (n) => bare(n).length >= 11],
+      ...topEnd.map((w) => [`"${w}"로 끝`, (n) => bare(n).endsWith(w)]),
+    ];
+    const tells = [];
+    for (const [label, f] of feats) {
+      const rf = rate(fn, f);
+      const rr = rate(rn, f);
+      if (rf + rr < 0.02) continue; // 양쪽 다 거의 없으면 볼 것 없다
+      const guess = rf / (rf + rr);
+      if (guess > 0.65 || guess < 0.35) {
+        tells.push(`${label}: 찍으면 ${(Math.max(guess, 1 - guess) * 100).toFixed(0)}% 적중 (가짜 ${(rf * 100).toFixed(1)}% 대 실단지 ${(rr * 100).toFixed(1)}%)`);
+      }
+    }
+    if (tells.length) bad("겉모양", `읽지 않고 찍을 수 있다 — ${tells.join(" / ")}`);
+    else ok("겉모양", "띄어쓰기·글자 수·끝 낱말 어느 것으로도 찍을 수 없다 (적중률 65% 미만)");
+
     const NOISE = /관리사무소|\d{3,}|제\s*\d|\d+\s*구역|임대|\d+\s*호(?!반|텔)|주택도시공사|도시개발공사|SH공사/;
     const clean = items.filter((a) => !NOISE.test(a.name));
     const bySido = {};
