@@ -158390,6 +158390,36 @@
       "builtYear": 2026,
       "households": 1554,
       "difficulty": "hard"
+    },
+    {
+      "id": "kA10019946",
+      "name": "산곡솔마루아파트",
+      "sido": "인천광역시",
+      "sigungu": "부평구",
+      "dong": "산곡동",
+      "builtYear": 2026,
+      "households": 400,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10019923",
+      "name": "형제아파트",
+      "sido": "인천광역시",
+      "sigungu": "계양구",
+      "dong": "작전동",
+      "builtYear": 1985,
+      "households": 110,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10019907",
+      "name": "검단호수공원역 풍경채 어바니티 아파트",
+      "sido": "인천광역시",
+      "sigungu": "검단구",
+      "dong": "불로동",
+      "builtYear": 2026,
+      "households": 610,
+      "difficulty": "hard"
     }
   ]
 }
