@@ -158420,6 +158420,486 @@
       "builtYear": 2026,
       "households": 610,
       "difficulty": "hard"
+    },
+    {
+      "id": "kA10019993",
+      "name": "상인푸르지오센터파크",
+      "sido": "대구광역시",
+      "sigungu": "달서구",
+      "dong": "상인동",
+      "builtYear": 2024,
+      "households": 990,
+      "difficulty": "mid"
+    },
+    {
+      "id": "kA42945008",
+      "name": "시화청솔아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1999,
+      "households": 750,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42945111",
+      "name": "시화영남6단지",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 820,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42945408",
+      "name": "서해1아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 530,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42945409",
+      "name": "서해2단지",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1998,
+      "households": 570,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42974409",
+      "name": "금강",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1996,
+      "households": 730,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42975511",
+      "name": "시화송운마을건영2차",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 710,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42975602",
+      "name": "시화건영3단지",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 2002,
+      "households": 210,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42975617",
+      "name": "시화계룡1단지",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 620,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42975619",
+      "name": "시화아주",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1994,
+      "households": 534,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42975705",
+      "name": "시화계룡2차아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1998,
+      "households": 630,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42975710",
+      "name": "시화신호새피앙",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 330,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42975806",
+      "name": "시화고합",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1998,
+      "households": 400,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42975903",
+      "name": "시화영화하이닉스",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 2002,
+      "households": 210,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42976007",
+      "name": "시화대림1단지",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1998,
+      "households": 660,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42976306",
+      "name": "시화동남",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1998,
+      "households": 720,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42976403",
+      "name": "시화동보",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 560,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42976504",
+      "name": "시화동원",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1998,
+      "households": 358,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42976707",
+      "name": "시화미주",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1996,
+      "households": 492,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42976812",
+      "name": "시화보성",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1998,
+      "households": 760,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42976910",
+      "name": "시화부성파스텔",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 600,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42977103",
+      "name": "시화삼환",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 350,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42977509",
+      "name": "시화신동아",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1996,
+      "households": 790,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42977601",
+      "name": "시화신우",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1996,
+      "households": 200,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42977704",
+      "name": "시화신한토탈",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 240,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42978310",
+      "name": "시화요진",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 580,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42978411",
+      "name": "시화월드메르디앙",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1995,
+      "households": 594,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42978706",
+      "name": "시화진로",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 330,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42978807",
+      "name": "시화한신",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1996,
+      "households": 406,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42978904",
+      "name": "시화한일",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1996,
+      "households": 580,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42979008",
+      "name": "시화화성",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1997,
+      "households": 420,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42985804",
+      "name": "시화무진",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1995,
+      "households": 488,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42985807",
+      "name": "시화유천",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1996,
+      "households": 580,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42986101",
+      "name": "시화대우",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1996,
+      "households": 176,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42986112",
+      "name": "시화두산아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "정왕동",
+      "builtYear": 1996,
+      "households": 930,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA42946001",
+      "name": "시흥6차푸르지오2단지",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "죽율동",
+      "builtYear": 2013,
+      "households": 769,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10025377",
+      "name": "배곧호반써밋플레이스c2아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2019,
+      "households": 905,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10025408",
+      "name": "배곧호반써밋플레이스C1아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2019,
+      "households": 890,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10025502",
+      "name": "시흥배곧신도시 대방노블랜드엘리트시티",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2019,
+      "households": 1089,
+      "difficulty": "hard"
+    },
+    {
+      "id": "kA10025651",
+      "name": "배곧 중흥S-클래스아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2019,
+      "households": 1208,
+      "difficulty": "mid"
+    },
+    {
+      "id": "kA10025661",
+      "name": "시흥배곧센텀베이1차",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2019,
+      "households": 689,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10026012",
+      "name": "한라비발디캠퍼스3차",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2018,
+      "households": 1304,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10026419",
+      "name": "한라비발디캠퍼스2차아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2018,
+      "households": 2695,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10026534",
+      "name": "시흥배곧한신더휴",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2018,
+      "households": 1358,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10026631",
+      "name": "호반베르디움센트로하임아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2017,
+      "households": 1647,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10026723",
+      "name": "시흥배곧이지더원2차에듀그린아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2017,
+      "households": 900,
+      "difficulty": "mid"
+    },
+    {
+      "id": "kA10027300",
+      "name": "배곧호반베르디움더프라임아파트",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2016,
+      "households": 1206,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10027886",
+      "name": "호반 베르디움 센트럴파크",
+      "sido": "경기도",
+      "sigungu": "시흥시",
+      "dong": "배곧동",
+      "builtYear": 2015,
+      "households": 1414,
+      "difficulty": "hard"
     }
   ]
 }
