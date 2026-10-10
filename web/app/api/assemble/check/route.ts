@@ -5,6 +5,7 @@ import { normalizeArea } from "@/lib/areaparam";
 import { recordAnswer, answerRate } from "@/lib/stats";
 import { readSession } from "@/lib/auth";
 import { claimOfficialAnswer } from "@/lib/officialrun";
+import { creditCorrect } from "@/lib/xpbudget";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,8 @@ export async function POST(req: Request) {
     correct: result.correct,
   });
   if (claim.first) await recordAnswer(today, body.no!, result.correct, area, "assemble");
+  // 첫 답이 맞았을 때만 경험치 한도를 올린다 — 다시 보낸 답으로 한도를 불릴 수 없게
+  if (claim.first && claim.correct) await creditCorrect(session?.uid, "assemble");
   const { rate, sample } = await answerRate(today, body.no!, 100, area, "assemble");
   return NextResponse.json({ ...result, correct: claim.correct, replay: !claim.first, rate, sample });
 }
