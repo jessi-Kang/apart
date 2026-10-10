@@ -533,6 +533,32 @@ function secret() {
   else ok("[비밀] 소스맵", "배포본에 없음");
 }
 
+/* ---------- 3-1. 경험치 위조 (DB를 붙여야 잰다) ---------- */
+
+/**
+ * 구역 명부는 user_state.areaXp로 줄을 선다. 그 값은 클라이언트가 올린다.
+ * 한때 로그인한 아무나 천만을 적어 넣어 1위가 됐고, 병합이 큰 쪽을 남겨서
+ * 영영 내려오지 않았다(lib/xpbudget.ts가 그 뒤에 생겼다).
+ *
+ * 쓰기 점검이라 **시험 DB에서만** 돈다: REDTEAM_DB=1 과 REDTEAM_UID(시험 브랜치에
+ * 만든, 기록 없는 계정 id)를 같이 줘야 한다. 운영 DB에 대고 돌리지 않는다.
+ */
+async function xpForgery() {
+  const uid = Number(process.env.REDTEAM_UID);
+  if (process.env.REDTEAM_DB !== "1" || !uid) {
+    unknown("[정답] 경험치 위조", "쓰기 점검이라 시험 DB에서만 잰다 — REDTEAM_DB=1 REDTEAM_UID=<시험 계정>");
+    return;
+  }
+  const t = token({ uid });
+  if (!t) return unknown("[정답] 경험치 위조", "AUTH_SECRET이 없다");
+  const r = await req("/api/state", { cookie: sess(t), method: "PUT", body: { v: 1, xp: 9_999_999, areaXp: { 서울특별시: 9_999_999, 부산광역시: 9_999_999 } } });
+  const st = r.json?.state ?? {};
+  const areaSum = Object.values(st.areaXp ?? {}).reduce((a, b) => a + b, 0);
+  if (r.status !== 200) unknown("[정답] 경험치 위조", `PUT ${r.status} — 시험 계정 id가 app_user에 있는가`);
+  else if ((st.xp ?? 0) > 100_000 || areaSum > 100_000) bad("[정답] 경험치 위조", `천만을 적었더니 xp ${st.xp} · 구역 합 ${areaSum}이 저장됐다`);
+  else ok("[정답] 경험치 위조", `천만을 적어도 xp ${st.xp} · 구역 합 ${areaSum} (서버가 본 적중만큼만 오른다)`);
+}
+
 /* ---------- 6. 헤더·리디렉션 ---------- */
 
 async function header() {
@@ -572,13 +598,34 @@ async function header() {
   }
 
   const home = await req("/");
+
+  // 보안 헤더가 하나도 없던 적이 있다. 그때는 남의 사이트가 이 게임을 iframe으로
+  // 감싸 투명하게 덮고 클릭을 가로챌 수 있었다(로그아웃·작명 접수가 단추 하나다)
+  const h = (k) => home.headers.get(k) ?? "";
+  const csp = h("content-security-policy");
+  const lack = [];
+  if (!/frame-ancestors 'none'/.test(csp) && !/DENY|SAMEORIGIN/i.test(h("x-frame-options"))) lack.push("iframe 차단");
+  if (!/nosniff/i.test(h("x-content-type-options"))) lack.push("nosniff");
+  if (!csp) lack.push("CSP");
+  else {
+    // 스크립트·연결이 바깥 출처로 열려 있으면 CSP가 있어도 막는 것이 없다
+    const src = (d) => (csp.match(new RegExp(`${d}([^;]*)`)) ?? [, ""])[1];
+    if (/\*|https?:(?!\/\/)/.test(src("script-src")) || /\*/.test(src("connect-src"))) lack.push("CSP가 바깥 출처에 열림");
+    if (!/object-src 'none'/.test(csp)) lack.push("object-src");
+    if (!/base-uri/.test(csp)) lack.push("base-uri");
+  }
+  if (!/max-age=\d{7,}/.test(h("strict-transport-security"))) lack.push("HSTS");
+  if (h("x-powered-by")) lack.push("X-Powered-By 노출");
+  if (lack.length) bad("[헤더] 보안 헤더", `빠졌거나 약함: ${lack.join(", ")}`);
+  else ok("[헤더] 보안 헤더", "CSP(바깥 출처 차단) · iframe 차단 · nosniff · HSTS · 서버 표지 숨김");
+
   if (/<meta name="robots" content="noindex"/.test(home.text)) ok("[헤더] 색인 차단", "noindex 유지");
   else unknown("[헤더] 색인 차단", "noindex가 없다 — 공개하기로 했다면 정상이다");
 }
 
 /* ---------- 실행 ---------- */
 
-const SECTIONS = { session, guard, answer, input, secret, header };
+const SECTIONS = { session, guard, answer: async () => { await answer(); await xpForgery(); }, input, secret, header };
 
 async function main() {
   const want = process.argv[2] ?? "all";
