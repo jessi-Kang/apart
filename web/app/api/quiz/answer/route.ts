@@ -5,6 +5,7 @@ import { recordName } from "@/lib/namestats";
 import { normalizeArea } from "@/lib/areaparam";
 import { readSession } from "@/lib/auth";
 import { claimOfficialAnswer } from "@/lib/officialrun";
+import { creditCorrect } from "@/lib/xpbudget";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,8 @@ export async function POST(req: Request) {
     // 판단하지 못한 것이므로 속았다고 세지 않는다
     const shownName = item.kind === "real" ? item.real!.name : item.fake!.name;
     if (choice !== "timeout") await recordName(shownName, item.kind, !correct);
+    // 첫 답이 맞았을 때만 경험치 한도를 올린다 (lib/xpbudget.ts)
+    if (claim.correct) await creditCorrect(session?.uid, "ox");
   }
   const { rate, sample } = await answerRate(today, no!, 100, area, "ox");
 

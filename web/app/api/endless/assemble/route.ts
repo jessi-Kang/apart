@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { readSession } from "@/lib/auth";
+import { creditCorrect } from "@/lib/xpbudget";
 import { blockIfUnreleased } from "@/lib/guard";
 import { randomAssemble, judgeAssemble } from "@/lib/endless";
 
@@ -22,5 +24,7 @@ export async function POST(req: Request) {
   }
   const result = judgeAssemble(body.id, body.guess);
   if (!result) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  // 맞혔으면 경험치 한도를 올린다 (lib/xpbudget.ts)
+  if (result.correct) await creditCorrect((await readSession())?.uid, "assemble");
   return NextResponse.json(result);
 }

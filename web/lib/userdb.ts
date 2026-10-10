@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { mergeStates, sanitizeState, type SyncState } from "./sync";
+import { clampToBudget } from "./xpbudget";
 
 /**
  * 계정·기록 저장 (Neon: app_user + user_state).
@@ -40,7 +41,8 @@ export async function mergeUserState(uid: number, incoming: SyncState): Promise<
   if (!sql) return null;
   try {
     const existing = await getUserState(uid);
-    const merged = existing ? mergeStates(existing, incoming) : incoming;
+    // 경험치는 서버가 본 적중만큼만 늘 수 있다 (lib/xpbudget.ts) — 명부가 이 값으로 줄 선다
+    const merged = await clampToBudget(uid, existing, existing ? mergeStates(existing, incoming) : incoming);
     const json = JSON.stringify(merged);
     await sql`
       INSERT INTO user_state (user_id, state, updated_at)
