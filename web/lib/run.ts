@@ -2,6 +2,7 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { assemblePoolOf, poolOf } from "./data";
 import { mulberry32 } from "./seeded";
+import { decoyPoolOf, usableDecoys } from "./decoy";
 
 /**
  * 무한 판의 진행 상태 (서명 쿠키, 창구마다 하나).
@@ -196,8 +197,8 @@ export function assembleAt(seed: number, area: string, n: number) {
   const pool = assemblePoolOf(area || null);
   const apt = smallest(pool.reals, `${seed}:${n}:a:`, 1, (a) => a.name)[0];
   const answer = apt.name.split(" ");
-  const cand = [...new Set(pool.fakes.flatMap((f) => f.name.split(" ")))].filter((t) => !answer.includes(t));
-  const decoys = smallest(cand, `${seed}:${n}:d:`, answer.length >= 3 ? 2 : 3, (t) => t);
+  const dp = decoyPoolOf(area || null);
+  const decoys = smallest(usableDecoys(dp.tokens, answer), `${seed}:${n}:d:`, answer.length >= 3 ? 2 : 3, (t) => t, (t) => dp.weight.get(t) ?? 1);
   return {
     id: apt.id,
     pieces: shuffleAt([...answer, ...decoys], seed, n),

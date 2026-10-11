@@ -33,7 +33,7 @@ const MIN_W = 0.25;
 const MAX_W = 4;
 
 /** 이름마다 무게. 평균 1 */
-function rake(feats: boolean[][], target: number[]): number[] {
+export function rake(feats: boolean[][], target: number[]): number[] {
   const n = feats.length;
   const w = new Array<number>(n).fill(1);
   if (!n) return w;
@@ -66,3 +66,17 @@ export function shapeWeights(reals: { name: string }[], fakes: { name: string }[
   const target = SHAPE_FEATURES.map((_, f) => (share(rf, f) + share(ff, f)) / 2);
   return { real: rake(rf, target), fake: rake(ff, target) };
 }
+
+/**
+ * 조립 조각의 겉모양. 미끼 조각이 이 특징들로 정답 조각과 갈리면 퍼즐이 반쯤 풀린 채 나간다
+ * (주간 점검 첫 회: 숫자가 든 조각은 정답이라고 찍으면 공식전 94.4%). 주간 점검과 같은 잣대다.
+ */
+export const PIECE_FEATURES: [string, (p: string) => boolean][] = [
+  ["1~2자", (p) => p.length <= 2],
+  ["5자 이상", (p) => p.length >= 5],
+  ["영문 포함", (p) => /[A-Za-z]/.test(p)],
+  ["숫자 포함", (p) => /\d/.test(p)],
+  ['"아파트"로 끝', (p) => p.endsWith("아파트")],
+  ['"마을"·"타운"으로 끝', (p) => /(마을|타운)$/.test(p)],
+  ['"단지"로 끝', (p) => p.endsWith("단지")],
+];

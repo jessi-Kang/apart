@@ -2,6 +2,8 @@ import { assemblePoolOf, type Apartment } from "./data";
 import { geoOf } from "./geo";
 import { choseongHint } from "./hangul";
 import { seededShuffle, rngForDate as rngForDateWithOffset } from "./seeded";
+import { balanced } from "./daily";
+import { decoyPoolOf, usableDecoys } from "./decoy";
 
 /**
  * 이름 조립 모드 출제 (docs/06 모드 2)
@@ -29,8 +31,22 @@ function answersForDate(date: string, area?: string | null): Apartment[] {
   return seededShuffle(assemblePoolOf(area).reals, rng).slice(0, 10);
 }
 
+/** 무게에 비례해 k개를 겹치지 않게 뽑는다 */
+function weightedSample(list: string[], weight: Map<string, number>, k: number, rng: () => number): string[] {
+  const left = [...list];
+  const out: string[] = [];
+  while (out.length < k && left.length) {
+    const total = left.reduce((s, t) => s + (weight.get(t) ?? 1), 0);
+    let r = rng() * total;
+    let i = 0;
+    for (; i < left.length - 1; i++) if ((r -= weight.get(left[i]) ?? 1) <= 0) break;
+    out.push(left.splice(i, 1)[0]);
+  }
+  return out;
+}
+
 /**
- * 함정 조각 풀: 같은 구역 가짜 이름의 토큰 (중복 제거).
+ * (2026-10-11까지의 공식전) 함정 조각 풀: 같은 구역 가짜 이름의 토큰 (중복 제거).
  *
  * 길이를 2~6자로 자른다. 정답 조각은 띄어쓴 실단지명을 쪼갠 것이라 늘 그 안에
  * 드는데, 가짜는 붙여 쓴 것이 많아 "옥련롯데캐슬퍼스트파크"처럼 한 덩어리가
@@ -51,12 +67,15 @@ function decoyPool(area?: string | null): string[] {
 export function assembleForDate(date: string, area?: string | null): AssemblePuzzle[] {
   const rng = rngForDate(date, area);
   const DECOY_POOL = decoyPool(area);
+  const on = balanced(date);
+  const dp = decoyPoolOf(area);
   return answersForDate(date, area).map((apt, idx) => {
     const answer = apt.name.split(" ");
-    const decoys = seededShuffle(
-      DECOY_POOL.filter((t) => !answer.includes(t)),
-      rng,
-    ).slice(0, answer.length >= 3 ? 2 : 3);
+    const k = answer.length >= 3 ? 2 : 3;
+    // 겉모양을 맞춘 미끼(lib/decoy.ts)는 BALANCE_FROM부터. 그날 도중에 바꾸면 치고 있던 사람의 퍼즐이 바뀐다
+    const decoys = on
+      ? weightedSample(usableDecoys(dp.tokens, answer), dp.weight, k, rng)
+      : seededShuffle(DECOY_POOL.filter((t) => !answer.includes(t)), rng).slice(0, k);
     return {
       no: idx + 1,
       pieces: seededShuffle([...answer, ...decoys], rng),

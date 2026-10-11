@@ -23,7 +23,7 @@ import fs from "node:fs";
 import { neon } from "@neondatabase/serverless";
 import { assembleAt, findAt, oxAt } from "../lib/run.ts";
 import { apartments, poolOf, regions, areaLabel } from "../lib/data.ts";
-import { SHAPE_FEATURES } from "../lib/balance.ts";
+import { PIECE_FEATURES, SHAPE_FEATURES } from "../lib/balance.ts";
 import { assembleForDate, checkAssemble } from "../lib/assemble.ts";
 
 const RUNS = 300; // 모의로 칠 판 수
@@ -268,16 +268,7 @@ function findTells() {
  * 조각 특징마다 "이 특징이면 미끼"라고 찍었을 때의 적중률을 감별 겉모양과 같은 잣대로 잰다.
  * 미끼 비율이 조각의 절반이 아니므로 각 쪽 안에서의 비율로 견준다.
  */
-const AS_N = 200;
-const PIECE_FEATURES: [string, (p: string) => boolean][] = [
-  ["1~2자", (p) => p.length <= 2],
-  ["5자 이상", (p) => p.length >= 5],
-  ["영문 포함", (p) => /[A-Za-z]/.test(p)],
-  ["숫자 포함", (p) => /\d/.test(p)],
-  ['"아파트"로 끝', (p) => p.endsWith("아파트")],
-  ['"마을"·"타운"으로 끝', (p) => /(마을|타운)$/.test(p)],
-  ['"단지"로 끝', (p) => p.endsWith("단지")],
-];
+const AS_N = 600; // 200으로는 표본 잡음이 문턱(65%)을 넘나들었다(경남 영문: 풀은 6.0% 대 6.0%인데 모의 4.8% 대 9.1%)
 type Split = { ans: string[]; dec: string[] };
 function pieceTells(where: string, { ans, dec }: Split, found: string[]) {
   for (const [label, f] of PIECE_FEATURES) {
@@ -290,12 +281,12 @@ function pieceTells(where: string, { ans, dec }: Split, found: string[]) {
   }
 }
 
-/** 공식전 조립은 지난 30일치 퍼즐을 그대로 다시 만들어 본다 (날짜 시드라 재현된다) */
+/** 공식전 조립은 오늘부터 30일치 퍼즐을 미리 만들어 본다 (날짜 시드라 앞으로 나갈 것이 정해져 있다) */
 function officialSplit(area: string): Split {
   const ans: string[] = [], dec: string[] = [];
   const today = new Date(Date.now() + 9 * 3600_000);
   for (let d = 0; d < 30; d++) {
-    const date = new Date(today.getTime() - d * 86400_000).toISOString().slice(0, 10);
+    const date = new Date(today.getTime() + d * 86400_000).toISOString().slice(0, 10);
     // 정답은 판정 함수가 공개하는 것을 그대로 쓴다(출제 코드를 고치지 않고 재현한다)
     assembleForDate(date, area || null).forEach((q) => {
       const answer = checkAssemble(date, q.no, [], area || null)!.answer.split(" ");
@@ -306,7 +297,7 @@ function officialSplit(area: string): Split {
 }
 
 function assembleTells() {
-  out(`### 5. 이름 조립: 미끼 조각이 티 나는가 (무한 구역마다 ${AS_N}퍼즐 · 공식전 30일치)`);
+  out(`### 5. 이름 조립: 미끼 조각이 티 나는가 (무한 구역마다 ${AS_N}퍼즐 · 공식전 앞으로 30일치)`);
   out("");
   const byId = new Map(apartments.map((a) => [a.id, a]));
   const found: string[] = [];
