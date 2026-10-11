@@ -1,5 +1,6 @@
 import { apartments, assemblePoolOf, fakeNames, poolOf, type Apartment } from "./data";
 import { choseongHint } from "./hangul";
+import { geoOf } from "./geo";
 
 /**
  * 무한 모드 출제 (데일리와 별개, 매 요청 랜덤)
@@ -27,6 +28,12 @@ function metaOf(a: Apartment) {
   };
 }
 
+/** 정답 공개용: 좌표까지. 문제를 낼 때(조립 힌트 등)는 metaOf만 쓴다 */
+function revealOf(a: Apartment) {
+  const geo = geoOf(a.id);
+  return { ...metaOf(a), ...(geo && { geo }) };
+}
+
 /* ---------- 감별 O/X ---------- */
 
 // 무한 감별의 출제는 lib/oxrun.ts가 한다 (판마다 시드를 두어 도전장으로 되살린다)
@@ -35,12 +42,12 @@ export function judgeOx(
   name: string,
   choice: "real" | "fake" | "timeout", // timeout = 시간 초과 (무조건 오답)
 ):
-  | { correct: boolean; kind: "real"; meta: ReturnType<typeof metaOf> }
+  | { correct: boolean; kind: "real"; meta: ReturnType<typeof revealOf> }
   | { correct: boolean; kind: "fake"; hint: string }
   | null {
   const key = normName(name);
   const real = realByName.get(key);
-  if (real) return { correct: choice === "real", kind: "real", meta: metaOf(real) };
+  if (real) return { correct: choice === "real", kind: "real", meta: revealOf(real) };
   const fake = fakeByName.get(key);
   if (fake) return { correct: choice === "fake", kind: "fake", hint: fake.hint };
   return null;

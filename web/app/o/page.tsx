@@ -10,6 +10,7 @@ import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { RuleButton, RuleOverlay, useGuide } from "@/components/RuleNote";
 import { TimerBar } from "@/components/TimerBar";
+import { AptPhoto, photoEnabled } from "@/components/AptPhoto";
 import { gradeFor } from "@/lib/grades";
 import { areaPref, bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
@@ -29,7 +30,7 @@ interface TodayResponse {
 interface AnswerResponse {
   correct: boolean;
   kind: "real" | "fake";
-  meta?: { location: string; builtYear: number; households: number };
+  meta?: { location: string; builtYear: number; households: number; geo?: [number, number] };
   hint?: string;
   rate?: number | null;
   sample?: number;
@@ -79,6 +80,8 @@ export default function PlayPage() {
   const [over, setOver] = useState<Over | null>(null);
   /** 답을 이미 아는 도전 판(다시 치기·내 도전장). 서버가 정해 준다 — 경험치도 도전장 발송도 없다 */
   const [retry, setRetry] = useState(false);
+  /** 이 문제의 사진을 못 받았다. 사진 칸을 접는다 */
+  const [photoFail, setPhotoFail] = useState(false);
   const [sendState, setSendState] = useState<"idle" | "busy" | "shared" | "copied" | "failed">("idle");
   const [xpRes, setXpRes] = useState<XpResult | null>(null); // 이번 완주 획득 점수
   const [eXpRes, setEXpRes] = useState<XpResult | null>(null); // 무한 판 획득 점수
@@ -268,6 +271,7 @@ export default function PlayPage() {
     if (choice !== "timeout") sfxTap();
     const dt = Date.now() - qStart.current;
     try {
+      setPhotoFail(false);
       if (endless) {
         if (!eq) throw new Error("no_question");
         const res = await fetch("/api/endless/ox", {
@@ -589,17 +593,30 @@ export default function PlayPage() {
               <div className={`verdict ${reveal.correct ? "right" : "wrong"}`}>
                 <span className="mark">{timedOut ? "시간 초과" : reveal.correct ? "정답" : "오답"}</span>
                 <h3>{reveal.kind === "real" ? "진짜 있는 아파트입니다" : "AI가 지은 이름입니다"}</h3>
-                <p className="meta">
-                  {reveal.kind === "real" && reveal.meta ? (
-                    <>
-                      {reveal.meta.location}
-                      <br />
-                      {reveal.meta.builtYear}년 준공 · {reveal.meta.households.toLocaleString()}세대
-                    </>
-                  ) : (
-                    reveal.hint
+                {/* 진짜이고 사진이 있으면 주소 줄 옆에 작은 사진. 제목은 폭을 그대로 둬야
+                    320px에서 두 줄로 꺾이지 않는다(꺾이면 칸이 47px 길어졌다) */}
+                <div className={reveal.kind === "real" && photoEnabled(reveal.meta?.geo) && !photoFail ? "with-thumb" : undefined}>
+                  <p className="meta">
+                    {reveal.kind === "real" && reveal.meta ? (
+                      <>
+                        {reveal.meta.location}
+                        <br />
+                        {reveal.meta.builtYear}년 준공 · {reveal.meta.households.toLocaleString()}세대
+                      </>
+                    ) : (
+                      reveal.hint
+                    )}
+                  </p>
+                  {reveal.kind === "real" && reveal.meta?.geo && photoEnabled(reveal.meta.geo) && !photoFail && currentName && (
+                    <AptPhoto
+                      key={currentName}
+                      geo={reveal.meta.geo}
+                      name={currentName}
+                      caption={`${reveal.meta.location} · ${reveal.meta.builtYear}년 준공 · ${reveal.meta.households.toLocaleString()}세대`}
+                      onLoadFail={() => setPhotoFail(true)}
+                    />
                   )}
-                </p>
+                </div>
                 <p className="rate">
                   {chal
                     ? reveal.correct

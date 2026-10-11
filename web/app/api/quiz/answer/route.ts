@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { geoOf } from "@/lib/geo";
 import { kstDateString, quizForDate } from "@/lib/daily";
 import { recordAnswer, answerRate } from "@/lib/stats";
 import { recordName } from "@/lib/namestats";
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
         location: `${r.sido} ${r.sigungu} ${r.dong}`,
         builtYear: r.builtYear,
         households: r.households,
+        ...(geoOf(r.id) && { geo: geoOf(r.id) }),
       },
       rate,
       sample,

@@ -661,6 +661,19 @@ a.chop { text-decoration: none; }
 .verdict h3 { margin-top: 12px; font-size: 17px; letter-spacing: -0.02em; overflow-wrap: anywhere; }
 .verdict .meta { margin-top: 8px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
 .verdict .rate { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--ink-soft); }
+/* 진짜 단지 항공사진 (확정 시안 design/photo-a.html). 글 오른쪽 84px, 칸 높이를 거의 안 늘린다 */
+.verdict .with-thumb { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+.verdict .with-thumb .meta { min-width: 0; }
+.apt-thumb { position: relative; width: 84px; height: 84px; margin-top: 8px; padding: 0; border: 1px solid var(--ink); background: var(--line); overflow: hidden; cursor: pointer; }
+.apt-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.apt-thumb em { position: absolute; right: 0; bottom: 0; font-style: normal; font-size: 11px; font-weight: 600; background: var(--ink); color: var(--sheet); padding: 2px 5px; }
+.photo-veil { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(27, 27, 30, 0.62); }
+.photo-card { width: min(100%, 360px); background: var(--sheet); border: 1px solid var(--ink); padding: 14px; display: grid; gap: 10px; }
+.photo-card img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover; background: var(--line); }
+.photo-card b { font-size: 16px; }
+.photo-card p { font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+.photo-card small { font-size: 12px; color: var(--ink-soft); }
+@media (max-width: 380px) { .apt-thumb { width: 56px; height: 56px; margin-top: 4px; } }
 .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .choices .full { grid-column: 1 / -1; }
 .btn-real { background: var(--ink); color: var(--sheet); border: 1px solid var(--ink); font-size: 17px; padding: 18px 12px; }
