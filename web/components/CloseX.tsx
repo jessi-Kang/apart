@@ -13,7 +13,7 @@ export function CloseX({ inProgress, onClose }: { inProgress: boolean; onClose?:
       onClose();
       return;
     }
-    if (inProgress && !window.confirm("진행 중인 감별을 중단할까요?\n오늘 다시 시작할 수 있습니다.")) return;
+    if (inProgress && !window.confirm("진행 중인 감별을 중단할까요?")) return;
     router.push("/");
   }
 

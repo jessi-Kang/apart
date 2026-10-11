@@ -449,7 +449,7 @@ export default function AssemblePage() {
           value: `${eRec.best}`,
           label: `무한 조립 최고 연속${fmtSec(eRec.avgMs) ? ` (평균 ${fmtSec(eRec.avgMs)})` : ""}`,
         },
-        { value: `+${xpRes?.gained ?? 0}점`, label: "오늘 획득 경험치" },
+        { value: `+${xpRes?.gained ?? 0}점`, label: "획득 경험치" },
       ],
   });
 
@@ -465,10 +465,9 @@ export default function AssemblePage() {
     }
   }
 
-  const ep = quiz?.episode ?? "";
-  /** 공식전 이름 — 구역별 공식전이면 구역을 함께 밝힌다 (제3호 부산 공식전) */
+  /** 공식전 이름 — 구역별 공식전이면 구역을 함께 밝힌다 (부산 공식전) */
   const officialArea = (quiz?.area ?? "").replace(/특별자치시$|특별시$|광역시$/, "");
-  const officialName = officialArea ? `제${ep}호 ${officialArea} 공식전` : `제${ep}호 공식전`;
+  const officialName = officialArea ? `${officialArea} 공식전` : "공식전";
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
 
   /** 공유 카드 내용. 통지서(이미지)와 링크 공유가 같은 값을 쓴다 */
@@ -512,11 +511,6 @@ export default function AssemblePage() {
           <br />
           실존 단지명을 <em>조립</em>하십시오
         </h2>
-        {quiz && (
-          <p className="date mono">
-            제{ep}호 / {Number(mm)}월 {Number(dd)}일
-          </p>
-        )}
         <p className="note">조각에는 함정이 섞여 있습니다.</p>
       </aside>
 
@@ -526,8 +520,7 @@ export default function AssemblePage() {
             아파트 감별사
             <small>
               {endless ? (area ? `무한 조립 · ${area.replace(/특별자치시$|특별시$|광역시$/, "")}` : "무한 조립") : officialName}
-              {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
-            </small>
+                          </small>
           </Link>
           <span className="head-tools">
             <RuleButton onOpen={() => guide.setOpen(true)} />
@@ -545,7 +538,7 @@ export default function AssemblePage() {
 
         {phase === "loading" && (
           <section className="screen">
-            <p className="center-note">오늘의 조립 문제를 준비하고 있습니다</p>
+            <p className="center-note">조립 문제를 준비하고 있습니다</p>
           </section>
         )}
 
@@ -756,7 +749,7 @@ export default function AssemblePage() {
             <div className="result-seal" aria-hidden="true">
               <Seal size={216} />
             </div>
-            <DocTitle eyebrow="조립결과통지" title={`제${ep}호 조립 결과`} />
+            <DocTitle eyebrow="조립결과통지" title="공식전 조립 결과" />
             <StampHero name={dGrade.name} />
             <p className="stamp-sub">
               {total}문제 중 {success}문제 조립 · 이번 판 {points}점

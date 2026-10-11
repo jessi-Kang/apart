@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 import { OgSeal, SEAL_TEXT } from "@/lib/ogseal";
-import { episodeNumber } from "@/lib/daily";
 import { gradeFor } from "@/lib/grades";
 import { parseSlug } from "@/lib/slug";
 
@@ -28,11 +27,10 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
   const r = parseSlug(slug);
   const score = r?.score ?? 0;
   const grade = r ? gradeFor(r.score) : gradeFor(0);
-  const ep = r ? episodeNumber(r.date) : 1;
   const marks = r?.marks ?? Array(10).fill(false);
 
   // 관인 링 글자도 같은 폰트로 그리므로 서브셋에 함께 넣는다
-  const text = `아파트 감별사 제호 결과 / 0123456789${grade.name}${SEAL_TEXT}`;
+  const text = `아파트 감별사 공식전 결과 / 0123456789${grade.name}${SEAL_TEXT}`;
   const font = await loadFont(text);
 
   return new ImageResponse(
@@ -75,7 +73,7 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
           >
             <OgSeal size={220} opacity={0.5} />
           </div>
-          <div style={{ fontSize: 40, color: "#1b1b1e", fontWeight: 700 }}>{`아파트 감별사 제${ep}호`}</div>
+          <div style={{ fontSize: 40, color: "#1b1b1e", fontWeight: 700 }}>"아파트 감별사 공식전"</div>
           <div style={{ fontSize: 120, color: "#1b1b1e", fontWeight: 700, lineHeight: 1 }}>{`${score} / 10`}</div>
           <div
             style={{

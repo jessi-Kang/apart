@@ -366,10 +366,9 @@ export default function FindRealPage() {
     }
   }
 
-  const ep = quiz?.episode ?? "";
-  /** 공식전 이름 — 구역별 공식전이면 구역을 함께 밝힌다 (제3호 부산 공식전) */
+  /** 공식전 이름 — 구역별 공식전이면 구역을 함께 밝힌다 (부산 공식전) */
   const officialArea = (quiz?.area ?? "").replace(/특별자치시$|특별시$|광역시$/, "");
-  const officialName = officialArea ? `제${ep}호 ${officialArea} 공식전` : `제${ep}호 공식전`;
+  const officialName = officialArea ? `${officialArea} 공식전` : "공식전";
   const [, mm, dd] = (quiz?.date ?? "--------").split("-");
 
   /** 공유 카드 내용. 통지서(이미지)와 링크 공유가 같은 값을 쓴다 */
@@ -413,13 +412,8 @@ export default function FindRealPage() {
           <br />
           <em>하나</em>뿐입니다
         </h2>
-        {quiz && (
-          <p className="date mono">
-            제{ep}호 / {Number(mm)}월 {Number(dd)}일
-          </p>
-        )}
         <p className="note">
-          나머지 셋은 AI 작품입니다. 오판하면 연속이 끊기고, 연속은 내일로 이어집니다.
+          나머지 셋은 AI 작품입니다. 오판하면 연속이 끊기고, 연속은 다음 판으로 이어집니다.
         </p>
       </aside>
 
@@ -429,8 +423,7 @@ export default function FindRealPage() {
             아파트 감별사
             <small>
               {endless ? (area ? `무한 찾기 · ${area}` : "무한 찾기") : officialName}
-              {quiz && (endless ? ` · 제${ep}호 ${mm}.${dd}` : ` · ${mm}.${dd}`)}
-            </small>
+                          </small>
           </Link>
           <span className="head-tools">
             <RuleButton onOpen={() => guide.setOpen(true)} />
@@ -448,7 +441,7 @@ export default function FindRealPage() {
 
         {phase === "loading" && (
           <section className="screen">
-            <p className="center-note">오늘의 감정 대상을 준비하고 있습니다</p>
+            <p className="center-note">감정 대상을 준비하고 있습니다</p>
           </section>
         )}
 
@@ -607,7 +600,7 @@ export default function FindRealPage() {
             <div className="result-seal" aria-hidden="true">
               <Seal size={216} />
             </div>
-            <DocTitle eyebrow="감정결과통지" title={`제${ep}호 감정 결과`} />
+            <DocTitle eyebrow="감정결과통지" title="공식전 감정 결과" />
             <StampHero name={dGrade.name} />
             <p className="stamp-sub">
               {total}문제 중 {hits}문제 적중 · AI에 {total - hits}번 속았습니다

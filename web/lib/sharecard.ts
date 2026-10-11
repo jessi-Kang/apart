@@ -17,7 +17,7 @@ export interface ShareCardData {
   episode: number;
   date: string; // YYYY-MM-DD
   subtitle: string; // "감별 결과 통지서" 등 모드별 서류명
-  headerRight?: string; // 지정 시 "제N호 · 날짜" 대신 이 문구 (무한 모드용)
+  headerRight?: string; // 지정 시 "공식전 · 날짜" 대신 이 문구 (무한 모드용)
   score: number;
   total: number;
   totalText?: string; // 지정 시 "/ total" 대신 이 단위 표기 (예: "연속")
@@ -278,7 +278,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
 
   const [yyyy, mm, dd] = data.date.split("-");
   const modeName = data.subtitle.replace(/\s*(통지서|접수증|신청서)$/, "");
-  const issued = data.headerRight ?? `제${data.episode}호 · ${yyyy}.${mm}.${dd}`;
+  const issued = data.headerRight ?? `공식전 · ${yyyy}.${mm}.${dd}`;
   // 본편은 "적중 7 / 10", 무한은 "최고 연속 12" — 판의 성적표 한 줄
   const hitLabel = data.totalText ? `최고 ${data.totalText}` : "적중";
   const hitValue = data.totalText ? String(data.score) : `${data.score} / ${data.total}`;
@@ -486,7 +486,7 @@ export function shareText(data: ShareCardData): string {
     const grid = data.marks.map((m) => (m ? "⬛" : "⬜")).join("");
     return [
       "[아파트 감별사]",
-      `제${data.episode}호 · ${data.gradeName}`,
+      `공식전 · ${data.gradeName}`,
       `${data.total}문제 중 ${data.score}문제 적중`,
       grid,
       `당신은 몇 개나 가려낼까요 ${SITE}`,

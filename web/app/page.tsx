@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { kstDateString, episodeNumber } from "@/lib/daily";
+import { kstDateString } from "@/lib/daily";
 import { regions } from "@/lib/data";
 import { visibleGames, hiddenGames, viewerIsOwner } from "@/lib/release";
 import { CoinChop, DailyChop } from "@/components/LedgerStatus";
@@ -13,7 +13,6 @@ export const dynamic = "force-dynamic";
 /** 홈 = 접수 대장 (확정 시안 home2-a: 순번·창구·현황 3열 서식 + 현황 도장) */
 export default async function HomePage() {
   const date = kstDateString();
-  const ep = episodeNumber(date);
   // 전개 전 창구는 운영자에게만 실린다 (lib/release.ts)
   const games = await visibleGames();
   const hidden = await hiddenGames();
@@ -30,9 +29,6 @@ export default async function HomePage() {
           감별 민원은
           <br />이 창구에서 <em>접수</em>합니다
         </h2>
-        <p className="date mono">
-          제{ep}호 / {Number(mm)}월 {Number(dd)}일
-        </p>
         <p className="note">
           진짜는 실존하는 단지, 가짜는 AI가 지은 이름입니다.
         </p>
@@ -45,7 +41,6 @@ export default async function HomePage() {
             <small>감별 민원 접수 창구</small>
           </div>
           <div className="form-no">
-            <span>제{ep}호</span>
             <span>
               {mm}.{dd}
             </span>
@@ -59,7 +54,7 @@ export default async function HomePage() {
             <Seal size={216} />
           </div>
           <h1>
-            오늘 처리할
+            처리할
             <br />
             감별 민원을 <em>선택</em>하세요
           </h1>
