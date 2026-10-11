@@ -5,7 +5,6 @@ import { SheetFooter } from "@/components/SheetFooter";
 import { DocTitle, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { getChallenge, type Challenge } from "@/lib/challenge";
 import { areaLabel } from "@/lib/data";
-import { eulReul } from "@/lib/josa";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ch = await getChallenge((await params).code);
   if (!ch) return { title: { absolute: "아파트 감별사" } };
   // 미리보기 카드가 곧 도전장이다. 기록과 "깰 수 있는가"만 싣고 문제는 싣지 않는다
-  const title = `연속 ${ch.target}${eulReul(ch.target)} 깨십시오`;
+  const title = `${ch.target}문제 연속 정답, 넘을 수 있습니까?`;
   const description = `${from(ch)} · 감별 O/X, 같은 문제를 같은 순서로`;
   return {
     title: { absolute: `${title} · 아파트 감별사` },
@@ -54,7 +53,7 @@ export default async function ChallengePage({ params }: Props) {
         </header>
 
         <section className="screen result">
-          <DocTitle eyebrow="도전장" title={`연속 ${ch.target}${eulReul(ch.target)} 깨십시오`} />
+          <DocTitle eyebrow="도전장" title={`${ch.target}문제 연속 정답을 넘으십시오`} />
           <StampHero name="접수 대기" />
           <VForm>
             <VRow label="보낸 사람">{ch.label || "익명"}</VRow>
@@ -62,7 +61,7 @@ export default async function ChallengePage({ params }: Props) {
               감별 O/X {ch.area && <small>{areaLabel(ch.area)}</small>}
             </VRow>
             <VRow label="넘을 기록">
-              연속 <span className="accent">{ch.target}</span>
+              <span className="accent">{ch.target}문제</span> 연속 정답
             </VRow>
             <VRow label="규칙">
               <small>보낸 사람이 받은 이름이 같은 순서로 나옵니다. 처음 틀리는 문제에서 끝납니다.</small>

@@ -15,7 +15,6 @@ import { areaPref, bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loa
 import { addXp, type XpResult } from "@/lib/level";
 import { FINISH_BONUS, RECORD_BONUS, questionScore } from "@/lib/scoring";
 import { shareCardImage, shareLink, type ShareCardData } from "@/lib/sharecard";
-import { eulReul, euroRo } from "@/lib/josa";
 import { ShareLink } from "@/components/ShareLink";
 import { sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
@@ -453,7 +452,7 @@ export default function PlayPage() {
       if (!res.ok) throw new Error("challenge_failed");
       const { code, target } = (await res.json()) as { code: string; target: number };
       const url = `${window.location.origin}/c/${code}`;
-      setSendState(await shareLink(`[아파트 감별사] 도전장\n연속 ${target}${eulReul(target)} 깨십시오\n${url}`));
+      setSendState(await shareLink(`[아파트 감별사] 도전장\n나는 ${target}문제를 연속으로 맞혔다. 넘어 볼래?\n${url}`));
     } catch {
       setSendState("failed");
     }
@@ -470,7 +469,7 @@ export default function PlayPage() {
             ? "다시 시도"
             : idle;
 
-  const outcome = over ? (over.mine > over.target ? "격파" : over.mine === over.target ? "무승부" : "분패") : "";
+  const outcome = over ? (over.mine > over.target ? "승리" : over.mine === over.target ? "무승부" : "패배") : "";
 
   return (
     <div className="frame">
@@ -549,7 +548,7 @@ export default function PlayPage() {
                 </div>
                 <p className="qlabel mono qlabel-row">
                   <span className="mode-chip official">도전장</span>
-                  {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 {run} / {chal.target}
+                  {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 정답 {run} / 상대 {chal.target}
                 </p>
               </>
             ) : endless ? (
@@ -601,8 +600,8 @@ export default function PlayPage() {
                   {chal
                     ? reveal.correct
                       ? run > chal.target
-                        ? `연속 ${run} · 상대 기록을 넘었습니다`
-                        : `연속 ${run} · 상대 기록까지 ${chal.target - run + 1}`
+                        ? `${run}문제 연속 정답 · 상대를 넘었습니다`
+                        : `${run}문제 연속 정답 · ${chal.target - run + 1}문제 더 맞히면 승리`
                       : "여기서 끝났습니다"
                     : endless
                     ? reveal.correct
@@ -693,20 +692,18 @@ export default function PlayPage() {
             <DocTitle eyebrow="대결통지" title={`${chal.label ? `${chal.label} 님의` : "받은"} 도전장`} />
             <StampHero name={outcome} />
             <p className="stamp-sub">
-              {outcome === "격파"
-                ? `${over.mine - over.target}개 더 맞히고 기록을 넘었습니다`
+              {outcome === "승리"
+                ? `상대는 ${over.target}문제, 나는 ${over.mine}문제를 연속으로 맞혔습니다`
                 : outcome === "무승부"
-                  ? "상대 기록과 같은 자리에서 멈췄습니다"
-                  : over.at
-                    ? `${over.at === 1 ? "첫 문제" : `${over.at}번째`}에서 끊겼습니다. ${over.target - over.mine}개 모자랐습니다`
-                    : `${over.target - over.mine}개 모자랐습니다`}
+                  ? `둘 다 ${over.mine}문제를 연속으로 맞혔습니다`
+                  : `상대는 ${over.target}문제를 연속으로 맞혔는데, 나는 ${over.mine === 0 ? "첫 문제에서 틀렸습니다" : `${over.mine}문제째까지 맞혔습니다`}`}
             </p>
             <VForm>
-              <VRow label="내 기록">연속 {over.mine}</VRow>
-              <VRow label="상대 기록">연속 {over.target}</VRow>
+              <VRow label="나">{over.mine}문제 연속 정답</VRow>
+              <VRow label="상대">{over.target}문제 연속 정답</VRow>
               {over.at && over.name && (
-                <VRow label="끊긴 곳">
-                  {over.at}번째 <small>{over.name} · {over.kind === "real" ? "진짜" : "가짜"}</small>
+                <VRow label="틀린 문제">
+                  {over.name} <small>{over.kind === "real" ? "진짜 아파트" : "AI가 지은 이름"}</small>
                 </VRow>
               )}
               <VRow label="직급">
@@ -714,17 +711,17 @@ export default function PlayPage() {
               </VRow>
             </VForm>
             <div className="cut" />
-            {outcome === "분패" ? (
+            {outcome === "패배" ? (
               <>
                 <div className="result-actions">
                   <button className="btn btn-next full" onClick={() => startEndless()} disabled={busy}>
-                    내 판으로 설욕하기
+                    새 판 치기
                   </button>
                 </div>
-                <p className="send-hint">새 판을 치고 그 기록으로 도전장을 보냅니다</p>
+                <p className="send-hint">새 판의 기록으로 도전장을 보낼 수 있습니다</p>
                 <div className="result-actions">
                   <button className="btn btn-ghost" onClick={() => startEndless(chal)} disabled={busy}>
-                    같은 문제 다시 보기
+                    같은 문제로 다시 도전
                   </button>
                 </div>
               </>
@@ -732,13 +729,13 @@ export default function PlayPage() {
               <>
                 <div className="result-actions">
                   <button className="btn btn-next full" onClick={sendChallenge} disabled={sendState === "busy"}>
-                    {sendLabel("되받아치기")}
+                    {sendLabel("내 기록으로 도전장 보내기")}
                   </button>
                 </div>
-                <p className="send-hint">연속 {over.mine}{euroRo(over.mine)} 새 도전장을 보냅니다</p>
+                <p className="send-hint">{over.mine}문제 연속 정답으로 새 도전장을 만듭니다</p>
                 <div className="result-actions">
                   <button className="btn btn-ghost" onClick={() => startEndless()} disabled={busy}>
-                    내 판 시작
+                    새 판 치기
                   </button>
                 </div>
               </>
