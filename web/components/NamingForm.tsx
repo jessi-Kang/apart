@@ -231,7 +231,7 @@ export function NamingForm({
         <h2>
           이번엔 당신이
           <br />
-          이름을 <em>짓습니다</em>
+          작명을 <em>신청</em>합니다
         </h2>
         <p className="note">지은 이름은 감별 창구에 올라갑니다. 남이 못 가려낼수록 잘 지은 이름입니다.</p>
       </aside>
@@ -260,14 +260,14 @@ export function NamingForm({
 
           {phase === "intro" && (
             <>
-              <DocTitle eyebrow="작명접수" title="가짜 단지명 짓기" />
+              <DocTitle eyebrow="작명접수" title="작명 신청서" />
               {/* 무엇을 얻는지를 먼저 말한다. 규칙 설명부터 하면 읽다가 나간다 */}
               <p className="coin-lead">
                 지금까지는 <b>가려내는 쪽</b>이었습니다. 여기서는 <b>속이는 쪽</b>입니다.
               </p>
               <VForm>
                 <VRow label="하는 일">
-                  있을 법한데 실제로는 없는 단지명을 짓습니다
+                  있을 법한데 실제로는 없는 단지명을 지어 신청합니다
                 </VRow>
                 {/* 무엇을 얻는지를 앞에 둔다. 절차만 늘어놓으면 왜 하는지 모른 채 닫는다 */}
                 <VRow label="얻는 것">
@@ -301,7 +301,7 @@ export function NamingForm({
               {signedIn ? (
                 <div className="result-actions">
                   <button className="btn btn-next" onClick={() => { sfxTap(); setPhase("make"); }}>
-                    이름 지으러 가기
+                    신청서 쓰기
                   </button>
                 </div>
               ) : canLogIn ? (
@@ -324,9 +324,9 @@ export function NamingForm({
 
           {phase === "make" && (
             <>
-              <DocTitle eyebrow="작명접수" title="이름 짓기" />
+              <DocTitle eyebrow="작명접수" title="작명 신청서" />
               <p className="task-line">
-                <b>구역</b>을 고르고 조각을 눌러 짓습니다. 직접 적어도 됩니다.
+                <b>구역</b>을 고르고 조각을 눌러 채웁니다. 직접 적어도 됩니다.
               </p>
 
               <VForm>
@@ -518,7 +518,7 @@ export function NamingForm({
 
               <div className="result-actions">
                 <button className="btn btn-next" onClick={() => { sfxTap(); setPhase("make"); }}>
-                  이름 지으러 가기
+                  신청서 쓰기
                 </button>
                 <Link className="btn btn-ghost" href="/">
                   창구로 돌아가기
@@ -585,7 +585,7 @@ export function NamingForm({
                     setPhase("make");
                   }}
                 >
-                  또 짓기
+                  한 장 더 쓰기
                 </button>
                 <Link className="btn btn-ghost" href="/">
                   창구로 돌아가기

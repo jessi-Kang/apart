@@ -37,7 +37,7 @@ export const GAMES: GameDef[] = [
   { key: "assemble", label: "이름 조립", href: "/a", desc: "힌트로 단지명 조립", released: true, official: true },
   { key: "findreal", label: "진짜 찾기", href: "/f", desc: "넷 중 진짜는 하나", released: true, official: true },
   // 운영자에게만 열어 두고 승인·말 거르기·새벽 출제(publish-coined)가 도는 것을 본 뒤 전개했다
-  { key: "naming", label: "작명소", href: "/n", desc: "가짜 단지명 직접 짓기", released: true, official: false },
+  { key: "naming", label: "작명소", href: "/n", desc: "가짜 단지명 작명 신청", released: true, official: false },
 ];
 
 export const gameByKey = (key: string): GameDef | undefined => GAMES.find((g) => g.key === key);
