@@ -670,6 +670,10 @@ a.chop { text-decoration: none; }
 .photo-veil { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(27, 27, 30, 0.62); }
 .photo-card { width: min(100%, 360px); background: var(--sheet); border: 1px solid var(--ink); padding: 14px; display: grid; gap: 10px; }
 .photo-card img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover; background: var(--line); }
+.photo-frame { position: relative; }
+/* 핀 끝이 사진 정중앙(=단지 좌표)에 닿게 놓는다 */
+.apt-pin { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -100%); pointer-events: none; filter: drop-shadow(0 1px 1px rgba(27, 27, 30, 0.35)); }
+.photo-link { font-size: 13px; font-weight: 600; color: var(--stamp); text-decoration: underline; text-underline-offset: 3px; }
 .photo-card b { font-size: 16px; }
 .photo-card p { font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
 .photo-card small { font-size: 12px; color: var(--ink-soft); }

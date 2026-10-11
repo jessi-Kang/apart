@@ -30,7 +30,7 @@ interface TodayResponse {
 interface AnswerResponse {
   correct: boolean;
   kind: "real" | "fake";
-  meta?: { location: string; builtYear: number; households: number; geo?: [number, number] };
+  meta?: { location: string; builtYear: number; households: number; geo?: [number, number] | [number, number, number] };
   hint?: string;
   rate?: number | null;
   sample?: number;

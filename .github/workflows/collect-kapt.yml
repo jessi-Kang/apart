@@ -120,13 +120,13 @@ jobs:
         run: npm run check-wordguard
 
       # 정답 공개 칸의 항공사진에 쓸 좌표. 키가 없으면 스크립트가 알아서 건너뛴다.
-      # 하룻밤 3,000건까지라 처음 전체를 채우는 데 엿새쯤 걸린다
+      # 하룻밤 6,000건까지(새 단지 먼저, 그다음 장소 번호 없는 예전 좌표). 무료 한도는 하루 10만 건
       - name: 좌표 채우기
         if: steps.guard.outputs.skip == '0'
         working-directory: web
         env:
           KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
-        run: node scripts/geocode-kakao.mjs --max=3000
+        run: node scripts/geocode-kakao.mjs --max=6000
 
       - name: 바뀐 게 있으면 커밋
         if: steps.guard.outputs.skip == '0'

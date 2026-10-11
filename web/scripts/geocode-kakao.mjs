@@ -6,10 +6,11 @@
  * 막혀 있어 카카오 로컬 키워드 검색으로 "시군구 동 단지명"을 찾고, 찾은 곳의 주소가
  * 그 동을 품고 있을 때만 받는다(이름만 같은 다른 동네 단지를 잡지 않게).
  *
- *   KAKAO_REST_KEY=... node scripts/geocode-kakao.mjs [--max=3000]
+ *   KAKAO_REST_KEY=... node scripts/geocode-kakao.mjs [--max=6000]
  *
  * - 한 번에 --max건까지만 묻는다(무료 한도는 하루 10만 건이라 넉넉하지만, 야간 작업
  *   시간을 길게 잡아먹지 않게). 처음 1만 5천여 건은 며칠에 나눠 채워진다.
+ * - 장소 번호 없이 좌표만 받아 둔 단지(예전 형식)는 새 단지를 다 물은 뒤 다시 묻는다.
  * - 못 찾은 단지는 null로 적어 다시 묻지 않는다(매일 같은 실패를 되풀이하지 않게).
  * - 키가 없으면 아무것도 하지 않고 끝난다(실패가 아니다).
  * - node 기본 모듈만 쓴다(야간 작업은 의존성을 설치하지 않는다).
@@ -22,7 +23,7 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const APTS = path.join(ROOT, "data/apartments.json");
 const OUT = path.join(ROOT, "data/coords.json");
 const KEY = process.env.KAKAO_REST_KEY ?? "";
-const MAX = Number(/--max=(\d+)/.exec(process.argv.join(" "))?.[1] ?? 3000);
+const MAX = Number(/--max=(\d+)/.exec(process.argv.join(" "))?.[1] ?? 6000);
 
 if (!KEY) {
   console.log("KAKAO_REST_KEY가 없어 좌표 채우기를 건너뜁니다.");
@@ -31,7 +32,10 @@ if (!KEY) {
 
 const items = JSON.parse(fs.readFileSync(APTS, "utf8")).items;
 const coords = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, "utf8")) : {};
-const todo = items.filter((a) => !(a.id in coords)).slice(0, MAX);
+// 처음 묻는 단지가 먼저, 그다음 장소 번호 없이 좌표만 받아 둔 단지(예전 형식)를 다시 묻는다
+const fresh = items.filter((a) => !(a.id in coords));
+const upgrade = items.filter((a) => Array.isArray(coords[a.id]) && coords[a.id].length === 2);
+const todo = [...fresh, ...upgrade].slice(0, MAX);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function find(a) {
@@ -49,7 +53,8 @@ async function find(a) {
     // 그 동 안에 있는 곳만. 아파트 분류를 먼저 본다
     const inDong = docs.filter((d) => `${d.address_name} ${d.road_address_name}`.includes(a.dong));
     const pick = inDong.find((d) => /아파트|주거/.test(d.category_name ?? "")) ?? inDong[0];
-    return pick ? [Number(Number(pick.y).toFixed(6)), Number(Number(pick.x).toFixed(6))] : null;
+    // [위도, 경도, 장소 번호]. 장소 번호는 카카오맵 장소 화면(사진·로드뷰)으로 잇는 데 쓴다
+    return pick ? [Number(Number(pick.y).toFixed(6)), Number(Number(pick.x).toFixed(6)), Number(pick.id)] : null;
   }
   throw new Error("kakao retry exhausted");
 }
@@ -58,7 +63,8 @@ let hit = 0, miss = 0;
 for (const a of todo) {
   try {
     const g = await find(a);
-    coords[a.id] = g;
+    // 예전 좌표를 다시 물었는데 이번엔 못 찾았으면 있던 좌표를 지우지 않는다
+    if (g || !Array.isArray(coords[a.id])) coords[a.id] = g;
     g ? hit++ : miss++;
   } catch (e) {
     // 키·한도 문제면 더 물어도 같은 결과다. 받은 데까지 저장하고 멈춘다

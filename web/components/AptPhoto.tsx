@@ -18,7 +18,14 @@ import { sfxTap } from "@/lib/sound";
 
 const KEY = process.env.NEXT_PUBLIC_VWORLD_KEY ?? "";
 
-function photoUrl([lat, lng]: [number, number], size: number): string {
+type Geo = [number, number] | [number, number, number];
+
+/**
+ * 사진은 단지 좌표를 한가운데 두고 받는다. 그래서 사진 정중앙이 곧 그 단지다 —
+ * 핀을 가운데 찍어 "이 사진 속 어느 건물인가"를 알려 준다(핀이 없으면 지붕 숲일 뿐이었다).
+ * 한 단계 더 당겨(18) 단지가 사진을 거의 채우게 한다.
+ */
+function photoUrl([lat, lng]: Geo, size: number): string {
   const q = new URLSearchParams({
     service: "image",
     request: "getmap",
@@ -27,13 +34,33 @@ function photoUrl([lat, lng]: [number, number], size: number): string {
     basemap: "PHOTO",
     center: `${lng},${lat}`,
     crs: "epsg:4326",
-    zoom: "17",
+    zoom: "18",
     size: `${size},${size}`,
   });
   return `https://api.vworld.kr/req/image?${q}`;
 }
 
-export const photoEnabled = (geo?: [number, number]) => Boolean(KEY && geo);
+export const photoEnabled = (geo?: Geo) => Boolean(KEY && geo);
+
+/**
+ * 카카오맵으로 잇는 주소. 항공사진만으로는 "이 아파트구나"가 안 와서, 사람들이 올린
+ * 단지 사진과 로드뷰가 있는 카카오맵 장소 화면으로 보낸다. 장소 번호가 아직 없는
+ * 단지(야간 작업이 채우는 중)는 좌표에 핀을 꽂은 지도로 연다 — 거기서도 로드뷰가 된다.
+ */
+function kakaoUrl(geo: Geo, name: string): string {
+  if (geo.length === 3) return `https://place.map.kakao.com/${geo[2]}`;
+  return `https://map.kakao.com/link/map/${encodeURIComponent(name)},${geo[0]},${geo[1]}`;
+}
+
+/** 사진 정중앙의 핀. 인주색 하나만 쓴다 */
+function Pin({ size }: { size: number }) {
+  return (
+    <svg className="apt-pin" width={size} height={size * 1.3} viewBox="0 0 20 26" aria-hidden="true">
+      <path d="M10 25C10 25 2 15.6 2 9.6A8 8 0 0 1 18 9.6C18 15.6 10 25 10 25Z" fill="var(--stamp)" stroke="var(--sheet)" strokeWidth="1.6" />
+      <circle cx="10" cy="9.6" r="3" fill="var(--sheet)" />
+    </svg>
+  );
+}
 
 export function AptPhoto({
   geo,
@@ -41,7 +68,7 @@ export function AptPhoto({
   caption,
   onLoadFail,
 }: {
-  geo: [number, number];
+  geo: Geo;
   name: string;
   caption: string;
   /** 사진을 못 받았을 때. 감싸는 칸이 사진 자리를 접는다 */
@@ -69,16 +96,23 @@ export function AptPhoto({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={photoUrl(geo, 168)} alt="" width={84} height={84} onError={onLoadFail} />
+        <Pin size={14} />
         <em>사진</em>
       </button>
       {open && (
         <div className="photo-veil" role="dialog" aria-modal="true" aria-label={`${name} 항공사진`} onClick={() => setOpen(false)}>
           <div className="photo-card" onClick={(e) => e.stopPropagation()}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photoUrl(geo, 640)} alt={`${name}을 하늘에서 내려다본 사진`} width={320} height={320} />
+            <div className="photo-frame">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photoUrl(geo, 640)} alt={`${name}을 하늘에서 내려다본 사진. 가운데 핀이 단지 위치`} width={320} height={320} />
+              <Pin size={26} />
+            </div>
             <b>{name}</b>
             <p>{caption}</p>
-            <small>항공사진 · 브이월드(국토교통부)</small>
+            <small>가운데 핀이 단지 위치 · 항공사진 브이월드(국토교통부)</small>
+            <a className="photo-link" href={kakaoUrl(geo, name)} target="_blank" rel="noopener noreferrer">
+              카카오맵에서 단지 사진·로드뷰 보기 ›
+            </a>
             <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
               닫기
             </button>
