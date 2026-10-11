@@ -1,0 +1,284 @@
+<title>단지 사진 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  /* ===== 단지 사진 시안 A · 접수 서류 세계관 =====
+     정답 공개 칸에 실단지 항공사진을 붙이는 방법. 토큰은 확정 시안(result3-r1-verdict)과 같고
+     앱이 밝은 서류 한 벌이라 시안도 한 벌로 고정한다. 사진 자리의 그림은 예시(SVG)다. */
+  :root{
+    --paper:#f6f6f3; --sheet:#fdfdfb; --ink:#1b1b1e; --ink-soft:#5c5c62; --line:#d9d9d3; --stamp:#c73a2f;
+    --veil:rgba(27,27,30,.62);
+    --radius:2px;
+    --f-body:"IBM Plex Sans KR", system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--f-body); -webkit-font-smoothing:antialiased; word-break:keep-all; padding-inline:16px; padding-block:28px 48px}
+  button{appearance:none; font:inherit; color:inherit; background:none; border:none; padding:0; cursor:pointer}
+  button:focus-visible{outline:2px solid var(--stamp); outline-offset:2px}
+  .mono{font-family:var(--f-mono); font-variant-numeric:tabular-nums}
+
+  .intro{max-width:1100px; margin:0 auto 26px; display:grid; gap:10px}
+  .intro h1{margin:0; font-size:22px; letter-spacing:-.02em; text-wrap:balance}
+  .intro p{margin:0; color:var(--ink-soft); font-size:14px; line-height:1.65; max-width:62ch}
+  .intro .why{display:flex; flex-wrap:wrap; gap:8px; margin-top:4px}
+  .intro .why span{font-size:12px; border:1px solid var(--line); background:var(--sheet); padding:5px 9px; border-radius:var(--radius)}
+
+  .board{max-width:1100px; margin:0 auto; display:grid; gap:34px; grid-template-columns:1fr}
+  @media (min-width:768px){ .board{grid-template-columns:repeat(2, minmax(0,1fr))} }
+  @media (min-width:1024px){ .board{grid-template-columns:repeat(3, minmax(0,1fr))} }
+  .art{display:flex; flex-direction:column; gap:12px; min-width:0}
+  .art-cap{display:grid; gap:4px}
+  .art-cap b{font-size:13px}
+  .art-cap b i{font-style:normal; font-family:var(--f-mono); color:var(--stamp); margin-right:6px}
+  .art-cap span{font-size:12.5px; color:var(--ink-soft); line-height:1.55}
+  .art-cap .tag{justify-self:start; font-size:12px; font-weight:600; padding:3px 8px; border:1px solid currentColor; border-radius:var(--radius)}
+  .tag.pick{color:var(--stamp)}
+  .tag.no{color:var(--ink-soft)}
+
+  /* 폰 한 대 (360x640 기준) */
+  .phone{position:relative; background:var(--sheet); border:1px solid var(--line); border-radius:var(--radius); width:100%; max-width:360px; height:640px; display:flex; flex-direction:column; overflow:hidden}
+  .head{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:2px solid var(--ink); box-shadow:0 3px 0 -1px var(--sheet), 0 4px 0 -1px var(--ink)}
+  .head b{display:block; font-size:15px}
+  .head small{display:block; font-size:12px; color:var(--ink-soft); margin-top:2px}
+  .head .tools{display:flex; gap:8px; align-items:center}
+  .head .tools span{font-size:12px; border:1px solid var(--line); padding:4px 8px}
+  .head .tools .x{width:32px; height:32px; border:1px solid var(--line); display:grid; place-items:center}
+  .body{padding:16px 14px 14px; display:flex; flex-direction:column; flex:1; min-height:0}
+  .qlabel{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-soft)}
+  .chip{font-size:12px; font-weight:700; border:1px solid var(--ink); color:var(--ink); padding:2px 7px}
+  .task{font-size:13px; color:var(--ink-soft); margin:12px 0 0}
+  .task b{color:var(--ink)}
+  .qname{flex:1; display:grid; place-items:center; font-size:26px; font-weight:700; letter-spacing:-.02em; text-align:center; min-height:72px}
+  .timer{display:flex; align-items:center; gap:8px; margin-bottom:10px}
+  .timer i{flex:1; height:4px; background:var(--line); position:relative}
+  .timer i::after{content:""; position:absolute; inset:0 22% 0 0; background:var(--ink)}
+  .timer span{font-size:12px; font-family:var(--f-mono); color:var(--ink-soft)}
+
+  /* 정답 공개 칸 */
+  .verdict{border:1px solid var(--line); padding:14px; display:grid; gap:8px}
+  .verdict .mark{justify-self:start; font-size:12px; font-weight:700; border:1.5px solid var(--ink); padding:3px 8px; transform:rotate(-2deg)}
+  .verdict.wrong .mark{color:var(--stamp); border-color:var(--stamp)}
+  .verdict h3{margin:0; font-size:16px}
+  .verdict .meta{margin:0; font-size:13px; color:var(--ink-soft); line-height:1.6}
+  .verdict .rate{margin:0; padding-top:8px; border-top:1px dashed var(--line); font-size:12px; color:var(--ink-soft)}
+  /* 추천안: 글 오른쪽에 작은 사진. 칸 높이를 거의 안 늘린다 */
+  .with-thumb{display:grid; grid-template-columns:minmax(0,1fr) 84px; gap:12px; align-items:start}
+  .with-thumb .txt{display:grid; gap:8px; min-width:0}
+  .thumb{position:relative; width:84px; height:84px; border:1px solid var(--ink); overflow:hidden; display:block}
+  .thumb svg{display:block; width:100%; height:100%}
+  .thumb em{position:absolute; right:0; bottom:0; font-style:normal; font-size:11px; font-weight:600; background:var(--ink); color:var(--sheet); padding:2px 5px}
+
+  .next{margin-top:12px; background:var(--ink); color:var(--sheet); font-weight:700; font-size:15px; text-align:center; padding:15px 0}
+
+  /* 덮개 */
+  .veil{position:absolute; inset:0; background:var(--veil); display:grid; align-items:center; padding:16px}
+  .card{background:var(--sheet); border:1px solid var(--ink); padding:14px; display:grid; gap:10px}
+  .card .ph{aspect-ratio:1/1; max-width:100%; border:1px solid var(--line); overflow:hidden}
+  .card .ph svg{display:block; width:100%; height:100%}
+  .card b{font-size:16px}
+  .card p{margin:0; font-size:13px; color:var(--ink-soft); line-height:1.6}
+  .card .src{font-size:12px; color:var(--ink-soft)}
+  .card .close{border:1px solid var(--ink); text-align:center; padding:12px 0; font-weight:600; font-size:14px}
+
+  /* 비추천안: 위에 가로 띠 */
+  .band{height:150px; border:1px solid var(--line); overflow:hidden}
+  .band svg{display:block; width:100%; height:100%}
+  .fold{position:absolute; left:0; right:0; top:568px; border-top:2px dashed var(--stamp); pointer-events:none}
+  .fold span{position:absolute; right:6px; top:-20px; font-size:11px; font-weight:600; color:var(--stamp); background:var(--sheet); padding:1px 4px}
+
+  .notes{max-width:1100px; margin:44px auto 0; border-top:2px solid var(--ink); padding-top:18px; display:grid; gap:22px}
+  .notes h2{margin:0; font-size:16px}
+  .notes ol, .notes ul{margin:0; padding-left:18px; display:grid; gap:10px; max-width:70ch}
+  .notes li{font-size:13.5px; line-height:1.6}
+  .notes li b{display:block}
+  .notes li span{color:var(--ink-soft)}
+</style>
+
+<!-- 항공사진 예시 그림. 실제로는 이 자리에 브이월드 항공사진이 들어간다 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="aerial" viewBox="0 0 200 200">
+      <rect width="200" height="200" fill="#8f9a86"/>
+      <path d="M0 132 L200 118 L200 136 L0 150Z" fill="#b9b7ae"/>
+      <path d="M62 0 L74 0 L82 200 L70 200Z" fill="#b9b7ae"/>
+      <rect x="92" y="10" width="98" height="98" fill="#a6ad9c"/>
+      <g fill="#e6e3da" stroke="#6f6c64" stroke-width="1.2">
+        <rect x="100" y="18" width="34" height="14"/><rect x="146" y="18" width="34" height="14"/>
+        <rect x="100" y="46" width="34" height="14"/><rect x="146" y="46" width="34" height="14"/>
+        <rect x="100" y="74" width="34" height="14"/><rect x="146" y="74" width="34" height="14"/>
+        <rect x="10" y="20" width="44" height="16"/><rect x="10" y="52" width="44" height="16"/>
+        <rect x="96" y="160" width="40" height="16"/><rect x="148" y="160" width="40" height="16"/>
+      </g>
+      <g fill="#6f8065"><circle cx="30" cy="95" r="9"/><circle cx="46" cy="104" r="7"/><circle cx="18" cy="112" r="6"/><circle cx="120" cy="190" r="6"/></g>
+      <rect x="10" y="164" width="48" height="26" fill="#c9c6bc"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="intro">
+  <h1>진짜 단지에 사진을 붙인다면</h1>
+  <p>정답을 맞힌 뒤 "진짜 있는 아파트입니다"가 나올 때, 그 단지를 하늘에서 내려다본 사진을 함께 보여 준다. 답하기 전에는 사진이 없으므로 힌트가 되지 않는다. 사진 자리의 그림은 예시이고, 실제로는 국토부 브이월드 항공사진이 들어간다.</p>
+  <div class="why"><span>답한 뒤에만 보임</span><span>320px에서도 '다음 문제'가 첫 화면에</span><span>사진은 휴대폰이 브이월드에서 직접 받음(서버 전송량 0)</span></div>
+</header>
+
+<main class="board">
+
+  <!-- 1. 추천안 -->
+  <section class="art">
+    <div class="art-cap">
+      <b><i>1</i>정답 공개 · 진짜 (추천)</b>
+      <span>공개 칸 오른쪽에 84px 사진. 칸 높이가 거의 그대로라 '다음 문제'가 밀리지 않는다.</span>
+      <span class="tag pick">추천</span>
+    </div>
+    <div class="phone">
+      <div class="head"><div><b>아파트 감별사</b><small>무한 감별</small></div><div class="tools"><span>안내</span><span class="x">✕</span></div></div>
+      <div class="body">
+        <div class="qlabel mono"><span class="chip">무한</span>4번째 · 연속 3 · 최고 7</div>
+        <p class="task">이 단지, <b>진짜</b>일까 <b>가짜</b>일까?</p>
+        <div class="qname">한솔3차아파트</div>
+        <div class="timer"><i></i><span>9</span></div>
+        <div class="verdict">
+          <div class="with-thumb">
+            <div class="txt">
+              <span class="mark">정답</span>
+              <h3>진짜 있는 아파트입니다</h3>
+              <p class="meta">경상북도 경산시 정평동<br>1998년 준공 · 144세대</p>
+            </div>
+            <button class="thumb" aria-label="한솔3차아파트 항공사진 크게 보기"><svg><use href="#aerial"/></svg><em>사진</em></button>
+          </div>
+          <p class="rate">연속 4문제 · 평균 1.8초 · 최고 7</p>
+        </div>
+        <div class="next">다음 문제</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 덮개 -->
+  <section class="art">
+    <div class="art-cap">
+      <b><i>2</i>사진을 눌렀을 때</b>
+      <span>덮개로 크게 본다. 화면 구조는 그대로이고 닫으면 원래 자리. 나가는 문은 '닫기' 하나. 출처를 사진 밑에 적는다.</span>
+    </div>
+    <div class="phone">
+      <div class="head"><div><b>아파트 감별사</b><small>무한 감별</small></div><div class="tools"><span>안내</span><span class="x">✕</span></div></div>
+      <div class="body">
+        <div class="qlabel mono"><span class="chip">무한</span>4번째 · 연속 3 · 최고 7</div>
+        <div class="qname">한솔3차아파트</div>
+      </div>
+      <div class="veil" role="dialog" aria-label="항공사진">
+        <div class="card">
+          <div class="ph"><svg><use href="#aerial"/></svg></div>
+          <b>한솔3차아파트</b>
+          <p>경상북도 경산시 정평동 · 1998년 준공 · 144세대</p>
+          <span class="src">항공사진 · 브이월드(국토교통부)</span>
+          <button class="close">닫기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 가짜 -->
+  <section class="art">
+    <div class="art-cap">
+      <b><i>3</i>정답 공개 · 가짜</b>
+      <span>AI가 지은 이름은 사진이 없다. 지금 화면 그대로다. 빈 사진 칸을 두지 않는다(없는 것을 있다고 말하는 꼴).</span>
+    </div>
+    <div class="phone">
+      <div class="head"><div><b>아파트 감별사</b><small>무한 감별</small></div><div class="tools"><span>안내</span><span class="x">✕</span></div></div>
+      <div class="body">
+        <div class="qlabel mono"><span class="chip">무한</span>5번째 · 연속 0 · 최고 7</div>
+        <p class="task">이 단지, <b>진짜</b>일까 <b>가짜</b>일까?</p>
+        <div class="qname">트루엘토평팰리스</div>
+        <div class="timer"><i></i><span>7</span></div>
+        <div class="verdict wrong">
+          <span class="mark">오답</span>
+          <h3>AI가 지은 이름입니다</h3>
+          <p class="meta">실단지에 없는 조합입니다</p>
+          <p class="rate">연속이 끊겼습니다 · 최고 7</p>
+        </div>
+        <div class="next">다음 문제</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. 못 불러왔을 때 -->
+  <section class="art">
+    <div class="art-cap">
+      <b><i>4</i>사진을 못 불러왔을 때</b>
+      <span>네트워크가 느리거나 좌표가 없는 단지면 사진 칸을 통째로 접는다. 깨진 그림 표시가 남지 않는다.</span>
+    </div>
+    <div class="phone">
+      <div class="head"><div><b>아파트 감별사</b><small>무한 감별</small></div><div class="tools"><span>안내</span><span class="x">✕</span></div></div>
+      <div class="body">
+        <div class="qlabel mono"><span class="chip">무한</span>4번째 · 연속 3 · 최고 7</div>
+        <p class="task">이 단지, <b>진짜</b>일까 <b>가짜</b>일까?</p>
+        <div class="qname">한솔3차아파트</div>
+        <div class="timer"><i></i><span>9</span></div>
+        <div class="verdict">
+          <span class="mark">정답</span>
+          <h3>진짜 있는 아파트입니다</h3>
+          <p class="meta">경상북도 경산시 정평동<br>1998년 준공 · 144세대</p>
+          <p class="rate">연속 4문제 · 평균 1.8초 · 최고 7</p>
+        </div>
+        <div class="next">다음 문제</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 비추천안 -->
+  <section class="art">
+    <div class="art-cap">
+      <b><i>5</i>대안 · 사진을 크게 띠로</b>
+      <span>사진이 먼저 눈에 들어오지만 공개 칸이 150px 늘어 320x568 화면에서 '다음 문제'가 첫 화면 밖으로 밀린다(빨간 점선 아래). 매 문제 스크롤이 생긴다.</span>
+      <span class="tag no">비추천</span>
+    </div>
+    <div class="phone">
+      <div class="head"><div><b>아파트 감별사</b><small>무한 감별</small></div><div class="tools"><span>안내</span><span class="x">✕</span></div></div>
+      <div class="body">
+        <div class="qlabel mono"><span class="chip">무한</span>4번째 · 연속 3 · 최고 7</div>
+        <p class="task">이 단지, <b>진짜</b>일까 <b>가짜</b>일까?</p>
+        <div class="qname">한솔3차아파트</div>
+        <div class="timer"><i></i><span>9</span></div>
+        <div class="verdict">
+          <div class="band"><svg viewBox="0 30 200 120" preserveAspectRatio="xMidYMid slice"><use href="#aerial"/></svg></div>
+          <span class="mark">정답</span>
+          <h3>진짜 있는 아파트입니다</h3>
+          <p class="meta">경상북도 경산시 정평동<br>1998년 준공 · 144세대</p>
+          <p class="rate">연속 4문제 · 평균 1.8초 · 최고 7</p>
+        </div>
+        <div class="next">다음 문제</div>
+      </div>
+      <div class="fold"><span>568px</span></div>
+    </div>
+  </section>
+
+</main>
+
+<section class="notes">
+  <div>
+    <h2>어떻게 들어가나</h2>
+    <ol>
+      <li><b>좌표</b><span>매일 밤 수집 작업이 새 단지의 주소를 카카오 로컬 API로 좌표(위도·경도)로 바꿔 단지 자료에 함께 적는다. 처음 한 번은 1만 5천여 건을 몰아서 바꾼다(무료 한도 안). 브이월드 주소 변환은 해외 서버에서 막혀 있어 쓰지 않는다.</span></li>
+      <li><b>사진</b><span>정답 공개 응답에 좌표가 실리고, 휴대폰이 그 좌표로 브이월드 항공사진을 직접 받는다. 사이트 서버를 거치지 않아 Vercel 전송량이 늘지 않는다.</span></li>
+      <li><b>정답 보호</b><span>좌표는 판정이 끝난 뒤의 응답에만 실린다. 문제를 내는 응답에는 지금처럼 이름만 있다.</span></li>
+    </ol>
+  </div>
+  <div>
+    <h2>Jessi가 준비할 것</h2>
+    <ul>
+      <li><b>브이월드 인증키</b><span>vworld.kr 회원가입 후 오픈API 인증키 발급, 서비스 주소에 apt-game.app 등록.</span></li>
+      <li><b>카카오 REST API 키</b><span>카카오 디벨로퍼스에서 앱 생성 후 REST 키를 GitHub Actions 시크릿에 넣는다.</span></li>
+      <li><b>출처 표기 확인</b><span>브이월드 이용약관의 항공사진 출처 표기 문구를 확인한다(시안은 "항공사진 · 브이월드(국토교통부)").</span></li>
+    </ul>
+  </div>
+  <div>
+    <h2>정해야 할 것</h2>
+    <ol>
+      <li><b>모양</b><span>1번(작은 사진, 눌러서 크게)을 추천한다. 5번은 사진이 크게 보이지만 매 문제 스크롤이 생긴다.</span></li>
+      <li><b>어느 창구까지</b><span>감별 O/X 정답 공개부터. 진짜 찾기·이름 조립의 정답 공개도 같은 칸을 쓰므로 그대로 따라 붙일 수 있다.</span></li>
+      <li><b>거리 사진</b><span>땅에서 찍은 사진(로드뷰)은 공개 API가 유료이거나 저장이 금지라 이번 범위에서 뺐다.</span></li>
+    </ol>
+  </div>
+</section>
