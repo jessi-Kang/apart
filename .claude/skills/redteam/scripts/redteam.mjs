@@ -625,7 +625,50 @@ async function header() {
 
 /* ---------- 실행 ---------- */
 
-const SECTIONS = { session, guard, answer: async () => { await answer(); await xpForgery(); }, input, secret, header };
+/* ---------- 도전장 ---------- */
+
+/**
+ * 도전장의 기록은 서버가 센 판에서 나와야 한다. 숫자를 받아 주면 "연속 99"짜리
+ * 도전장이 생기고, 판정 라우트가 화면에 없는 이름을 받아 주면 남의 문제 정답을
+ * 판 진행 없이 캐 간다. 도전장 겉면에 시드가 실리면 받기 전에 판을 미리 굴린다.
+ */
+async function challenge() {
+  const forged = await req("/api/challenge", { method: "POST", body: { target: 99 } });
+  if (forged.status === 200) bad("[도전장] 판 없이 기록을 적어 만들 수 있는가", `200 ${forged.text.slice(0, 80)}`);
+  else ok("[도전장] 판 없이 기록을 적어 만들 수 있는가", `${forged.status}로 거절`);
+
+  const j = jar();
+  const q = await j.req("/api/endless/ox?start=1");
+  const other = await j.req("/api/endless/ox", { method: "POST", body: { name: q.json?.name === "래미안" ? "자이" : "래미안", choice: "real" } });
+  if (other.status === 200) bad("[도전장] 화면에 없는 이름을 판정해 주는가", "200");
+  else ok("[도전장] 화면에 없는 이름을 판정해 주는가", `${other.status}로 거절`);
+
+  // 한 문제를 맞힐 때까지 쳐서 기록 1 이상인 판을 만든 뒤 도전장을 만든다
+  let code = null;
+  for (let k = 0; k < 20 && !code; k++) {
+    const cur = await j.req("/api/endless/ox");
+    const r = await j.req("/api/endless/ox", { method: "POST", body: { name: cur.json?.name, choice: "real" } });
+    if (r.json?.correct) {
+      const c = await j.req("/api/challenge", { method: "POST", body: { target: 99 } });
+      code = c.json?.code ?? null;
+      if (c.json?.target === 99) bad("[도전장] 요청한 기록이 실리는가", "target 99가 그대로 실렸다");
+      else ok("[도전장] 요청한 기록이 실리는가", `서버가 센 기록 ${c.json?.target}이 실렸다`);
+    }
+  }
+  if (!code) {
+    unknown("[도전장] 겉면에 시드가 실리는가", "도전장을 못 만들었다");
+    return;
+  }
+  const face = await req(`/api/challenge/${code}`);
+  const leak = ["seed", "start", "senderUid"].filter((k) => new RegExp(`"${k}"\\s*:`).test(face.text));
+  if (leak.length) bad("[도전장] 겉면에 시드가 실리는가", leak.join(", "));
+  else ok("[도전장] 겉면에 시드가 실리는가", "기록·보낸 사람만 있다");
+  const junk = await req("/api/challenge/zz'or'1=1");
+  if (junk.status === 404) ok("[도전장] 모르는 번호", "404");
+  else bad("[도전장] 모르는 번호", `${junk.status}`);
+}
+
+const SECTIONS = { session, guard, answer: async () => { await answer(); await xpForgery(); await challenge(); }, input, secret, header };
 
 async function main() {
   const want = process.argv[2] ?? "all";

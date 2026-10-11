@@ -11,7 +11,6 @@ import { coinedCount, comboState, currentStreak, endlessRecord, type ComboState 
 import { currentLevel, type LevelInfo } from "@/lib/level";
 import { coinLevel, coinScore } from "@/lib/coinlevel";
 import { coinStage } from "@/lib/coinstatus";
-import { episodeNumber, kstDateString } from "@/lib/episode";
 
 interface Me {
   configured: boolean;
@@ -102,6 +101,8 @@ export default function RecordPage() {
   const [me, setMe] = useState<Me | null>(null);
   const [coined, setCoined] = useState<MyCoined | null>(null);
   const [coinedHere, setCoinedHere] = useState(0);
+  /** 내가 보낸 도전장 요약 (로그인한 사람만, 보낸 적이 있을 때만 칸을 그린다) */
+  const [sent, setSent] = useState<{ sent: number; takes: number; beaten: number } | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -141,6 +142,10 @@ export default function RecordPage() {
     fetch(`/api/coined/mine?limit=${COIN_TOP}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: MyCoined | null) => setCoined(d))
+      .catch(() => undefined);
+    fetch("/api/challenge/mine")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { sent: number; takes: number; beaten: number } | null) => setSent(d))
       .catch(() => undefined);
   }, []);
 
@@ -190,7 +195,7 @@ export default function RecordPage() {
           </div>
           <DocTitle eyebrow="감별사기록부" title={`Lv.${level?.level ?? 1} ${level?.title ?? "견습 감별사"}`} />
           <p className="stamp-sub">
-            {loaded ? `누적 ${level?.xp ?? 0}점 · 연속 출전 ${Math.max(streak.count, 0)}일` : "기록을 불러오는 중"}
+            {loaded ? `누적 ${level?.xp ?? 0}점` : "기록을 불러오는 중"}
           </p>
           {/* 직급 눈금은 제목 바로 아래다. 아래쪽 표에 따로 칸을 두면 같은
               "Lv.N 직급"이 한 화면에 두 번 나온다 */}
@@ -217,12 +222,17 @@ export default function RecordPage() {
               {fmtSec(combo.bestAvgMs) && <small>평균 {fmtSec(combo.bestAvgMs)}</small>}
               <span className="vr-rank">{rankCell(ranks?.endless.findreal, combo.best)}</span>
             </VRow>
+            {sent && sent.sent > 0 && (
+              <VRow label="보낸 도전장">
+                {sent.sent}통 <small>받아 친 사람 {sent.takes}명 · 넘은 사람 {sent.beaten}명</small>
+              </VRow>
+            )}
           </VForm>
 
           <div className="cut" />
 
           <p className="sec-cap">
-            오늘의 공식전<small>제{episodeNumber(kstDateString())}호 · 자정에 새 판</small>
+            공식전<small>자정에 새 판</small>
           </p>
           <VForm>
             {/* 공식전은 창구마다 문제도 순위도 따로다. 한 행에 뭉쳐 두면

@@ -95,7 +95,7 @@ async function behavior() {
     const q = `?area=${encodeURIComponent(area)}`;
     try {
       const names = [];
-      for (let i = 0; i < 40; i++) names.push((await getJson(`${LOCAL}/api/endless/ox${q}`)).name);
+      for (let i = 0; i < 40; i++) names.push((await getJson(`${LOCAL}/api/endless/ox${q}&start=1`)).name);
       const leak = names.filter((n) => {
         const s = bySido.get(n.replace(/\s+/g, ""));
         return s && s !== area;
@@ -194,11 +194,17 @@ async function behavior() {
 
     // 공유 이미지 저장 파일명
     const dl = await ctx.newPage();
-    await dl.goto(`${LOCAL}/play`, { waitUntil: "load" });
+    // 무한 감별 결과의 통지서 공유 자리는 도전장이 이어받았다. 통지서 그림은 공식전 성적표에 남는다
+    await dl.goto(`${LOCAL}/o?official=1`, { waitUntil: "load" });
     await dl.waitForSelector(".qname", { timeout: 20000 });
-    await dl.locator('button:has-text("진짜"), button:has-text("가짜")').first().click();
-    await dl.waitForTimeout(1200);
-    await dl.locator(".close-x").click();
+    // 안내 덮개는 처음 온 사람에게만 뜬다. 없을 때 기다리면 그사이 제한 시간이 흐른다
+    if (await dl.locator(".rule-veil button").count()) await dl.locator(".rule-veil button").first().click();
+    for (let k = 0; k < 10; k++) {
+      await dl.locator(".btn-real").click();
+      await dl.locator(".btn-next").waitFor({ timeout: 10000 });
+      await dl.locator(".btn-next").click();
+      await dl.waitForTimeout(300);
+    }
     await dl.waitForSelector(".stamp-hero", { timeout: 15000 });
     const got = dl.waitForEvent("download", { timeout: 20000 }).then((d) => d.suggestedFilename()).catch(() => null);
     await dl.locator('button:has-text("통지서 공유")').first().click();
