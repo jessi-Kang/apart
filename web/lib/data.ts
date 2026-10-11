@@ -1,5 +1,6 @@
 import apartmentsJson from "@/data/apartments.json";
 import fakesJson from "@/data/fake_names.json";
+import { shapeWeights } from "./balance";
 
 export type Difficulty = "easy" | "mid" | "hard";
 
@@ -132,21 +133,43 @@ for (const f of fakeNames) {
   fakeAreas.set(f.id, new Set(allowed));
 }
 
+export interface Pool {
+  reals: Apartment[];
+  fakes: FakeName[];
+  /** 이름별 출제 무게(평균 1). 진짜와 가짜의 겉모양을 맞춘다 (lib/balance.ts) */
+  realW: Map<Apartment, number>;
+  fakeW: Map<FakeName, number>;
+}
+
+const poolCache = new Map<string, Pool>();
+
 /** 그 구역에서 낼 수 있는 진짜/가짜. area가 없거나 모르는 값이면 전국 */
-export function poolOf(area?: string | null): { reals: Apartment[]; fakes: FakeName[] } {
-  if (!area || !isArea(area)) return { reals: apartments, fakes: fakeNames };
-  const reals = apartments.filter((a) => a.sido === area);
-  const allow = new Set(reals.map((a) => guKey(a.sido, a.sigungu)));
-  return {
-    reals,
-    fakes: fakeNames.filter((f) => {
+export function poolOf(area?: string | null): Pool {
+  const key = area && isArea(area) ? area : "";
+  const hit = poolCache.get(key);
+  if (hit) return hit;
+  let reals = apartments;
+  let fakes = fakeNames;
+  if (key) {
+    reals = apartments.filter((a) => a.sido === key);
+    const allow = new Set(reals.map((a) => guKey(a.sido, a.sigungu)));
+    fakes = fakeNames.filter((f) => {
       const gus = fakeAreas.get(f.id);
       if (gus === null) return true; // 지역색 없는 이름은 어디서나
       if (!gus) return false;
       for (const g of gus) if (allow.has(g)) return true;
       return false;
-    }),
+    });
+  }
+  const w = shapeWeights(reals, fakes);
+  const pool: Pool = {
+    reals,
+    fakes,
+    realW: new Map(reals.map((r, i) => [r, w.real[i]])),
+    fakeW: new Map(fakes.map((f, i) => [f, w.fake[i]])),
   };
+  poolCache.set(key, pool);
+  return pool;
 }
 
 /** 화면에 쓰는 구역 이름 (서울특별시 → 서울) */

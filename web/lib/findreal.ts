@@ -1,6 +1,6 @@
 import { poolOf, type Apartment, type FakeName, type Difficulty } from "./data";
 import { geoOf } from "./geo";
-import { pickByDifficulty } from "./daily";
+import { balanced, pickByDifficulty } from "./daily";
 import { seededShuffle, rngForDate } from "./seeded";
 
 /**
@@ -26,13 +26,14 @@ interface InternalRound {
 }
 
 function roundsForDate(date: string, area?: string | null): InternalRound[] {
-  const { reals, fakes: fakePool } = poolOf(area);
+  const { reals, fakes: fakePool, realW, fakeW } = poolOf(area);
   const rng = rngForDate(date, SEED_OFFSET, area);
+  const on = balanced(date);
   const usedReal = new Set<Apartment>();
   const usedFake = new Set<FakeName>();
   return ROUND_DIFF.map((want) => {
-    const real = pickByDifficulty(reals, want, rng, usedReal);
-    const fakes = [0, 1, 2].map(() => pickByDifficulty(fakePool, want, rng, usedFake));
+    const real = pickByDifficulty(reals, want, rng, usedReal, on ? realW : undefined);
+    const fakes = [0, 1, 2].map(() => pickByDifficulty(fakePool, want, rng, usedFake, on ? fakeW : undefined));
     const options = seededShuffle([real.name, ...fakes.map((f) => f.name)], rng);
     return { real, fakes, options };
   });

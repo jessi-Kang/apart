@@ -140,29 +140,27 @@ function kindsUpTo(seed: number, n: number): boolean[] {
  * n번째 이름. 풀에서 (시드, n, 이름)의 해시가 가장 작은 것을 고른다.
  * 풀은 매일 밤 늘어나는데, 배열 위치로 고르면 하나만 늘어도 뒤가 다 밀려 받은
  * 도전장이 다른 문제가 된다. 해시 최솟값은 새로 든 이름이 이길 때만 바뀐다.
+ * 이름마다 겉모양 무게가 있어 그만큼 잘 뽑힌다(lib/balance.ts).
  */
 export function oxAt(seed: number, area: string, n: number): { name: string; real: boolean } {
   const real = kindsUpTo(seed, n)[n];
-  const { reals, fakes } = poolOf(area || null);
-  const pool: { name: string }[] = real ? reals : fakes;
-  const salt = `${seed}:${n}:`;
-  let best = pool[0];
-  let bh = Infinity;
-  for (const p of pool) {
-    const h = hash32(salt + p.name);
-    if (h < bh) {
-      bh = h;
-      best = p;
-    }
-  }
+  const pool = poolOf(area || null);
+  const best = real
+    ? smallest(pool.reals, `${seed}:${n}:`, 1, (a) => a.name, (a) => pool.realW.get(a) ?? 1)[0]
+    : smallest(pool.fakes, `${seed}:${n}:`, 1, (f) => f.name, (f) => pool.fakeW.get(f) ?? 1)[0];
   return { name: best.name, real };
 }
 
-/** 풀에서 (salt+이름) 해시가 가장 작은 k개. 풀이 늘어도 새로 든 것이 이길 때만 바뀐다 */
-function smallest<T>(pool: T[], salt: string, k: number, key: (t: T) => string): T[] {
+/**
+ * 풀에서 (salt+이름) 해시로 k개. 풀이 늘어도 새로 든 것이 이길 때만 바뀐다.
+ * 무게가 있으면 해시를 0~1로 펴 −ln(u)/무게가 작은 순으로 고른다 — 무게에 비례해
+ * 뽑히는 지수 경주다. 무게가 모두 1이면 해시 최솟값과 순서가 같다.
+ */
+function smallest<T>(pool: T[], salt: string, k: number, key: (t: T) => string, weight?: (t: T) => number): T[] {
   const top: { h: number; t: T }[] = [];
   for (const t of pool) {
-    const h = hash32(salt + key(t));
+    const raw = hash32(salt + key(t));
+    const h = weight ? -Math.log((raw + 0.5) / 4294967296) / weight(t) : raw;
     if (top.length < k) {
       top.push({ h, t });
       top.sort((x, y) => x.h - y.h);
@@ -187,9 +185,9 @@ function shuffleAt<T>(arr: T[], seed: number, n: number): T[] {
 
 /** 진짜 찾기 n번째: 진짜 하나 + 가짜 셋 */
 export function findAt(seed: number, area: string, n: number): { options: string[] } {
-  const { reals, fakes } = poolOf(area || null);
-  const real = smallest(reals, `${seed}:${n}:r:`, 1, (a) => a.name)[0];
-  const three = smallest(fakes, `${seed}:${n}:f:`, 3, (f) => f.name).map((f) => f.name);
+  const pool = poolOf(area || null);
+  const real = smallest(pool.reals, `${seed}:${n}:r:`, 1, (a) => a.name, (a) => pool.realW.get(a) ?? 1)[0];
+  const three = smallest(pool.fakes, `${seed}:${n}:f:`, 3, (f) => f.name, (f) => pool.fakeW.get(f) ?? 1).map((f) => f.name);
   return { options: shuffleAt([real.name, ...three], seed, n) };
 }
 

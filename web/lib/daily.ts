@@ -25,6 +25,7 @@ export function pickByDifficulty<T extends { difficulty: Difficulty }>(
   want: Difficulty,
   rng: () => number,
   used: Set<T>,
+  weight?: Map<T, number>,
 ): T {
   const order: Difficulty[][] = {
     easy: [["easy"], ["mid"], ["hard"]],
@@ -34,13 +35,28 @@ export function pickByDifficulty<T extends { difficulty: Difficulty }>(
   for (const tier of order) {
     const candidates = pool.filter((p) => tier.includes(p.difficulty) && !used.has(p));
     if (candidates.length) {
-      const chosen = candidates[Math.floor(rng() * candidates.length)];
+      const chosen = weight ? weightedPick(candidates, weight, rng) : candidates[Math.floor(rng() * candidates.length)];
       used.add(chosen);
       return chosen;
     }
   }
   throw new Error("출제 풀 부족: 시드 데이터를 확인하세요");
 }
+
+/** 무게(lib/balance.ts의 겉모양 무게)에 비례해 하나 */
+function weightedPick<T>(list: T[], weight: Map<T, number>, rng: () => number): T {
+  const total = list.reduce((s, t) => s + (weight.get(t) ?? 1), 0);
+  let r = rng() * total;
+  for (const t of list) if ((r -= weight.get(t) ?? 1) <= 0) return t;
+  return list[list.length - 1];
+}
+
+/**
+ * 공식전에 겉모양 무게를 쓰기 시작한 날(KST). 공식전은 (날짜, 구역)으로 정해진 문제라
+ * 그날 도중에 뽑는 법을 바꾸면 이미 치고 있던 사람의 문제가 바뀐다. 다음 날부터 적용한다
+ */
+export const BALANCE_FROM = "2026-10-12";
+export const balanced = (date: string) => date >= BALANCE_FROM;
 
 /** 난이도 커브: 위치별 목표 난이도 (docs/02) */
 const CURVE: Difficulty[] = ["easy", "easy", "mid", "mid", "mid", "mid", "mid", "hard", "hard", "hard"];
@@ -51,8 +67,9 @@ const CURVE: Difficulty[] = ["easy", "easy", "mid", "mid", "mid", "mid", "mid", 
  * 같은 (날짜, 구역)이면 누가 열어도 같은 문제 — 그래야 순위를 비교할 수 있다.
  */
 export function quizForDate(date: string, area?: string | null): QuizItem[] {
-  const { reals, fakes } = poolOf(area);
+  const { reals, fakes, realW, fakeW } = poolOf(area);
   const rng = rngForDate(date, 0, area);
+  const on = balanced(date);
 
   const realCount = 4 + Math.floor(rng() * 3); // 4~6
   const kinds = seededShuffle(
@@ -66,9 +83,9 @@ export function quizForDate(date: string, area?: string | null): QuizItem[] {
   return kinds.map((kind, idx) => {
     const want = CURVE[idx];
     if (kind === "real") {
-      return { no: idx + 1, kind, real: pickByDifficulty(reals, want, rng, usedReal) };
+      return { no: idx + 1, kind, real: pickByDifficulty(reals, want, rng, usedReal, on ? realW : undefined) };
     }
-    return { no: idx + 1, kind, fake: pickByDifficulty(fakes, want, rng, usedFake) };
+    return { no: idx + 1, kind, fake: pickByDifficulty(fakes, want, rng, usedFake, on ? fakeW : undefined) };
   });
 }
 

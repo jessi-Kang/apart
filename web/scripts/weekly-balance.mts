@@ -22,6 +22,7 @@ import fs from "node:fs";
 import { neon } from "@neondatabase/serverless";
 import { oxAt } from "../lib/run.ts";
 import { poolOf, regions, areaLabel } from "../lib/data.ts";
+import { SHAPE_FEATURES } from "../lib/balance.ts";
 
 const RUNS = 300; // 모의로 칠 판 수
 const LEN = 20; // 한 판에 몇 문제까지 보나 (무한 판 대부분이 이 안에서 끝난다)
@@ -115,40 +116,50 @@ function rules() {
   if (Math.abs(share - 0.5) > 0.04) warns.push(`출제 규칙의 진짜 비율이 ${pct(share)}`);
   if (longest > 8) warns.push(`같은 쪽이 ${longest}문제 연달아 나온다 (규칙은 3연속부터 반대쪽으로 기운다)`);
   out("");
-  out(`| 구역 | 실단지 | 가짜 | 가짜 되풀이 (${SEEN}개 볼 때) |`);
-  out("|---|---:|---:|---:|");
+  // 겉모양 무게(lib/balance.ts) 때문에 실제로 도는 가짜는 풀보다 적다. 유효 크기 = (Σw)²/Σw²
+  out(`| 구역 | 실단지 | 가짜 | 실제로 도는 가짜 | 가짜 되풀이 (${SEEN}개 볼 때) |`);
+  out("|---|---:|---:|---:|---:|");
   for (const area of ["", ...regions.map((r) => r.sido)]) {
-    const { reals, fakes } = poolOf(area || null);
-    const rep = repeatOf(fakes.length);
+    const { reals, fakes, fakeW } = poolOf(area || null);
+    const ws = [...fakeW.values()];
+    const eff = Math.round(ws.reduce((a, b) => a + b, 0) ** 2 / (ws.reduce((a, b) => a + b * b, 0) || 1));
+    const rep = repeatOf(eff);
     const label = area ? areaLabel(area) : "전국";
-    out(`| ${label} | ${reals.length.toLocaleString()} | ${fakes.length.toLocaleString()} | ${pct(rep)} |`);
-    if (rep > 0.15) warns.push(`${label}: 가짜가 얇다 (${fakes.length}건 — ${SEEN}개 중 ${pct(rep)}가 본 것)`);
+    out(`| ${label} | ${reals.length.toLocaleString()} | ${fakes.length.toLocaleString()} | ${eff.toLocaleString()} | ${pct(rep)} |`);
+    if (rep > 0.15) warns.push(`${label}: 가짜가 얇다 (실제로 도는 것 ${eff}건 — ${SEEN}개 중 ${pct(rep)}가 본 것)`);
   }
 }
 
 /* ---------- 3. 겉모양 ---------- */
+/**
+ * 두 번 잰다. 풀 그대로(이름 수로 센 것)와 실제로 나가는 것(겉모양 무게를 먹인 것).
+ * 경고는 나가는 쪽만 — 풀이 쏠려 있어도 무게가 덮고 있으면 플레이어는 못 찍는다.
+ * 다만 풀의 쏠림이 커지면 무게가 한도(0.25~4)에 걸려 못 덮게 되므로 같이 적어 둔다.
+ */
 function looks() {
-  out("### 3. 겉모양으로 찍을 수 있는가");
+  out("### 3. 겉모양으로 찍을 수 있는가 (실제로 나가는 비율)");
   out("");
-  // qa.mjs의 겉모양 검사와 같은 잣대: 그 특징이 있으면 무조건 가짜라고 찍었을 때 적중률
-  const bare = (n: string) => n.replace(/\s+/g, "");
-  const feats: [string, (n: string) => boolean][] = [
-    ["띄어쓰기 있음", (n) => /\s/.test(n)],
-    ["6자 이하", (n) => bare(n).length <= 6],
-    ["11자 이상", (n) => bare(n).length >= 11],
-    ...["아파트", "마을", "타운", "맨션"].map((w) => [`"${w}"로 끝`, (n: string) => bare(n).endsWith(w)] as [string, (n: string) => boolean]),
-  ];
-  const areas = ["", ...regions.map((r) => r.sido)];
   const found: string[] = [];
-  // "아파트"로 끝나면 진짜 쪽이 많은 것처럼 반대 방향도 힌트다 — 찍을 쪽만 다르다
-  for (const area of areas) {
-    const { reals, fakes } = poolOf(area || null);
-    const rate = (arr: { name: string }[], f: (n: string) => boolean) => arr.filter((x) => f(x.name)).length / (arr.length || 1);
-    for (const [label, f] of feats) {
-      const rf = rate(fakes, f), rr = rate(reals, f);
+  let rawTells = 0;
+  for (const area of ["", ...regions.map((r) => r.sido)]) {
+    const { reals, fakes, realW, fakeW } = poolOf(area || null);
+    const rate = <T extends { name: string }>(arr: T[], f: (n: string) => boolean, w?: Map<T, number>) => {
+      let on = 0, all = 0;
+      for (const x of arr) {
+        const k = w?.get(x) ?? 1;
+        all += k;
+        if (f(x.name)) on += k;
+      }
+      return on / (all || 1);
+    };
+    for (const [label, f] of SHAPE_FEATURES) {
+      const tell = (rf: number, rr: number) => ((rf + rr) / 2 >= 0.05 ? rf / (rf + rr) : 0.5);
       // 그 특징이 드문 것이면(문제 스물에 하나 꼴도 안 되면) 힌트가 돼도 판을 못 흔든다
-      if ((rf + rr) / 2 < 0.05) continue;
-      const g = rf / (rf + rr);
+      const raw = tell(rate(fakes, f), rate(reals, f));
+      if (raw > 0.65 || raw < 0.35) rawTells++;
+      const rf = rate(fakes, f, fakeW), rr = rate(reals, f, realW);
+      const g = tell(rf, rr);
+      // "아파트"로 끝나면 진짜 쪽이 많은 것처럼 반대 방향도 힌트다 — 찍을 쪽만 다르다
       if (g > 0.65 || g < 0.35)
         found.push(`${area ? areaLabel(area) : "전국"} · ${label}: ${g > 0.5 ? "가짜" : "진짜"}로 찍으면 ${pct(Math.max(g, 1 - g))} 적중 (가짜 ${pct(rf)} 대 실단지 ${pct(rr)})`);
     }
@@ -158,6 +169,8 @@ function looks() {
     for (const f of found) out(`- ${f}`);
     warns.push(`겉모양 힌트 ${found.length}건 (3번 참고)`);
   }
+  out("");
+  out(`풀 자체(무게 없이 센 것)의 쏠림은 ${rawTells}건이고, 출제 무게(lib/balance.ts)가 덮고 있습니다.`);
 }
 
 await served().catch((e) => {
