@@ -32,7 +32,7 @@ export { COIN_POINTS, AWARD_PER_DAY, SUBMIT_PER_DAY } from "./coinrule";
 export interface CoinResult {
   ok: boolean;
   /** 실패 사유. 저장이 안 된 것과 이미 있는 이름인 것은 다른 일이다 */
-  reason?: "duplicate" | "store";
+  reason?: "duplicate" | "limit" | "store";
   awarded: boolean;
   points: number;
   /** 접수번호. 창구에서 받아 가는 번호라 실제로 들어간 행 번호를 쓴다 */
@@ -61,22 +61,6 @@ export interface CoinedRow {
 /** 접수된 작명의 처리 상태 */
 export type CoinStatus = "pending" | "approved" | "rejected";
 
-/**
- * 점수를 줘도 되는가.
- * 로그인한 사람만, 하루 다섯 건까지. 비회원은 서버가 누군지 몰라 셀 수가 없다.
- * 조건에 걸려도 작명은 저장된다 — 점수를 못 받는 것과 이름이 안 남는 것은 다르다.
- */
-async function canAward(uid: number | null): Promise<boolean> {
-  if (!sql || uid === null) return false;
-  try {
-    const rows = (await sql`
-      SELECT COUNT(*) FILTER (WHERE awarded AND created_at > now() - interval '1 day')::int AS today
-      FROM coined_name WHERE user_id = ${uid}`) as { today: number }[];
-    return (rows[0]?.today ?? 0) < AWARD_PER_DAY;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * 지은 이름을 접수한다.
@@ -114,21 +98,48 @@ export async function saveCoined(input: {
 }): Promise<CoinResult> {
   if (!sql) return { ok: false, reason: "store", awarded: false, points: 0 };
   try {
-    const awarded = await canAward(input.uid);
     const hold = input.hold ?? "";
-    const rows = (await sql`
-      INSERT INTO coined_name (name, area, user_id, awarded, approved, hold_reason)
-      VALUES (${input.name}, ${input.area}, ${input.uid}, ${awarded}, ${hold === ""}, ${hold})
-      ON CONFLICT (name) DO NOTHING
-      RETURNING id`) as { id: number }[];
-    // 같은 이름이 이미 접수돼 있으면 새 행이 안 생긴다. 아직 출제 풀에 오르지
-    // 않은 이름은 판정에서 안 걸리므로, 여기가 마지막 그물이다
-    if (!rows[0]) return { ok: false, reason: "duplicate", awarded: false, points: 0 };
+    const uid = input.uid;
+    const bare = input.name.replace(/\s+/g, "").toLowerCase();
+    /*
+     * 하루 상한·점수 상한·중복 확인을 **한 번에, 한 사람씩** 한다.
+     *
+     * 예전에는 "오늘 몇 건인가"를 세고 나서 넣었다. 그 사이가 비어 있어서 같은 사람이
+     * 요청을 한꺼번에 50개 쏘면 전부 "아직 19건"을 보고 들어갔다(접수 20건·점수 5건
+     * 상한이 둘 다 뚫린다). 사람마다 잠금(pg_advisory_xact_lock)을 걸고 그 안에서 세고
+     * 넣는다. 다른 사람끼리는 서로 기다리지 않는다.
+     *
+     * 띄어쓰기만 다른 이름("한빛 누리"와 "한빛누리")도 같은 이름으로 본다. 둘 다 받아
+     * 두면 출제로 내보낼 때 뒤의 것이 조용히 빠져서, 지은 사람은 영영 "출제 대기"로 본다.
+     */
+    const [, inserted, counted] = (await sql.transaction([
+      sql`SELECT pg_advisory_xact_lock(${uid ?? 0})`,
+      sql`
+        WITH today AS (
+          SELECT COUNT(*)::int AS n, COUNT(*) FILTER (WHERE awarded)::int AS a
+          FROM coined_name WHERE user_id IS NOT DISTINCT FROM ${uid} AND created_at > now() - interval '1 day'
+        )
+        INSERT INTO coined_name (name, area, user_id, awarded, approved, hold_reason)
+        SELECT ${input.name}, ${input.area}, ${uid}, ${uid !== null} AND today.a < ${AWARD_PER_DAY}, ${hold === ""}, ${hold}
+        FROM today
+        WHERE today.n < ${SUBMIT_PER_DAY}
+          AND NOT EXISTS (SELECT 1 FROM coined_name WHERE lower(replace(name, ' ', '')) = ${bare})
+        ON CONFLICT (name) DO NOTHING
+        RETURNING id, awarded`,
+      sql`
+        SELECT COUNT(*)::int AS n FROM coined_name
+        WHERE user_id IS NOT DISTINCT FROM ${uid} AND created_at > now() - interval '1 day'`,
+    ])) as [unknown, { id: number; awarded: boolean }[], { n: number }[]];
+    const row = inserted[0];
+    if (!row) {
+      const limited = uid !== null && Number(counted[0]?.n ?? 0) >= SUBMIT_PER_DAY;
+      return { ok: false, reason: limited ? "limit" : "duplicate", awarded: false, points: 0 };
+    }
     return {
       ok: true,
-      awarded,
-      points: awarded ? COIN_POINTS : 0,
-      no: `${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(rows[0].id).padStart(4, "0")}`,
+      awarded: row.awarded,
+      points: row.awarded ? COIN_POINTS : 0,
+      no: `${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(row.id).padStart(4, "0")}`,
     };
   } catch {
     return { ok: false, reason: "store", awarded: false, points: 0 };

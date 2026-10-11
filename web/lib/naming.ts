@@ -140,6 +140,9 @@ export function judgeName(raw: string): NameVerdict {
     return { ok: false, reason: "format", message: `${MIN_LEN}자에서 ${MAX_LEN}자 사이로 지어 주세요` };
   if (!ALLOWED.test(name))
     return { ok: false, reason: "format", message: "한글·영문·숫자와 띄어쓰기만 쓸 수 있습니다" };
+  // 숫자만으로는 단지명이 아니다("12345"가 통과하고 있었다)
+  if ((name.match(/[가-힣A-Za-z]/g) ?? []).length < 2)
+    return { ok: false, reason: "format", message: "글자를 두 자 이상 넣어 지어 주세요" };
   if (ADMIN_NOISE.test(name))
     return { ok: false, reason: "format", message: "동·호수나 관리 단위가 들어간 이름은 출제할 수 없습니다" };
   // 명백한 말은 접수 자체를 막는다. 나중에 반려하면 지은 사람은 왜 안 나오는지
@@ -151,10 +154,12 @@ export function judgeName(raw: string): NameVerdict {
   // 지역 이름 하나만 적는 것은 단지명이 아니다("부산광역시", "해운대").
   // 조각을 한 번만 누르고 접수하면 이렇게 되므로 여기서 막는다
   if (placeOnly.has(nf)) return { ok: false, reason: "format", message: "동네 이름만으로는 단지명이 되지 않습니다" };
-  for (const f of fakesJson.items as { name: string }[]) {
-    if (norm(f.name) === nf) return { ok: false, reason: "exists", near: f.name };
-  }
-  for (const r of apartments) {
+  // 실단지와 출제 중인 가짜를 **같은 잣대**로 대조한다. 예전에는 실단지만 비슷한 이름까지
+  // 막고 가짜는 똑같은 이름만 막았는데, 그 차이가 그대로 정답표가 됐다 — 감별 화면에 뜬
+  // 이름 뒤에 글자 하나를 붙여 확인(check)만 눌러 보면 진짜는 "비슷한 실단지가 있다",
+  // 가짜는 통과로 갈려 30문제 중 30문제를 맞혔다(로그인만 하면 무제한, 흔적도 없다).
+  // 둘을 같이 대조하면 어느 쪽이든 "이미 있는 이름과 비슷하다"로 똑같이 답한다
+  for (const r of [...(fakesJson.items as { name: string }[]), ...apartments]) {
     const nr = norm(r.name);
     if (nf === nr) return { ok: false, reason: "exists", near: r.name };
     const limit = Math.min(nf.length, nr.length) <= 5 ? 1 : Math.min(nf.length, nr.length) <= 11 ? 2 : 3;

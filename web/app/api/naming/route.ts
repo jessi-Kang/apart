@@ -82,6 +82,10 @@ export async function POST(req: Request) {
     if (saved.reason === "duplicate") {
       return NextResponse.json({ verdict: { ok: false, reason: "exists", near: name } });
     }
+    // 세고 넣는 사이에 다른 요청이 끼어든 경우. 위의 todayCount는 빠른 길이고, 여기가 진짜 상한이다
+    if (saved.reason === "limit") {
+      return NextResponse.json({ error: "daily_limit", limit: SUBMIT_PER_DAY }, { status: 429 });
+    }
     return NextResponse.json({ error: "store_unavailable" }, { status: 503 });
   }
   // 접수하자마자 작명 호칭이 어디까지 왔는지 보여준다. 호칭은 감별 직급과

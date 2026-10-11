@@ -338,6 +338,38 @@ async function answer() {
     }
   }
 
+  // 작명소의 "확인"(check)으로 감별 답을 캘 수 있는가. 실단지만 비슷한 이름까지 막고
+  // 가짜는 똑같은 이름만 막던 때는 화면에 뜬 이름 뒤에 글자 하나를 붙여 물으면
+  // 진짜는 "비슷한 단지가 있다", 가짜는 통과로 갈려 30문제 중 30문제를 맞혔다
+  const nameTok = token();
+  if (!nameTok) {
+    unknown("[정답] 작명 확인으로 감별 답 캐기", "AUTH_SECRET이 없어 로그인 분기를 못 만든다");
+  } else {
+    let hit = 0, n = 0;
+    for (let i = 0; i < 24; i++) {
+      const open = await req("/api/endless/ox?start=1");
+      const ck = open.headers.get("set-cookie")?.split(";")[0];
+      const name = open.json?.name;
+      if (!ck || !name) continue;
+      const probe = await req("/api/naming", {
+        method: "POST",
+        cookie: `aptgam_session=${nameTok}`,
+        body: { name: name.replace(/\s+/g, "") + "동", area: "서울특별시", check: true },
+      });
+      const truth = await req("/api/endless/ox", { method: "POST", cookie: ck, body: { name, choice: "real" } });
+      if (typeof truth.json?.correct !== "boolean") continue;
+      const saysReal = probe.json?.verdict?.reason === "exists";
+      // 진짜·가짜를 가르는 답이 나오는지만 본다: 진짜에서만 "exists"면 새는 것이다
+      if (saysReal === truth.json.correct) hit++;
+      n++;
+    }
+    // 진짜·가짜에 같은 답을 주면 맞히는 비율이 진짜 비율(반쯤)에 머문다. 90%를 넘으면 샌다
+    const sameAnswer = n > 0 && hit / n < 0.9;
+    if (n < 10) unknown("[정답] 작명 확인으로 감별 답 캐기", `표본이 모자란다 (${n}문제)`);
+    else if (sameAnswer) ok("[정답] 작명 확인으로 감별 답 캐기", `'이름+동'을 물어 ${n}문제 중 ${hit}문제 (찍기 수준)`);
+    else bad("[정답] 작명 확인으로 감별 답 캐기", `'이름+동'을 물어 ${n}문제 중 ${hit}문제를 맞힌다. 실단지와 가짜를 같은 잣대로 대조해야 한다(lib/naming.ts)`);
+  }
+
   // 비회원이 판을 새로 열면 여전히 한 문제씩 캘 수 있다. 못 막는 것을
   // 막았다고 적어 두지 않는다 — 판을 계정에 묶기 전까지 남는 구멍이다
   unknown(
