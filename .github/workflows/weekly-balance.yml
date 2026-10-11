@@ -6,8 +6,9 @@
 # 그래서 일주일에 한 번 실제로 나간 문제·출제 규칙·구역별 풀·겉모양을 재서 일지
 # 이슈에 남긴다(scripts/weekly-balance.mts).
 #
-# 읽기만 한다: 커밋·배포를 하지 않는다. DB에는 지난 점검의 합계 한 줄만 쓴다
-# (balance_snapshot — 누적 집계에서 이번 주 몫만 빼 보려고).
+# 리포트는 reports/weekly/날짜.md로 레포에 쌓는다. 이슈 댓글은 알림이라 흘러가고,
+# 몇 주 치를 나란히 놓고 보려면 파일로 남아 있어야 한다. web/ 밖이라 배포는 돌지 않는다.
+# DB에는 지난 점검의 합계 한 줄만 쓴다(balance_snapshot — 누적에서 이번 주 몫만 빼 보려고).
 #
 # 필요한 시크릿: DATABASE_URL (없으면 실제 출제분만 건너뛰고 나머지는 잰다)
 name: weekly-balance
@@ -18,8 +19,13 @@ on:
     - cron: "47 23 * * 0"
   workflow_dispatch:
 
+# 야간 작업과 같은 묶음이라 동시에 밀지 않는다
+concurrency:
+  group: data-push
+  cancel-in-progress: false
+
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 jobs:
@@ -48,6 +54,26 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run weekly-balance
+
+      - name: 리포트 쌓기
+        run: |
+          d=$(TZ=Asia/Seoul date +%F)
+          mkdir -p reports/weekly
+          cp /tmp/balance.md "reports/weekly/$d.md"
+          git config user.name "apt-gam-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add "reports/weekly/$d.md"
+          if git diff --cached --quiet; then
+            echo "::notice::같은 날 리포트와 내용이 같아 커밋하지 않습니다."
+            exit 0
+          fi
+          head=$(head -1 "reports/weekly/$d.md" | sed 's/^### //')
+          git commit -m "chore: 주간 점검 리포트 $d (자동)" \
+            -m "$head" \
+            -m "세 창구(감별·찾기·조립)의 진짜·가짜 비율과 겉모양 힌트를 재서 reports/weekly에 쌓는다. 이슈 댓글은 흘러가서 몇 주 치를 견주려면 파일로 남아 있어야 한다." \
+            -m ".github/workflows/weekly-balance.yml"
+          git pull --rebase -q origin claude/apartment-quiz-game-planning-i6rqe9
+          git push
 
       - name: 결과 알리기
         if: always()
