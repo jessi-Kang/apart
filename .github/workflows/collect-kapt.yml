@@ -68,18 +68,13 @@ jobs:
             echo "skip=0" >> "$GITHUB_OUTPUT"
           fi
 
+      # 의존성은 설치하지 않는다. 이 작업이 쓰는 스크립트(수집·승격·생성·검증 둘)는
+      # node 기본 모듈만 쓴다. 예전에는 매일 밤 npm ci로 Next까지 통째로 받았다
       - name: Node 준비
         if: steps.guard.outputs.skip == '0'
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-
-      - name: 의존성 설치
-        if: steps.guard.outputs.skip == '0'
-        working-directory: web
-        run: npm ci
 
       - name: 단지 수집
         if: steps.guard.outputs.skip == '0'

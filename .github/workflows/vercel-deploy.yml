@@ -16,6 +16,13 @@ on:
     branches:
       - claude/apartment-quiz-game-planning-i6rqe9
       - main
+    # 사이트에 들어가는 것이 바뀔 때만 배포한다. 문서·스킬·워크플로만 바꾼 커밋도
+    # 매번 빌드를 돌리고 있었다(최근 15커밋 중 4개). 스크립트(web/scripts)는 빌드에
+    # 안 들어가고, 야간 작업은 데이터를 바꾸면 훅을 직접 쏜다
+    paths:
+      - "web/**"
+      - "!web/scripts/**"
+      - "!web/**/*.md"
   # 빈 커밋 없이 배포만 다시 쏠 수 있는 수동 버튼 (Actions 탭 → Run workflow)
   workflow_dispatch:
 
