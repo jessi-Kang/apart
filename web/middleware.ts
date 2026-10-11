@@ -34,5 +34,8 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   // 정적 자산까지 미들웨어를 태울 이유는 없다
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // 확장자가 붙은 정적 파일(아이콘·매니페스트 이미지·sw.js 등)은 건너뛴다. 주소를
+  // 하나로 모으는 일은 문서 요청만 넘기면 충분하고, 파일 요청마다 미들웨어를 돌리면
+  // 그만큼 호출이 과금된다
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.[a-z0-9]+$).*)"],
 };

@@ -57,7 +57,16 @@ const nextConfig = {
     return MOVED.map(([source, destination]) => ({ source, destination, permanent: true }));
   },
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      // 배경음(680KB)과 아이콘은 이름이 안 바뀌는 정적 파일인데 max-age=0이라 게임을
+      // 열 때마다 브라우저가 서버에 다시 물었다. 일주일 캐시한다. 파일을 바꿀 때는
+      // 이름을 바꾼다(같은 이름이면 일주일 동안 옛 것이 남는다)
+      {
+        source: "/:file(bgm/.*|icon-.*\\.png|apple-touch-icon\\.png|icon\\.svg)",
+        headers: [{ key: "Cache-Control", value: "public, max-age=604800" }],
+      },
+    ];
   },
 };
 
