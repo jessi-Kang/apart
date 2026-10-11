@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { CF_BEACON_TOKEN } from "@/lib/analytics";
 import Script from "next/script";
 import "./globals.css";
 import { CloudSync } from "@/components/CloudSync";
@@ -74,6 +75,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PwaRegister />
         <InstallToast />
         <CloudSync />
+        {/* 방문 집계 (lib/analytics.ts). spa: 화면 전환(주소만 바뀌는 이동)도 페이지뷰로 센다 */}
+        {CF_BEACON_TOKEN && (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={JSON.stringify({ token: CF_BEACON_TOKEN, spa: true })}
+          />
+        )}
       </body>
     </html>
   );

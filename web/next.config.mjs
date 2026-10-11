@@ -26,14 +26,15 @@ const MOVED = [
  * 심고, 설치 안내용 선점 스크립트도 head에 인라인으로 있어서다. 그래서 이 CSP가
  * 막는 것은 XSS 전체가 아니라 **바깥 출처**다 — 스크립트·연결·폼 전송이 이 사이트와
  * 구글(로그인·글꼴) 밖으로 나가지 못한다. 출처를 늘릴 때는 여기에 적는다.
+ * 클라우드플레어 두 곳은 방문 집계(lib/analytics.ts)의 스크립트와 전송처다.
  */
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https://api.vworld.kr",
-  "connect-src 'self'",
+  "connect-src 'self' https://cloudflareinsights.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self' https://accounts.google.com",
