@@ -1,0 +1,275 @@
+<title>도전장 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  /* ===== 도전장 시안 A · 접수 서류 세계관 =====
+     흐름: 판 결과(보내는 쪽) → 메신저 미리보기 → 도전장 접수(받는 쪽) → 도전 중 → 대결 통지서
+     토큰은 확정 결과 시안(result3-r1-verdict)과 같다. 앱이 밝은 서류 한 벌이라 시안도 한 벌로 고정한다. */
+  :root{
+    --paper:#f6f6f3; --sheet:#fdfdfb; --ink:#1b1b1e; --ink-soft:#5c5c62; --line:#d9d9d3; --stamp:#c73a2f;
+    --chat:#e9e7e1; --bubble:#fff9d6;
+    --radius:2px;
+    --f-body:"IBM Plex Sans KR", system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--f-body); -webkit-font-smoothing:antialiased; word-break:keep-all; padding-inline:16px; padding-block:28px 48px;}
+  button{appearance:none; font:inherit; color:inherit; background:none; border:none; padding:0; cursor:pointer}
+  button:focus-visible{outline:2px solid var(--stamp); outline-offset:2px}
+  .mono{font-family:var(--f-mono); font-variant-numeric:tabular-nums}
+
+  /* 머리말 */
+  .intro{max-width:1100px; margin:0 auto 26px; display:grid; gap:10px}
+  .intro h1{margin:0; font-size:22px; letter-spacing:-.02em; text-wrap:balance}
+  .intro p{margin:0; color:var(--ink-soft); font-size:14px; line-height:1.65; max-width:62ch}
+  .intro .why{display:flex; flex-wrap:wrap; gap:8px; margin-top:4px}
+  .intro .why span{font-size:12px; border:1px solid var(--line); background:var(--sheet); padding:5px 9px; border-radius:var(--radius)}
+
+  /* 대지: 넓으면 가로로, 폰에서는 세로로 */
+  .board{max-width:1100px; margin:0 auto; display:grid; gap:34px; grid-template-columns:1fr}
+  @media (min-width:768px){ .board{grid-template-columns:repeat(2, minmax(0,1fr))} }
+  @media (min-width:1024px){ .board{grid-template-columns:repeat(3, minmax(0,1fr))} }
+  .art{display:flex; flex-direction:column; gap:12px; min-width:0}
+  .art-cap{display:grid; gap:4px}
+  .art-cap b{font-size:13px}
+  .art-cap b i{font-style:normal; font-family:var(--f-mono); color:var(--stamp); margin-right:6px}
+  .art-cap span{font-size:12.5px; color:var(--ink-soft); line-height:1.55}
+
+  /* 폰 화면 하나 */
+  .phone{background:var(--sheet); border:1px solid var(--line); border-radius:var(--radius); width:100%; max-width:380px; min-height:620px; display:flex; flex-direction:column; overflow:hidden}
+  .head{display:grid; grid-template-columns:1fr auto; border-bottom:2px solid var(--ink)}
+  .head .t{padding:14px 16px; min-width:0}
+  .head .t b{font-size:15px; display:block}
+  .head .t small{display:block; color:var(--ink-soft); font-size:12px; margin-top:2px}
+  .head .no{border-left:1px solid var(--line); display:grid; place-items:center; padding:0 14px; font-size:12px; font-weight:600}
+  .head .x{border-left:1px solid var(--line); display:grid; place-items:center; width:46px}
+  .body{padding:20px 16px 22px; display:flex; flex-direction:column; flex:1; gap:0}
+  .doc-title{text-align:center; font-size:12px; letter-spacing:.35em; color:var(--ink-soft)}
+  .doc-title b{display:block; letter-spacing:-.02em; color:var(--ink); font-size:21px; margin-top:6px}
+
+  .stamp-hero{display:grid; place-items:center; padding:22px 0 14px}
+  .stamp{position:relative; color:var(--stamp); transform:rotate(-4deg); font-weight:700; font-size:22px; padding:14px 22px; text-align:center; line-height:1.25}
+  .stamp i{position:absolute; inset:0; border:3.5px solid currentColor; border-radius:3px}
+  .stamp i::after{content:""; position:absolute; inset:4px; border:1.2px solid currentColor}
+  .stamp.big{font-size:34px; padding:14px 30px; letter-spacing:.12em}
+  .stamp-sub{text-align:center; color:var(--ink-soft); font-size:13px; line-height:1.6}
+
+  .form{margin-top:16px; border:1px solid var(--ink); border-radius:var(--radius)}
+  .form .r{display:grid; grid-template-columns:84px 1fr; border-bottom:1px solid var(--line)}
+  .form .r:last-child{border-bottom:none}
+  .form .k{padding:10px; font-size:12px; color:var(--ink-soft); background:var(--paper); border-right:1px solid var(--line); display:flex; align-items:center}
+  .form .v{padding:10px 12px; font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0}
+  .form .v small{font-weight:400; color:var(--ink-soft); font-size:12px}
+  .form .v.win{color:var(--stamp)}
+
+  .cut{margin:20px 0 14px; border-top:2px dashed var(--line)}
+  .actions{display:flex; flex-direction:column; gap:8px; margin-top:auto}
+  .btn{font-size:15px; font-weight:700; padding:15px 12px; border-radius:var(--radius); text-align:center; display:block; width:100%}
+  .btn-next{background:var(--ink); color:var(--sheet)}
+  .btn-ghost{background:var(--sheet); color:var(--ink); border:1px solid var(--line); font-weight:500; font-size:14px; padding:12px}
+  .hint{font-size:12px; color:var(--ink-soft); text-align:center; line-height:1.5; margin-top:-2px}
+  .new{position:relative}
+  .new::after{content:"새로"; position:absolute; top:-8px; right:-6px; background:var(--stamp); color:var(--sheet); font-size:10px; font-weight:700; padding:2px 6px; border-radius:var(--radius)}
+
+  /* 메신저 미리보기 */
+  .chat{background:var(--chat); flex:1; padding:18px 14px; display:flex; flex-direction:column; gap:10px; justify-content:flex-end}
+  .msg{align-self:flex-end; max-width:86%; display:grid; gap:6px}
+  .msg .txt{background:var(--bubble); padding:9px 12px; border-radius:10px 10px 2px 10px; font-size:13.5px; line-height:1.5}
+  .card{background:var(--sheet); border:1px solid var(--line); border-radius:8px; overflow:hidden}
+  .og{aspect-ratio:1200/630; max-width:100%; background:var(--paper); border-bottom:1px solid var(--line); display:grid; grid-template-columns:1fr auto; align-items:center; padding:12px 14px; gap:10px}
+  .og .l{display:grid; gap:3px; min-width:0}
+  .og .l small{font-size:11px; letter-spacing:.3em; color:var(--ink-soft)}
+  .og .l b{font-size:17px; letter-spacing:-.02em}
+  .og .l span{font-size:12px; color:var(--ink-soft)}
+  .og .stamp{font-size:13px; padding:8px 10px}
+  .card .meta{padding:8px 10px; display:grid; gap:2px}
+  .card .meta b{font-size:12.5px}
+  .card .meta span{font-size:12px; color:var(--ink-soft)}
+  .time{font-size:11px; color:var(--ink-soft); align-self:flex-end}
+  .other{align-self:flex-start; background:var(--sheet); padding:9px 12px; border-radius:10px 10px 10px 2px; font-size:13.5px}
+
+  /* 도전 중 */
+  .rival{display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--line); background:var(--paper)}
+  .rival small{font-size:12px; color:var(--ink-soft)}
+  .meter{height:8px; background:var(--sheet); border:1px solid var(--line); border-radius:99px; overflow:hidden; position:relative}
+  .meter i{position:absolute; inset:0 auto 0 0; width:75%; background:var(--ink); border-radius:99px}
+  .rival b{font-size:13px}
+  .qno{font-size:12px; color:var(--ink-soft); text-align:center; margin-top:6px}
+  .namecard{margin:22px 0 10px; border:1px solid var(--ink); border-radius:var(--radius); padding:34px 14px; text-align:center}
+  .namecard small{display:block; font-size:12px; letter-spacing:.3em; color:var(--ink-soft)}
+  .namecard b{display:block; font-size:25px; letter-spacing:-.02em; margin-top:10px}
+  .ox{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:auto}
+  .ox .btn{padding:20px 8px; font-size:17px}
+  .ox .real{background:var(--ink); color:var(--sheet)}
+  .ox .fake{background:var(--sheet); border:1.6px solid var(--stamp); color:var(--stamp)}
+  .timer{height:3px; background:var(--line); margin-top:10px}
+  .timer i{display:block; height:100%; width:58%; background:var(--ink)}
+
+  .notes{max-width:1100px; margin:44px auto 0; border-top:2px solid var(--ink); padding-top:18px; display:grid; gap:18px}
+  .notes h2{margin:0; font-size:16px}
+  .notes ol{margin:0; padding-left:18px; display:grid; gap:10px; max-width:70ch}
+  .notes li{font-size:13.5px; line-height:1.6}
+  .notes li b{display:block}
+  .notes li span{color:var(--ink-soft)}
+
+  @media (prefers-reduced-motion:no-preference){
+    .stamp.slam{animation:slam .38s cubic-bezier(.22,1,.36,1) .15s backwards}
+    @keyframes slam{from{opacity:0; transform:rotate(-4deg) scale(1.6)} to{opacity:1; transform:rotate(-4deg) scale(1)}}
+  }
+</style>
+
+<header class="intro">
+  <h1>도전장 시안</h1>
+  <p>날짜가 아니라 사람이 다시 불러들이게 한다. 판이 끝나면 그 판을 링크로 보내고, 받은 사람은 같은 이름을 같은 순서로 받아 기록을 겨룬다. 머리글의 호수와 날짜는 뺐다.</p>
+  <div class="why"><span>결과 화면 단추 수 그대로</span><span>받는 쪽 나가는 문 하나</span><span>정답은 계속 서버에서만 판정</span></div>
+</header>
+
+<main class="board">
+
+  <!-- 1. 판 결과 (보내는 쪽) -->
+  <section class="art">
+    <div class="art-cap"><b><i>1</i>판 결과 · 보내는 쪽</b><span>지금의 "통지서 공유" 자리를 "도전장 보내기"가 이어받는다. 통지서 이미지는 그대로 함께 간다. 단추가 늘지 않는다.</span></div>
+    <div class="phone">
+      <div class="head"><div class="t"><b>판정 통지서</b><small>무한 감별 한 판</small></div><div class="no">감별 O/X</div></div>
+      <div class="body">
+        <div class="doc-title">감 별 결 과<b>연속 12 적중</b></div>
+        <div class="stamp-hero"><div class="stamp slam"><i></i>부동산 카페<br>눈팅러</div></div>
+        <p class="stamp-sub">이번 판 순위 상위 18%</p>
+        <div class="form">
+          <div class="r"><div class="k">최고 연속</div><div class="v mono">12 <small>이 판 기준</small></div></div>
+          <div class="r"><div class="k">푼 문제</div><div class="v mono">31 <small>적중 24</small></div></div>
+          <div class="r"><div class="k">평균 시간</div><div class="v mono">2.4초</div></div>
+        </div>
+        <div class="cut"></div>
+        <div class="actions">
+          <button class="btn btn-next new" type="button">도전장 보내기</button>
+          <p class="hint">이 판과 같은 순서로 문제가 나오는 링크를 보냅니다</p>
+          <button class="btn btn-ghost" type="button">한 판 더</button>
+          <button class="btn btn-ghost" type="button">창구로 돌아가기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 메신저 미리보기 -->
+  <section class="art">
+    <div class="art-cap"><b><i>2</i>메신저에서 보이는 모습</b><span>링크 미리보기 카드가 곧 도전장이다. 기록과 "깰 수 있는가"만 보이고, 문제와 정답은 보이지 않는다.</span></div>
+    <div class="phone">
+      <div class="head"><div class="t"><b>민지</b><small>대화</small></div></div>
+      <div class="chat">
+        <div class="other">요즘 뭐 해</div>
+        <div class="msg">
+          <div class="txt">이거 진짜 아파트 이름인지 맞히는 건데 나 12개 연속임 ㅋㅋ</div>
+          <div class="card">
+            <div class="og">
+              <div class="l"><small>도 전 장</small><b>연속 12를 깨십시오</b><span>감별 O/X · 같은 문제, 같은 순서</span></div>
+              <div class="stamp"><i></i>발송</div>
+            </div>
+            <div class="meta"><b>지*현 님의 도전장 · 아파트 감별사</b><span>apt-game.app</span></div>
+          </div>
+        </div>
+        <div class="time">오후 9:41</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 도전장 접수 (받는 쪽 첫 화면) -->
+  <section class="art">
+    <div class="art-cap"><b><i>3</i>도전장 접수 · 받는 쪽</b><span>링크를 연 사람의 첫 화면. 무엇을 겨루는지만 서식으로 보여 주고 바로 시작한다. 처음 온 사람도 규칙 한 줄이면 된다.</span></div>
+    <div class="phone">
+      <div class="head"><div class="t"><b>도전장</b><small>아파트 감별사</small></div><div class="x" aria-label="닫기"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div></div>
+      <div class="body">
+        <div class="doc-title">도 전 장<b>연속 12를 깨십시오</b></div>
+        <div class="stamp-hero"><div class="stamp"><i></i>접수 대기</div></div>
+        <div class="form">
+          <div class="r"><div class="k">보낸 사람</div><div class="v">지*현</div></div>
+          <div class="r"><div class="k">창구</div><div class="v">감별 O/X</div></div>
+          <div class="r"><div class="k">넘을 기록</div><div class="v mono">연속 12</div></div>
+          <div class="r"><div class="k">규칙</div><div class="v" style="font-weight:500; font-size:13px; line-height:1.5">보낸 사람이 받은 이름이 같은 순서로 나옵니다. 진짜인지 가짜인지 고르세요.</div></div>
+        </div>
+        <div class="cut"></div>
+        <div class="actions">
+          <button class="btn btn-next" type="button">도전 접수</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. 도전 중 -->
+  <section class="art">
+    <div class="art-cap"><b><i>4</i>도전 중</b><span>평소 무한 화면에 한 줄만 더한다. 상대 기록까지 얼마나 남았는지 막대로 보인다. 설명은 얹지 않는다.</span></div>
+    <div class="phone">
+      <div class="head"><div class="t"><b>감별 O/X</b><small>도전장 · 지*현</small></div><div class="no mono">연속 9</div></div>
+      <div class="rival"><small>상대 기록</small><div class="meter" aria-label="12 중 9"><i></i></div><b class="mono">9 / 12</b></div>
+      <div class="body">
+        <p class="qno mono">10번째 이름</p>
+        <div class="namecard"><small>이 이름은</small><b>성서에코하이츠</b></div>
+        <div class="timer" aria-hidden="true"><i></i></div>
+        <div class="ox">
+          <button class="btn real" type="button">진짜</button>
+          <button class="btn fake" type="button">가짜</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 대결 통지서 (받는 쪽 결과) -->
+  <section class="art">
+    <div class="art-cap"><b><i>5</i>대결 통지서 · 받는 쪽</b><span>등급 도장 자리에 승부 도장이 찍힌다. 되받아치기는 내 기록으로 새 도전장을 보낸다. 이렇게 고리가 닫힌다.</span></div>
+    <div class="phone">
+      <div class="head"><div class="t"><b>대결 통지서</b><small>지*현 님의 도전장</small></div><div class="no">감별 O/X</div></div>
+      <div class="body">
+        <div class="doc-title">대 결 결 과<b>연속 14 적중</b></div>
+        <div class="stamp-hero"><div class="stamp big slam"><i></i>격파</div></div>
+        <p class="stamp-sub">두 개 더 맞히고 기록을 넘었습니다</p>
+        <div class="form">
+          <div class="r"><div class="k">내 기록</div><div class="v win mono">연속 14</div></div>
+          <div class="r"><div class="k">상대 기록</div><div class="v mono">연속 12</div></div>
+          <div class="r"><div class="k">갈린 곳</div><div class="v" style="font-size:13px">13번째 <small>"트루엘토평팰리스"는 가짜</small></div></div>
+        </div>
+        <div class="cut"></div>
+        <div class="actions">
+          <button class="btn btn-next new" type="button">되받아치기</button>
+          <p class="hint">연속 14로 지*현 님에게 다시 보냅니다</p>
+          <button class="btn btn-ghost" type="button">내 판 시작</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. 졌을 때 -->
+  <section class="art">
+    <div class="art-cap"><b><i>6</i>졌을 때</b><span>분패도 같은 서식이다. 다시 도전은 같은 문제로 한 번 더. 첫 판에서 정답을 다 봤으므로 두 번째부터는 기록에 안 들어간다.</span></div>
+    <div class="phone">
+      <div class="head"><div class="t"><b>대결 통지서</b><small>지*현 님의 도전장</small></div><div class="no">감별 O/X</div></div>
+      <div class="body">
+        <div class="doc-title">대 결 결 과<b>연속 7 적중</b></div>
+        <div class="stamp-hero"><div class="stamp big"><i></i>분패</div></div>
+        <p class="stamp-sub">8번째에서 끊겼습니다. 다섯 개 모자랐습니다</p>
+        <div class="form">
+          <div class="r"><div class="k">내 기록</div><div class="v mono">연속 7</div></div>
+          <div class="r"><div class="k">상대 기록</div><div class="v mono">연속 12</div></div>
+          <div class="r"><div class="k">갈린 곳</div><div class="v" style="font-size:13px">8번째 <small>"다운파크"는 가짜</small></div></div>
+        </div>
+        <div class="cut"></div>
+        <div class="actions">
+          <button class="btn btn-next" type="button">내 판으로 설욕하기</button>
+          <p class="hint">새 판을 치고 그 기록으로 도전장을 보냅니다</p>
+          <button class="btn btn-ghost" type="button">같은 문제 다시 보기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<section class="notes">
+  <h2>정해야 할 것</h2>
+  <ol>
+    <li><b>보낸 사람이 결과를 어떻게 아는가</b><span>로그인한 사람은 기록 열람실에 "보낸 도전장" 칸을 두어 누가 격파했는지 보여 줄 수 있다. 비회원은 알 길이 없다. 받는 쪽이 되받아치기를 보내야 소식이 돌아온다.</span></li>
+    <li><b>세 창구 모두인가</b><span>감별 O/X와 진짜 찾기는 연속으로, 이름 조립은 적중 수로 겨룬다. 처음에는 감별 O/X 하나로 열고 반응을 보는 것을 권한다.</span></li>
+    <li><b>공식전과의 관계</b><span>공식전(모두가 같은 10문제)은 남기되 호수와 날짜 없이 부른다. 도전장이 자리를 잡으면 공식전은 홈 대장에서 한 줄로 줄일 수 있다.</span></li>
+    <li><b>정답 보호</b><span>링크에는 문제 목록이 아니라 짧은 코드만 담는다. 문제는 서버가 코드로 만들어 한 개씩 내주고 판정도 서버가 한다. 지금 구조 그대로 간다.</span></li>
+  </ol>
+</section>
