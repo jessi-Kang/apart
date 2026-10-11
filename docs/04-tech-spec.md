@@ -108,7 +108,7 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 | `/api/coined` | GET / PATCH | 접수 목록(쪽 넘김) / 승인·반려·되돌리기 (운영자만) |
 | `/api/coined/mine` | GET | 내가 지은 이름과 속은 수 |
 
-페이지 라우트는 한 글자다: `/`(접수 대장 홈), `/o`(감별 O/X), `/a`(이름 조립), `/f`(진짜 찾기), `/n`(작명소, 비공개), `/me`(기록 열람실), `/top`(구역 명부), `/bug`, `/report`(운영자), `/r/{date}-{score}-{grid}`(공유 결과 + OG). 옛 경로(`/play`·`/assemble`·`/findreal`·`/record`·`/ranking`)는 `next.config.mjs`가 308로 넘긴다.
+페이지 라우트는 한 글자다: `/`(접수 대장 홈), `/o`(감별 O/X), `/a`(이름 조립), `/f`(진짜 찾기), `/n`(작명소, 로그인 필요), `/me`(기록 열람실), `/top`(구역 명부), `/bug`, `/report`(운영자), `/r/{date}-{score}-{grid}`(공유 결과 + OG). 옛 경로(`/play`·`/assemble`·`/findreal`·`/record`·`/ranking`)는 `next.config.mjs`가 308로 넘긴다.
 
 - **정답을 클라이언트에 미리 내려주지 않는 이유**: 소스 보기로 만점 치팅 방지. 판정은 서버에서만. 자동화 치팅은 여전히 가능하지만 순위 경쟁이 없어 방어 비용을 더 들이지 않는다.
 - 캐시: `today` 계열만 `max-age=60`, 나머지는 `no-store` 또는 기본값. 문제 자체가 시드 생성이라 CDN 장시간 캐시의 이득이 크지 않다.

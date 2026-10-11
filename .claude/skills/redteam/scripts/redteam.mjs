@@ -41,7 +41,8 @@ function env() {
     return {};
   }
 }
-const ENV = env();
+// 컨테이너처럼 .env.local이 없는 곳에서는 서버를 띄울 때 준 시험용 키를 그대로 넘겨받는다
+const ENV = { ...env(), ...(process.env.AUTH_SECRET && { AUTH_SECRET: process.env.AUTH_SECRET }) };
 
 const b64 = (s) => Buffer.from(s).toString("base64url");
 
@@ -168,14 +169,12 @@ async function guard() {
   const plain = token({ uid: 2, name: "보통", own: false });
   const owner = token({ own: true });
   if (!owner) {
-    unknown("[가드] 전개 전 창구·운영자 화면", "AUTH_SECRET이 없어 로그인 분기를 못 만든다");
+    unknown("[가드] 운영자 화면·비로그인 작명", "AUTH_SECRET이 없어 로그인 분기를 못 만든다");
     return;
   }
 
+  // 운영자 화면만. 작명소(/n)는 전개했으므로 여기서 뺐다 — 대신 아래에서 "비로그인 접수가 막히는가"를 본다
   const targets = [
-    "/n",
-    `/api/naming?area=${encodeURIComponent("서울특별시")}`,
-    "/api/coined/mine",
     "/ops",
     "/report",
     "/api/ops",
@@ -195,24 +194,25 @@ async function guard() {
       if (LEAKY.test(r.text.slice(0, 400))) leaks.push(`${who} → ${t}: 본문이 권한 문제를 알린다`);
     }
   }
+  // 작명은 생산이라 로그인해야 접수된다(누가 넣었는지 남고, 하루 상한을 셀 수 있다)
   const p = await req("/api/naming", {
     method: "POST",
     body: { name: "점검용이름", area: "서울특별시" },
   });
-  if (p.status !== 404) holes.push(`비로그인 → POST /api/naming = ${p.status}`);
+  if (p.status === 200) holes.push(`비로그인 → POST /api/naming = 200 (로그인 없이 접수됐다)`);
 
-  if (holes.length) bad("[가드] 전개 전 창구·운영자 화면", holes.join("\n         "));
-  else ok("[가드] 전개 전 창구·운영자 화면", `${targets.length}곳 x 2분기 전부 404`);
+  if (holes.length) bad("[가드] 운영자 화면·비로그인 작명", holes.join("\n         "));
+  else ok("[가드] 운영자 화면·비로그인 작명", `${targets.length}곳 x 2분기 전부 404 · 비로그인 작명 ${p.status}`);
   if (leaks.length) bad("[가드] 404로만 답하는가", leaks.join("\n         "));
   else ok("[가드] 404로만 답하는가", "본문에 권한 문구 없음");
 
   const closed = [];
-  for (const t of ["/n", "/api/coined/mine", "/ops", "/api/ops", "/api/coined"]) {
+  for (const t of ["/ops", "/api/ops", "/api/coined"]) {
     const r = await req(t, { cookie: sess(owner) });
     if (r.status !== 200) closed.push(`${t} = ${r.status}`);
   }
   if (closed.length) bad("[가드] 운영자에게는 열리는가", `막혀 있다: ${closed.join(", ")}`);
-  else ok("[가드] 운영자에게는 열리는가", "5곳 전부 200");
+  else ok("[가드] 운영자에게는 열리는가", "3곳 전부 200");
 }
 
 /* ---------- 3. 정답 유출 ---------- */
