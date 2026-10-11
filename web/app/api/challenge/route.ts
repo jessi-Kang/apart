@@ -17,6 +17,8 @@ export async function POST() {
   if (blocked) return blocked;
   const run = await readRun();
   if (!run || run.b < 1) return NextResponse.json({ error: "no_record" }, { status: 400 });
+  // 답을 보고 친 판의 기록은 도전장에 싣지 않는다
+  if (run.p) return NextResponse.json({ error: "practice" }, { status: 400 });
   const session = await readSession();
   const code = await createChallenge({
     seed: run.s,

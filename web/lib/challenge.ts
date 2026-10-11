@@ -129,6 +129,18 @@ export async function getChallenge(code: unknown): Promise<Challenge | null> {
   }
 }
 
+/** 이 사람이 이 도전장을 이미 쳤는가 */
+export async function hasTaken(code: string, taker: string): Promise<boolean> {
+  if (!sql) return memTakes.get(code)?.has(taker) ?? false;
+  try {
+    await ensure();
+    const rows = (await sql`SELECT 1 FROM challenge_take WHERE code = ${code} AND taker = ${taker}`) as unknown[];
+    return rows.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 /** 받은 사람의 결과. 한 사람의 첫 판만 남는다 */
 export async function recordTake(code: string, taker: string, best: number): Promise<void> {
   if (!sql) {

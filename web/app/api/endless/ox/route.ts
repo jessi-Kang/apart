@@ -5,7 +5,7 @@ import { blockIfUnreleased } from "@/lib/guard";
 import { judgeOx } from "@/lib/endless";
 import { recordName } from "@/lib/namestats";
 import { normalizeArea } from "@/lib/areaparam";
-import { getChallenge, recordTake } from "@/lib/challenge";
+import { getChallenge, hasTaken, recordTake } from "@/lib/challenge";
 import { applyAnswer, newRun, oxAt, readRun, writeRun, type OxRun } from "@/lib/oxrun";
 
 export const dynamic = "force-dynamic";
@@ -31,21 +31,27 @@ export async function GET(req: Request) {
     if (code) {
       const ch = await getChallenge(code);
       if (!ch) return NextResponse.json({ error: "not_found" }, { status: 404 });
-      run = newRun(prev, { area: ch.area, seed: ch.seed, start: ch.start, code: ch.code, target: ch.target });
+      // 답을 이미 아는 판: 같은 도전장을 다시 치거나, 보낸 사람이 자기 도전장을 쳐 보는 것.
+      // 화면은 똑같이 돌지만 경험치를 주지 않고 그 기록으로 도전장도 못 보낸다 —
+      // 아는 문제를 되풀이해 경험치와 명부 순위를 쌓는 길이 된다
+      const session = await readSession();
+      const taker = session ? `u${session.uid}` : `g${prev?.g ?? ""}`;
+      const practice = Boolean(session && ch.senderUid === session.uid) || (prev ? await hasTaken(ch.code, taker) : false);
+      run = newRun(prev, { area: ch.area, seed: ch.seed, start: ch.start, code: ch.code, target: ch.target, practice });
     } else {
       run = newRun(prev, { area: normalizeArea(url.searchParams.get("area")) });
     }
     await writeRun(run);
   }
   if (run.e) return NextResponse.json({ error: "ended" }, { status: 409 });
-  return NextResponse.json({ name: oxAt(run.s, run.a, run.i).name });
+  return NextResponse.json({ name: oxAt(run.s, run.a, run.i).name, ...(run.p && { practice: true }) });
 }
 
 async function endChallenge(run: OxRun): Promise<{ mine: number; target: number }> {
   const session = await readSession();
   const ch = run.c ? await getChallenge(run.c) : null;
   // 보낸 사람이 자기 도전장을 쳐 본 것은 받은 사람 결과에 넣지 않는다
-  if (ch && !(session && ch.senderUid === session.uid)) {
+  if (ch && !run.p && !(session && ch.senderUid === session.uid)) {
     await recordTake(ch.code, session ? `u${session.uid}` : `g${run.g}`, run.b);
   }
   return { mine: run.b, target: run.t ?? 0 };
@@ -85,7 +91,7 @@ export async function POST(req: Request) {
   // 시간 초과는 판단이 아니라 판단하지 못한 것이므로 속았다고 세지 않는다
   if (choice !== "timeout") await recordName(q.name, result.kind, !result.correct);
   // 맞혔으면 경험치 한도를 올린다 (lib/xpbudget.ts)
-  if (result.correct) await creditCorrect((await readSession())?.uid, "ox");
+  if (result.correct && !run.p) await creditCorrect((await readSession())?.uid, "ox");
   const next = applyAnswer(run, result.correct);
   await writeRun(next);
   const over = next.e ? await endChallenge(next) : undefined;

@@ -77,6 +77,8 @@ export default function PlayPage() {
   // 도전장: 받은 것(chal)과 그 판의 끝(over), 보내기 단추 상태
   const [chal, setChal] = useState<Chal | null>(null);
   const [over, setOver] = useState<Over | null>(null);
+  /** 답을 이미 아는 도전 판(다시 치기·내 도전장). 서버가 정해 준다 — 경험치도 도전장 발송도 없다 */
+  const [retry, setRetry] = useState(false);
   const [sendState, setSendState] = useState<"idle" | "busy" | "shared" | "copied" | "failed">("idle");
   const [xpRes, setXpRes] = useState<XpResult | null>(null); // 이번 완주 획득 점수
   const [eXpRes, setEXpRes] = useState<XpResult | null>(null); // 무한 판 획득 점수
@@ -148,7 +150,9 @@ export default function PlayPage() {
     const qs = q.toString();
     const res = await fetch(`/api/endless/ox${qs ? `?${qs}` : ""}`);
     if (!res.ok) throw new Error("endless_failed");
-    setEq(((await res.json()) as { name: string }).name);
+    const d = (await res.json()) as { name: string; practice?: boolean };
+    setEq(d.name);
+    if (start) setRetry(Boolean(d.practice));
   }
 
   async function openChallenge(code: string) {
@@ -212,7 +216,7 @@ export default function PlayPage() {
   }
 
   /** 이번 판에 쌓은 문제 점수 + 신기록 보너스 */
-  const runXp = () => endlessPts.current + (sBest > startBest.current ? RECORD_BONUS : 0);
+  const runXp = () => (retry ? 0 : endlessPts.current + (sBest > startBest.current ? RECORD_BONUS : 0));
 
   function finishEndless() {
     if (sBest > startBest.current) sfxRecord();
@@ -285,7 +289,7 @@ export default function PlayPage() {
           setRun(nextRun);
           setSHits((h) => h + 1);
           setSBest((b) => Math.max(b, nextRun));
-          setERec(bumpEndlessRecord("ox", nextRun, runAvgMs()));
+          if (!retry) setERec(bumpEndlessRecord("ox", nextRun, runAvgMs()));
           sfxStampRight();
         } else {
           runTimes.current = [];
@@ -674,7 +678,7 @@ export default function PlayPage() {
               </button>
             </div>
             <p className="send-hint">
-              {sBest < 1 ? "한 문제라도 맞혀야 도전장을 보낼 수 있습니다" : "이 판과 같은 순서로 문제가 나오는 링크를 보냅니다"}
+              {sBest < 1 ? "한 문제라도 맞혀야 도전장을 보낼 수 있습니다" : `${sBest}문제 연속으로 맞힌 그 문제들이 같은 순서로 나갑니다`}
             </p>
             <div className="result-actions">
               <button className="btn btn-ghost" onClick={() => startEndless()} disabled={busy}>
@@ -696,8 +700,15 @@ export default function PlayPage() {
                 ? `상대는 ${over.target}문제, 나는 ${over.mine}문제를 연속으로 맞혔습니다`
                 : outcome === "무승부"
                   ? `둘 다 ${over.mine}문제를 연속으로 맞혔습니다`
-                  : `상대는 ${over.target}문제를 연속으로 맞혔는데, 나는 ${over.mine === 0 ? "첫 문제에서 틀렸습니다" : `${over.mine}문제째까지 맞혔습니다`}`}
+                  : `상대는 ${over.target}문제를 연속으로 맞혔는데, 나는 ${
+                      over.mine === 0
+                        ? "첫 문제에서 틀렸습니다"
+                        : over.at
+                          ? `${over.mine}문제를 맞히고 ${over.mine + 1}번째에서 틀렸습니다`
+                          : `${over.mine}문제를 맞히고 멈췄습니다`
+                    }`}
             </p>
+            {retry && <p className="send-hint">답을 본 판이라 기록과 경험치에 들어가지 않습니다</p>}
             <VForm>
               <VRow label="나">{over.mine}문제 연속 정답</VRow>
               <VRow label="상대">{over.target}문제 연속 정답</VRow>
@@ -711,7 +722,7 @@ export default function PlayPage() {
               </VRow>
             </VForm>
             <div className="cut" />
-            {outcome === "패배" ? (
+            {outcome === "패배" || retry ? (
               <>
                 <div className="result-actions">
                   <button className="btn btn-next full" onClick={() => startEndless()} disabled={busy}>

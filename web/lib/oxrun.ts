@@ -41,6 +41,8 @@ export interface OxRun {
   t?: number;
   /** 도전 판이 끝났다 */
   e?: 1;
+  /** 답을 이미 아는 판(같은 도전장을 다시 치거나 내 도전장을 쳐 보는 것). 경험치·도전장 발송 없음 */
+  p?: 1;
   /** 비회원 도전 기록을 한 사람으로 묶는 임의 값. 판이 바뀌어도 물려준다 */
   g: string;
 }
@@ -83,7 +85,7 @@ export async function writeRun(run: OxRun): Promise<void> {
 }
 
 /** 새 판. 도전장이면 그 판의 시드·구역·시작 번호를 그대로 받는다 */
-export function newRun(prev: OxRun | null, opts: { area: string; seed?: number; start?: number; code?: string; target?: number }): OxRun {
+export function newRun(prev: OxRun | null, opts: { area: string; seed?: number; start?: number; code?: string; target?: number; practice?: boolean }): OxRun {
   const start = opts.start ?? 0;
   return {
     s: opts.seed ?? randomBytes(4).readUInt32LE(0),
@@ -95,6 +97,7 @@ export function newRun(prev: OxRun | null, opts: { area: string; seed?: number; 
     bs: start,
     h: 0,
     ...(opts.code && { c: opts.code, t: opts.target ?? 0 }),
+    ...(opts.practice && { p: 1 as const }),
     g: prev?.g ?? randomBytes(6).toString("base64url"),
   };
 }
