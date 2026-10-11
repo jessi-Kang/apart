@@ -112,6 +112,7 @@ node .claude/skills/redteam/scripts/redteam.mjs all
   (`REDTEAM_DB=1 REDTEAM_UID=<시험 계정>`).
 - 보안 헤더(CSP·iframe 차단·HSTS)는 `next.config.mjs` 한 곳에 있다. 외부 출처(글꼴·
   분석 등)를 새로 붙이면 CSP에 적어야 동작한다.
+- **방문 집계는 클라우드플레어 웹 분석**(`lib/analytics.ts`, 무료·쿠키 없음, DNS는 안 옮겼다). Vercel Web Analytics는 Pro에 포함분이 없어 1천 건당 과금되고 다른 서비스와 같은 크레딧을 써서 안 썼다. 토큰은 공개 값이라 코드에 둔다. 대시보드는 클라우드플레어 → 관찰 가능성 → Web Analytics.
 - **연결 문자열을 대화나 로그에 찍지 않는다.** 시험 브랜치는 원본의 계정·비밀번호를
   그대로 복사하므로 시험용 주소를 찍는 것도 운영 비밀번호를 찍는 것과 같다. 한 번
   찍혀서 비밀번호를 재설정했다. 시험 브랜치는 끝나면 지운다(사용자 데이터 사본이다).
