@@ -20,7 +20,6 @@ export default async function HomePage() {
   // 주소를 외워 치고 있었다. 대장 아래에 내부용 한 줄을 둔다. 문은 하나만
   // 둔다 — 운영 현황에서 감별 리포트로 건너간다
   const owner = await viewerIsOwner();
-  const [, mm, dd] = date.split("-");
 
   return (
     <div className="frame">
@@ -39,11 +38,6 @@ export default async function HomePage() {
           <div className="form-title">
             <b>아파트 감별사</b>
             <small>감별 민원 접수 창구</small>
-          </div>
-          <div className="form-no">
-            <span>
-              {mm}.{dd}
-            </span>
           </div>
         </header>
 
