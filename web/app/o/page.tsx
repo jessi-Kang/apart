@@ -591,22 +591,24 @@ export default function PlayPage() {
 
             {phase === "reveal" && reveal && (
               <div className={`verdict ${reveal.correct ? "right" : "wrong"}`}>
-                <span className="mark">{timedOut ? "시간 초과" : reveal.correct ? "정답" : "오답"}</span>
-                <h3>{reveal.kind === "real" ? "진짜 있는 아파트입니다" : "AI가 지은 이름입니다"}</h3>
-                {/* 진짜이고 사진이 있으면 주소 줄 옆에 작은 사진. 제목은 폭을 그대로 둬야
-                    320px에서 두 줄로 꺾이지 않는다(꺾이면 칸이 47px 길어졌다) */}
+                {/* 진짜이고 사진이 있으면 칸 오른쪽 위에 작은 사진(확정 시안 photo-a 1번). 사진 폭은
+                    좁은 화면에서 56px로 줄여 제목이 한 줄로 들어가게 한다 */}
                 <div className={reveal.kind === "real" && photoEnabled(reveal.meta?.geo) && !photoFail ? "with-thumb" : undefined}>
-                  <p className="meta">
-                    {reveal.kind === "real" && reveal.meta ? (
-                      <>
-                        {reveal.meta.location}
-                        <br />
-                        {reveal.meta.builtYear}년 준공 · {reveal.meta.households.toLocaleString()}세대
-                      </>
-                    ) : (
-                      reveal.hint
-                    )}
-                  </p>
+                  <div className="verdict-txt">
+                    <span className="mark">{timedOut ? "시간 초과" : reveal.correct ? "정답" : "오답"}</span>
+                    <h3>{reveal.kind === "real" ? "진짜 있는 아파트입니다" : "AI가 지은 이름입니다"}</h3>
+                    <p className="meta">
+                      {reveal.kind === "real" && reveal.meta ? (
+                        <>
+                          {reveal.meta.location}
+                          <br />
+                          {reveal.meta.builtYear}년 준공 · {reveal.meta.households.toLocaleString()}세대
+                        </>
+                      ) : (
+                        reveal.hint
+                      )}
+                    </p>
+                  </div>
                   {reveal.kind === "real" && reveal.meta?.geo && photoEnabled(reveal.meta.geo) && !photoFail && currentName && (
                     <AptPhoto
                       key={currentName}
