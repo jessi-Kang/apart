@@ -1,0 +1,58 @@
+# 주간 점검: 진짜·가짜 비율
+#
+# 왜 있나: 감별은 진짜:가짜가 반반이어야 "모르면 반은 맞는" 게임이다. 그런데 풀은
+# 매일 밤 늘고(실단지 수집·가짜 생성·작명 출제) 구역마다 가짜가 따로 갈린다. 반반이
+# 깨져도 화면에서는 안 보인다 — 겉모양으로 찍을 수 있던 상태로 세 주를 돈 적이 있다.
+# 그래서 일주일에 한 번 실제로 나간 문제·출제 규칙·구역별 풀·겉모양을 재서 일지
+# 이슈에 남긴다(scripts/weekly-balance.mts).
+#
+# 읽기만 한다: 커밋·배포를 하지 않는다. DB에는 지난 점검의 합계 한 줄만 쓴다
+# (balance_snapshot — 누적 집계에서 이번 주 몫만 빼 보려고).
+#
+# 필요한 시크릿: DATABASE_URL (없으면 실제 출제분만 건너뛰고 나머지는 잰다)
+name: weekly-balance
+
+on:
+  schedule:
+    # 월요일 08:47 KST (일요일 23:47 UTC). 정각은 몰려서 늦게 돈다
+    - cron: "47 23 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 받기
+        uses: actions/checkout@v4
+        with:
+          ref: claude/apartment-quiz-game-planning-i6rqe9
+
+      - name: Node 준비
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # 출제 규칙을 실제 코드(lib/*.ts)로 돌리고 DB 드라이버를 쓰느라 설치한다. 주 1회라 부담이 적다
+      - name: 의존성 설치
+        working-directory: web
+        run: npm ci
+
+      - name: 비율 재기
+        working-directory: web
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run weekly-balance
+
+      - name: 결과 알리기
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash .github/scripts/report-nightly.sh "주간 점검"

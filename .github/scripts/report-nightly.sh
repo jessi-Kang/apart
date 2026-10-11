@@ -9,7 +9,7 @@
 # 알리면, 작업이 아예 안 도는 상태(시크릿이 빠졌다거나)와 조용한 성공이
 # 똑같아 보인다.
 #
-# 쓰는 곳: collect-kapt.yml, publish-coined.yml 의 마지막 단계.
+# 쓰는 곳: collect-kapt.yml, publish-coined.yml, weekly-balance.yml 의 마지막 단계.
 #   bash .github/scripts/report-nightly.sh "<작업 이름>"
 #
 # 넘겨받는 환경변수
@@ -31,6 +31,8 @@ if [ "${SKIP:-0}" = "1" ]; then
   echo "시크릿이 없어 아무것도 하지 않았습니다. Settings → Secrets → Actions를 확인해 주세요." >> "$OUT"
 elif [ "${JOB:-}" = "failure" ]; then
   echo "### ${TASK} · 실패" >> "$OUT"
+elif [ -s /tmp/balance.md ]; then
+  echo "### ${TASK} · 재었습니다" >> "$OUT"
 elif [ "${CHANGED:-0}" = "1" ]; then
   echo "### ${TASK} · 새로 나갔습니다" >> "$OUT"
 else
@@ -51,6 +53,12 @@ if [ -s /tmp/collect.log ]; then
     echo "$bad" | sed 's/^/> /' >> "$OUT"
     echo "" >> "$OUT"
   fi
+fi
+
+# 주간 점검은 표·목록이 든 마크다운이라 코드 블록에 넣지 않고 그대로 붙인다
+if [ -s /tmp/balance.md ]; then
+  cat /tmp/balance.md >> "$OUT"
+  echo "" >> "$OUT"
 fi
 
 # 각 단계가 남긴 기록을 그대로 붙인다. 요약하지 않는다 — 요약하다 빠뜨린
