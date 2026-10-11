@@ -1,4 +1,5 @@
 import { poolOf, type Apartment, type FakeName, type Difficulty } from "./data";
+import { geoOf } from "./geo";
 import { pickByDifficulty } from "./daily";
 import { seededShuffle, rngForDate } from "./seeded";
 
@@ -59,6 +60,7 @@ export function checkFindReal(
       location: `${r.sido} ${r.sigungu} ${r.dong}`,
       builtYear: r.builtYear,
       households: r.households,
+      ...(geoOf(r.id) && { geo: geoOf(r.id) }),
     },
   };
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readSession } from "@/lib/auth";
 import { blockIfUnreleased } from "@/lib/guard";
 import { createChallenge, maskName } from "@/lib/challenge";
-import { readRun } from "@/lib/oxrun";
+import { isRunMode, readRun } from "@/lib/run";
 
 export const dynamic = "force-dynamic";
 
@@ -12,15 +12,24 @@ export const dynamic = "force-dynamic";
  * 도전장의 문제는 그 최고 연속이 시작된 번호부터 나온다. 보낸 사람이 끊기지 않고
  * 맞힌 바로 그 구간을 받는 사람도 같은 조건(첫 오답에서 끝)으로 친다.
  */
-export async function POST() {
-  const blocked = await blockIfUnreleased("ox");
+export async function POST(req: Request) {
+  // 어느 창구의 판인가. 몸이 비었으면 감별(도전장이 감별에만 있던 때의 화면)
+  let mode: unknown = "ox";
+  try {
+    mode = ((await req.json()) as { mode?: unknown }).mode ?? "ox";
+  } catch {
+    /* 빈 몸 */
+  }
+  if (!isRunMode(mode)) return NextResponse.json({ error: "bad_mode" }, { status: 400 });
+  const blocked = await blockIfUnreleased(mode);
   if (blocked) return blocked;
-  const run = await readRun();
+  const run = await readRun(mode);
   if (!run || run.b < 1) return NextResponse.json({ error: "no_record" }, { status: 400 });
   // 답을 보고 친 판의 기록은 도전장에 싣지 않는다
   if (run.p) return NextResponse.json({ error: "practice" }, { status: 400 });
   const session = await readSession();
   const code = await createChallenge({
+    mode,
     seed: run.s,
     area: run.a,
     start: run.bs,

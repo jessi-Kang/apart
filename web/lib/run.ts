@@ -1,10 +1,10 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { poolOf } from "./data";
+import { assemblePoolOf, poolOf } from "./data";
 import { mulberry32 } from "./seeded";
 
 /**
- * 무한 감별 한 판의 진행 상태 (서명 쿠키).
+ * 무한 판의 진행 상태 (서명 쿠키, 창구마다 하나).
  *
  * 왜 있나. 도전장은 "내가 받은 이름을 같은 순서로" 남에게 보내는 일이다. 예전처럼
  * 문제마다 따로 동전을 던지면 지나간 판을 되살릴 길이 없다. 그래서 판마다 시드를
@@ -18,10 +18,14 @@ import { mulberry32 } from "./seeded";
  * 쓰기가 생긴다 — 순위가 걸린 자리가 아니라서 지금은 쿠키로 둔다.
  */
 
-export const OX_COOKIE = "aptgam_ox";
+/** 판 기록은 창구마다 따로 둔다. 감별을 치다 조립으로 가도 감별 판이 지워지지 않게 */
+export type RunMode = "ox" | "findreal" | "assemble";
+export const RUN_MODES: RunMode[] = ["ox", "findreal", "assemble"];
+export const isRunMode = (x: unknown): x is RunMode => RUN_MODES.includes(x as RunMode);
+const COOKIE: Record<RunMode, string> = { ox: "aptgam_ox", findreal: "aptgam_fr", assemble: "aptgam_as" };
 const MAX_AGE = 30 * 86400;
 
-export interface OxRun {
+export interface Run {
   /** 시드 */
   s: number;
   /** 구역 (빈 값 = 전국) */
@@ -50,18 +54,19 @@ export interface OxRun {
 /* AUTH_SECRET이 없는 로컬에서도 판이 돌게 프로세스마다 임의 키를 쓴다(재시작하면 판이 새로 시작된다) */
 const LOCAL_KEY = randomBytes(32).toString("base64url");
 const secret = () => process.env.AUTH_SECRET || LOCAL_KEY;
-const sign = (p: string) => createHmac("sha256", secret()).update(`ox|${p}`).digest("base64url");
+/* 서명에 창구를 섞는다. 감별 쿠키를 조립 쿠키 자리에 옮겨 넣어도 통하지 않게 */
+const sign = (p: string, mode: RunMode) => createHmac("sha256", secret()).update(`${mode}|${p}`).digest("base64url");
 
-function parse(raw: string | undefined): OxRun | null {
+function parse(raw: string | undefined, mode: RunMode): Run | null {
   if (!raw) return null;
   const dot = raw.lastIndexOf(".");
   if (dot < 0) return null;
   const payload = raw.slice(0, dot);
   const got = Buffer.from(raw.slice(dot + 1));
-  const want = Buffer.from(sign(payload));
+  const want = Buffer.from(sign(payload, mode));
   if (got.length !== want.length || !timingSafeEqual(got, want)) return null;
   try {
-    const s = JSON.parse(Buffer.from(payload, "base64url").toString()) as OxRun;
+    const s = JSON.parse(Buffer.from(payload, "base64url").toString()) as Run;
     if (!s || typeof s.s !== "number" || typeof s.i !== "number" || typeof s.g !== "string") return null;
     return s;
   } catch {
@@ -69,13 +74,13 @@ function parse(raw: string | undefined): OxRun | null {
   }
 }
 
-export async function readRun(): Promise<OxRun | null> {
-  return parse((await cookies()).get(OX_COOKIE)?.value);
+export async function readRun(mode: RunMode): Promise<Run | null> {
+  return parse((await cookies()).get(COOKIE[mode])?.value, mode);
 }
 
-export async function writeRun(run: OxRun): Promise<void> {
+export async function writeRun(run: Run, mode: RunMode): Promise<void> {
   const payload = Buffer.from(JSON.stringify(run)).toString("base64url");
-  (await cookies()).set(OX_COOKIE, `${payload}.${sign(payload)}`, {
+  (await cookies()).set(COOKIE[mode], `${payload}.${sign(payload, mode)}`, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -85,7 +90,7 @@ export async function writeRun(run: OxRun): Promise<void> {
 }
 
 /** 새 판. 도전장이면 그 판의 시드·구역·시작 번호를 그대로 받는다 */
-export function newRun(prev: OxRun | null, opts: { area: string; seed?: number; start?: number; code?: string; target?: number; practice?: boolean }): OxRun {
+export function newRun(prev: Run | null, opts: { area: string; seed?: number; start?: number; code?: string; target?: number; practice?: boolean }): Run {
   const start = opts.start ?? 0;
   return {
     s: opts.seed ?? randomBytes(4).readUInt32LE(0),
@@ -153,8 +158,60 @@ export function oxAt(seed: number, area: string, n: number): { name: string; rea
   return { name: best.name, real };
 }
 
+/** 풀에서 (salt+이름) 해시가 가장 작은 k개. 풀이 늘어도 새로 든 것이 이길 때만 바뀐다 */
+function smallest<T>(pool: T[], salt: string, k: number, key: (t: T) => string): T[] {
+  const top: { h: number; t: T }[] = [];
+  for (const t of pool) {
+    const h = hash32(salt + key(t));
+    if (top.length < k) {
+      top.push({ h, t });
+      top.sort((x, y) => x.h - y.h);
+    } else if (h < top[k - 1].h) {
+      top[k - 1] = { h, t };
+      top.sort((x, y) => x.h - y.h);
+    }
+  }
+  return top.map((x) => x.t);
+}
+
+/** (시드, n)으로 섞는다. 같은 도전장이면 보기 순서도 같아야 한다 */
+function shuffleAt<T>(arr: T[], seed: number, n: number): T[] {
+  const rnd = mulberry32((seed ^ Math.imul(n + 1, 2654435761)) >>> 0);
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** 진짜 찾기 n번째: 진짜 하나 + 가짜 셋 */
+export function findAt(seed: number, area: string, n: number): { options: string[] } {
+  const { reals, fakes } = poolOf(area || null);
+  const real = smallest(reals, `${seed}:${n}:r:`, 1, (a) => a.name)[0];
+  const three = smallest(fakes, `${seed}:${n}:f:`, 3, (f) => f.name).map((f) => f.name);
+  return { options: shuffleAt([real.name, ...three], seed, n) };
+}
+
+/** 이름 조립 n번째: 진짜 단지 하나를 조각으로, 가짜에서 미끼 조각을 섞는다 */
+export function assembleAt(seed: number, area: string, n: number) {
+  const pool = assemblePoolOf(area || null);
+  const apt = smallest(pool.reals, `${seed}:${n}:a:`, 1, (a) => a.name)[0];
+  const answer = apt.name.split(" ");
+  const cand = [...new Set(pool.fakes.flatMap((f) => f.name.split(" ")))].filter((t) => !answer.includes(t));
+  const decoys = smallest(cand, `${seed}:${n}:d:`, answer.length >= 3 ? 2 : 3, (t) => t);
+  return {
+    id: apt.id,
+    pieces: shuffleAt([...answer, ...decoys], seed, n),
+    answerLen: answer.length,
+    hint: { location: `${apt.sido} ${apt.sigungu} ${apt.dong}`, builtYear: apt.builtYear, households: apt.households },
+    /** 실제로 좁힌 범위. 자치구를 골라도 조립은 그 시·도로 넓히므로 화면이 이 값을 쓴다 */
+    sido: pool.sido,
+  };
+}
+
 /** 한 문제를 반영한다. 도전 판은 첫 오답에서 끝난다 */
-export function applyAnswer(run: OxRun, correct: boolean): OxRun {
+export function applyAnswer(run: Run, correct: boolean): Run {
   const next = { ...run, i: run.i + 1 };
   if (correct) {
     next.h = run.h + 1;

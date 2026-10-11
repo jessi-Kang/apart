@@ -11,11 +11,12 @@ import { SheetFooter } from "@/components/SheetFooter";
 import { RuleButton, RuleOverlay, useGuide } from "@/components/RuleNote";
 import { TimerBar } from "@/components/TimerBar";
 import { AptPhoto, photoEnabled } from "@/components/AptPhoto";
+import { ChallengeResult, RivalLine, SendChallenge, fetchChal, quitChal, rivalRate, type Chal, type Over } from "@/components/Challenge";
 import { gradeFor } from "@/lib/grades";
 import { areaPref, bumpStreak, bumpEndlessRecord, comboState, endlessRecord, loadResult, saveResult, type EndlessRecord, type ReviewItem, type SavedResult } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
 import { FINISH_BONUS, RECORD_BONUS, questionScore } from "@/lib/scoring";
-import { shareCardImage, shareLink, type ShareCardData } from "@/lib/sharecard";
+import { shareCardImage, type ShareCardData } from "@/lib/sharecard";
 import { ShareLink } from "@/components/ShareLink";
 import { sfxRecord, sfxResult, sfxStampRight, sfxStampWrong, sfxTap } from "@/lib/sound";
 
@@ -38,21 +39,6 @@ interface AnswerResponse {
   over?: { mine: number; target: number };
 }
 
-/** 받은 도전장 (겉면만. 시드는 서버에만 있다) */
-interface Chal {
-  code: string;
-  target: number;
-  label: string;
-}
-
-/** 도전 판의 끝. at은 끊긴 문제 번호(그만두었으면 null) */
-interface Over {
-  mine: number;
-  target: number;
-  at: number | null;
-  name: string | null;
-  kind: "real" | "fake" | null;
-}
 
 type Phase = "loading" | "question" | "reveal" | "result" | "eresult" | "cresult" | "error";
 
@@ -82,7 +68,6 @@ export default function PlayPage() {
   const [retry, setRetry] = useState(false);
   /** 이 문제의 사진을 못 받았다. 사진 칸을 접는다 */
   const [photoFail, setPhotoFail] = useState(false);
-  const [sendState, setSendState] = useState<"idle" | "busy" | "shared" | "copied" | "failed">("idle");
   const [xpRes, setXpRes] = useState<XpResult | null>(null); // 이번 완주 획득 점수
   const [eXpRes, setEXpRes] = useState<XpResult | null>(null); // 무한 판 획득 점수
 
@@ -141,7 +126,7 @@ export default function PlayPage() {
   }, [phase, idx, eCount]);
 
   /** start면 새 판을 연다(code가 있으면 그 도전장의 판). 아니면 지금 판의 다음 문제.
-   * 판의 진행과 기록은 서버가 센다 (lib/oxrun.ts) */
+   * 판의 진행과 기록은 서버가 센다 (lib/run.ts) */
   async function fetchEndless(start = false, code?: string) {
     const q = new URLSearchParams();
     if (start) {
@@ -160,10 +145,7 @@ export default function PlayPage() {
 
   async function openChallenge(code: string) {
     try {
-      const res = await fetch(`/api/challenge/${encodeURIComponent(code)}`);
-      if (!res.ok) throw new Error("challenge_failed");
-      const c = (await res.json()) as Chal;
-      await startEndless(c);
+      await startEndless(await fetchChal(code));
     } catch {
       setPhase("error");
     }
@@ -178,7 +160,6 @@ export default function PlayPage() {
       setOver(null);
       // 도전장 판을 떠나 내 판을 열었으면 주소의 ?c=도 걷는다. 새로고침이 도전장으로 돌아가지 않게
       if (!c && window.location.search.includes("c=")) window.history.replaceState(null, "", "/o");
-      setSendState("idle");
       setEndless(true);
       setRun(0);
       setECount(0);
@@ -281,7 +262,7 @@ export default function PlayPage() {
         });
         if (!res.ok) throw new Error("answer_failed");
         const data = (await res.json()) as AnswerResponse;
-        if (data.over) setOver({ ...data.over, at: eCount + 1, name: eq, kind: data.kind });
+        if (data.over) setOver({ ...data.over, at: eCount + 1, missLabel: "틀린 문제", missName: eq, missNote: data.kind === "real" ? "진짜 아파트" : "AI가 지은 이름" });
         setReveal(data);
         setTimedOut(choice === "timeout");
         setECount((c) => c + 1);
@@ -418,7 +399,6 @@ export default function PlayPage() {
   /** 공식전 이름 — 구역별 공식전이면 구역을 함께 밝힌다 (부산 공식전) */
   const officialArea = (quiz?.area ?? "").replace(/특별자치시$|특별시$|광역시$/, "");
   const officialName = officialArea ? `${officialArea} 공식전` : "공식전";
-  const [, mm, dd] = (quiz?.date ?? "--------").split("-");
   const currentName = endless ? eq : quiz?.items[idx]?.name;
 
   /** 도전 판을 끝내고 대결 통지서를 연다 */
@@ -433,13 +413,8 @@ export default function PlayPage() {
   async function quitChallenge() {
     setBusy(true);
     try {
-      const res = await fetch("/api/endless/ox", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ end: true }),
-      });
-      const d = res.ok ? ((await res.json()) as { over: { mine: number; target: number } }) : null;
-      const o: Over = { mine: d?.over.mine ?? sBest, target: d?.over.target ?? chal?.target ?? 0, at: null, name: null, kind: null };
+      const d = await quitChal("/api/endless/ox");
+      const o: Over = { mine: d?.mine ?? sBest, target: d?.target ?? chal?.target ?? 0, at: null };
       setOver(o);
       if (o.mine > o.target) sfxRecord();
       else sfxResult();
@@ -449,35 +424,6 @@ export default function PlayPage() {
       setBusy(false);
     }
   }
-
-  /** 도전장 보내기. 기록은 서버가 센 이 판의 것이 실린다 */
-  async function sendChallenge() {
-    if (sendState === "busy") return;
-    sfxTap();
-    setSendState("busy");
-    try {
-      const res = await fetch("/api/challenge", { method: "POST" });
-      if (!res.ok) throw new Error("challenge_failed");
-      const { code, target } = (await res.json()) as { code: string; target: number };
-      const url = `${window.location.origin}/c/${code}`;
-      setSendState(await shareLink(`[아파트 감별사] 도전장\n나는 ${target}문제를 연속으로 맞혔다. 넘어 볼래?\n${url}`));
-    } catch {
-      setSendState("failed");
-    }
-  }
-
-  const sendLabel = (idle: string) =>
-    sendState === "busy"
-      ? "보내는 중"
-      : sendState === "shared"
-        ? "보냈습니다"
-        : sendState === "copied"
-          ? "링크 복사됨"
-          : sendState === "failed"
-            ? "다시 시도"
-            : idle;
-
-  const outcome = over ? (over.mine > over.target ? "승리" : over.mine === over.target ? "무승부" : "패배") : "";
 
   return (
     <div className="frame">
@@ -550,14 +496,7 @@ export default function PlayPage() {
           <section className="screen">
             {chal ? (
               <>
-                {/* 상대 기록까지 얼마나 남았는지. 설명은 얹지 않고 막대 하나만 더한다 */}
-                <div className="rival" aria-label={`상대 기록 ${chal.target} 중 ${run}`}>
-                  <i style={{ width: `${Math.min(100, (run / Math.max(1, chal.target)) * 100)}%` }} />
-                </div>
-                <p className="qlabel mono qlabel-row">
-                  <span className="mode-chip official">도전장</span>
-                  {eCount + (phase === "question" ? 1 : 0)}번째 · 연속 정답 {run} / 상대 {chal.target}
-                </p>
+                <RivalLine chal={chal} run={run} nth={eCount + (phase === "question" ? 1 : 0)} />
               </>
             ) : endless ? (
               <p className="qlabel mono qlabel-row">
@@ -621,11 +560,7 @@ export default function PlayPage() {
                 </div>
                 <p className="rate">
                   {chal
-                    ? reveal.correct
-                      ? run > chal.target
-                        ? `${run}문제 연속 정답 · 상대를 넘었습니다`
-                        : `${run}문제 연속 정답 · ${chal.target - run + 1}문제 더 맞히면 승리`
-                      : "여기서 끝났습니다"
+                    ? rivalRate(chal, run, reveal.correct)
                     : endless
                     ? reveal.correct
                       ? `연속 ${run}문제 · 평균 ${fmtSec(runAvgMs()) ?? "-"} · 최고 ${eRec.best}${fmtSec(eRec.avgMs) ? ` (${fmtSec(eRec.avgMs)})` : ""}`
@@ -691,14 +626,7 @@ export default function PlayPage() {
             </VForm>
             <div className="cut" />
             {/* 통지서 공유 자리를 도전장이 이어받는다. 날짜가 아니라 사람이 다시 불러들이게 한다 */}
-            <div className="result-actions">
-              <button className="btn btn-next full" onClick={sendChallenge} disabled={sendState === "busy" || sBest < 1}>
-                {sendLabel("도전장 보내기")}
-              </button>
-            </div>
-            <p className="send-hint">
-              {sBest < 1 ? "한 문제라도 맞혀야 도전장을 보낼 수 있습니다" : `${sBest}문제 연속으로 맞힌 그 문제들이 같은 순서로 나갑니다`}
-            </p>
+            <SendChallenge mode="ox" best={sBest} />
             <div className="result-actions">
               <button className="btn btn-ghost" onClick={() => startEndless()} disabled={busy}>
                 한 판 더
@@ -711,66 +639,16 @@ export default function PlayPage() {
         )}
 
         {phase === "cresult" && chal && over && (
-          <section className="screen result">
-            <DocTitle eyebrow="대결통지" title={`${chal.label ? `${chal.label} 님의` : "받은"} 도전장`} />
-            <StampHero name={outcome} />
-            <p className="stamp-sub">
-              {outcome === "승리"
-                ? `상대는 ${over.target}문제, 나는 ${over.mine}문제를 연속으로 맞혔습니다`
-                : outcome === "무승부"
-                  ? `둘 다 ${over.mine}문제를 연속으로 맞혔습니다`
-                  : `상대는 ${over.target}문제를 연속으로 맞혔는데, 나는 ${
-                      over.mine === 0
-                        ? "첫 문제에서 틀렸습니다"
-                        : over.at
-                          ? `${over.mine}문제를 맞히고 ${over.mine + 1}번째에서 틀렸습니다`
-                          : `${over.mine}문제를 맞히고 멈췄습니다`
-                    }`}
-            </p>
-            {retry && <p className="send-hint">답을 본 판이라 기록과 경험치에 들어가지 않습니다</p>}
-            <VForm>
-              <VRow label="나">{over.mine}문제 연속 정답</VRow>
-              <VRow label="상대">{over.target}문제 연속 정답</VRow>
-              {over.at && over.name && (
-                <VRow label="틀린 문제">
-                  {over.name} <small>{over.kind === "real" ? "진짜 아파트" : "AI가 지은 이름"}</small>
-                </VRow>
-              )}
-              <VRow label="직급">
-                <LevelBar result={eXpRes} />
-              </VRow>
-            </VForm>
-            <div className="cut" />
-            {outcome === "패배" || retry ? (
-              <>
-                <div className="result-actions">
-                  <button className="btn btn-next full" onClick={() => startEndless()} disabled={busy}>
-                    새 판 치기
-                  </button>
-                </div>
-                <p className="send-hint">새 판의 기록으로 도전장을 보낼 수 있습니다</p>
-                <div className="result-actions">
-                  <button className="btn btn-ghost" onClick={() => startEndless(chal)} disabled={busy}>
-                    같은 문제로 다시 도전
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="result-actions">
-                  <button className="btn btn-next full" onClick={sendChallenge} disabled={sendState === "busy"}>
-                    {sendLabel("내 기록으로 도전장 보내기")}
-                  </button>
-                </div>
-                <p className="send-hint">{over.mine}문제 연속 정답으로 새 도전장을 만듭니다</p>
-                <div className="result-actions">
-                  <button className="btn btn-ghost" onClick={() => startEndless()} disabled={busy}>
-                    새 판 치기
-                  </button>
-                </div>
-              </>
-            )}
-          </section>
+          <ChallengeResult
+            mode="ox"
+            chal={chal}
+            over={over}
+            retry={retry}
+            xp={eXpRes}
+            busy={busy}
+            onNewRun={() => startEndless()}
+            onRetry={() => startEndless(chal)}
+          />
         )}
 
         {phase === "result" && quiz && (

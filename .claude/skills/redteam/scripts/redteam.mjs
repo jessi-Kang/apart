@@ -663,6 +663,20 @@ async function challenge() {
   const leak = ["seed", "start", "senderUid"].filter((k) => new RegExp(`"${k}"\\s*:`).test(face.text));
   if (leak.length) bad("[도전장] 겉면에 시드가 실리는가", leak.join(", "));
   else ok("[도전장] 겉면에 시드가 실리는가", "기록·보낸 사람만 있다");
+  // 찾기·조립도 같은 구멍이 없어야 한다: 보기·퍼즐을 지어 와 판정만 받아 가기, 다른 창구 도전장으로 판 열기
+  const jf = jar();
+  await jf.req("/api/endless/find?start=1");
+  const fakeOpts = await jf.req("/api/endless/find", { method: "POST", body: { options: ["래미안", "자이", "푸르지오", "힐스테이트"], pick: "래미안" } });
+  const ja = jar();
+  await ja.req("/api/endless/assemble?start=1");
+  const otherId = await ja.req("/api/endless/assemble", { method: "POST", body: { id: "kA00000000", guess: ["래미안"] } });
+  const cross = await jf.req(`/api/endless/find?start=1&c=${code}`);
+  const leaks = [];
+  if (fakeOpts.status === 200 && fakeOpts.json?.answer === "래미안") leaks.push("찾기: 지어 온 보기로 판정을 받았다");
+  if (otherId.status === 200) leaks.push(`조립: 지금 판이 아닌 퍼즐 판정 ${otherId.status}`);
+  if (cross.status === 200) leaks.push("감별 도전장으로 찾기 판이 열렸다");
+  if (leaks.length) bad("[도전장] 찾기·조립도 서버가 정한 문제만 판정하는가", leaks.join(", "));
+  else ok("[도전장] 찾기·조립도 서버가 정한 문제만 판정하는가", `보기 위조 ${fakeOpts.status === 200 ? "무시됨" : fakeOpts.status} · 퍼즐 위조 ${otherId.status} · 창구 교차 ${cross.status}`);
   const junk = await req("/api/challenge/zz'or'1=1");
   if (junk.status === 404) ok("[도전장] 모르는 번호", "404");
   else bad("[도전장] 모르는 번호", `${junk.status}`);

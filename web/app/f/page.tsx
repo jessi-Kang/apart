@@ -10,6 +10,8 @@ import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { RuleButton, RuleOverlay, useGuide } from "@/components/RuleNote";
 import { TimerBar } from "@/components/TimerBar";
+import { AptPhoto, photoEnabled } from "@/components/AptPhoto";
+import { ChallengeResult, RivalLine, SendChallenge, fetchChal, quitChal, rivalRate, type Chal, type Over } from "@/components/Challenge";
 import { findGradeFor } from "@/lib/grades";
 import { applyComboPick, areaPref, comboState, type ComboState } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
@@ -34,10 +36,12 @@ interface TodayResponse {
 interface CheckResponse {
   correct: boolean;
   answer: string;
-  meta: { location: string; builtYear: number; households: number };
+  meta: { location: string; builtYear: number; households: number; geo?: [number, number] | [number, number, number] };
+  /** 도전 판이 이 답으로 끝났다 */
+  over?: { mine: number; target: number };
 }
 
-type Phase = "loading" | "solve" | "reveal" | "done" | "eresult" | "error";
+type Phase = "loading" | "solve" | "reveal" | "done" | "eresult" | "cresult" | "error";
 
 const RESULT_KEY = "aptgam:findreal";
 const TIME_LIMIT = 15; // 초 — 4개를 읽고 고를 시간
@@ -58,7 +62,6 @@ export default function FindRealPage() {
   const [combo, setCombo] = useState<ComboState>({ current: 0, best: 0 });
   const [busy, setBusy] = useState(false);
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
-  const [eImgState, setEImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
   const [xpRes, setXpRes] = useState<XpResult | null>(null);
   const [eXpRes, setEXpRes] = useState<XpResult | null>(null);
 
@@ -73,6 +76,14 @@ export default function FindRealPage() {
   const [pendingOfficial, setPendingOfficial] = useState(false); // 홈에서 공식전으로 바로 들어왔는가
   const [eTop, setETop] = useState<number | null>(null); // 이 판의 최근 7일 상위 %
   const [area, setArea] = useState(""); // 담당 구역 (빈 값이면 서울 전체)
+  // 이 판 안의 연속. 화면의 '연속'(combo)은 판을 넘어 이어지지만, 도전장은 서버가 센 이 판의 연속으로 겨룬다
+  const [eRun, setERun] = useState(0);
+  const [eBest, setEBest] = useState(0);
+  // 도전장: 받은 것(chal)과 그 판의 끝(over), 답을 본 판(retry, 서버가 정함)
+  const [chal, setChal] = useState<Chal | null>(null);
+  const [over, setOver] = useState<Over | null>(null);
+  const [retry, setRetry] = useState(false);
+  const [photoFail, setPhotoFail] = useState(false);
   const sessionTimes = useRef<number[]>([]);
   const startBest = useRef(0);
   const qStart = useRef(0);
@@ -85,7 +96,10 @@ export default function FindRealPage() {
     setArea(areaPref().replace(/특별자치시$|특별시$|광역시$/, ""));
     // 홈 대장의 현황 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
     // quiz가 들어온 뒤에 열어야 해서 깃발만 세우고 아래 effect에서 처리한다
-    const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
+    const params = new URLSearchParams(window.location.search);
+    const wantOfficial = params.get("official") === "1";
+    // 도전장 링크(/c/번호)에서 "도전 접수"로 들어온 경우
+    const chalCode = params.get("c");
     const officialArea = areaPref();
     fetch(`/api/findreal/today${officialArea ? `?area=${encodeURIComponent(officialArea)}` : ""}`)
       .then((r) => r.json())
@@ -101,7 +115,8 @@ export default function FindRealPage() {
         } catch {
           /* 무시 */
         }
-        if (wantOfficial) setPendingOfficial(true);
+        if (chalCode) void openChallenge(chalCode);
+        else if (wantOfficial) setPendingOfficial(true);
         else void startEndless();
       })
       .catch(() => setPhase("error"));
@@ -124,24 +139,48 @@ export default function FindRealPage() {
   const roundNo = endless ? null : quiz?.items[idx]?.no;
   const total = quiz?.items.length ?? 10;
 
-  async function fetchEndless() {
-    const a = areaPref();
-    const res = await fetch(`/api/endless/find${a ? `?area=${encodeURIComponent(a)}` : ""}`);
+  /** start면 새 판을 연다(code가 있으면 그 도전장의 판). 아니면 지금 판의 다음 문제.
+   * 판의 진행과 기록은 서버가 센다 (lib/run.ts) */
+  async function fetchEndless(start = false, code?: string) {
+    const q = new URLSearchParams();
+    if (start) {
+      q.set("start", "1");
+      const a = areaPref();
+      if (code) q.set("c", code);
+      else if (a) q.set("area", a);
+    }
+    const qs = q.toString();
+    const res = await fetch(`/api/endless/find${qs ? `?${qs}` : ""}`);
     if (!res.ok) throw new Error("endless_failed");
-    setEOptions(((await res.json()) as { options: string[] }).options);
+    const d = (await res.json()) as { options: string[]; practice?: boolean };
+    setEOptions(d.options);
+    if (start) setRetry(Boolean(d.practice));
   }
 
-  async function startEndless() {
+  async function openChallenge(code: string) {
+    try {
+      await startEndless(await fetchChal(code));
+    } catch {
+      setPhase("error");
+    }
+  }
+
+  async function startEndless(c: Chal | null = null) {
     sfxTap();
     setBusy(true);
     try {
-      await fetchEndless();
+      await fetchEndless(true, c?.code);
+      setChal(c);
+      setOver(null);
+      setERun(0);
+      setEBest(0);
+      // 도전장 판을 떠나 내 판을 열었으면 주소의 ?c=도 걷는다. 새로고침이 도전장으로 돌아가지 않게
+      if (!c && window.location.search.includes("c=")) window.history.replaceState(null, "", "/f");
       setEndless(true);
       setECount(0);
       setSHits(0);
       setSMaxCombo(0);
       endlessPts.current = 0;
-      setEImgState("idle");
       sessionTimes.current = [];
       startBest.current = comboState().best;
       setPicked(null);
@@ -160,12 +199,14 @@ export default function FindRealPage() {
     setBusy(true);
     if (option !== null) sfxTap();
     const dt = Date.now() - qStart.current;
+    setPhotoFail(false);
     try {
+      // 무한은 보기를 보내지 않는다. 서버가 지금 판의 문제로 판정한다
       const res = endless
         ? await fetch("/api/endless/find", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(option === null ? { options, timeout: true } : { options, pick: option }),
+            body: JSON.stringify(option === null ? { timeout: true } : { pick: option }),
           })
         : await fetch("/api/findreal/check", {
             method: "POST",
@@ -187,6 +228,10 @@ export default function FindRealPage() {
       } else {
         setECount((c) => c + 1);
         sessionTimes.current.push(dt);
+        const nextRun = data.correct ? eRun + 1 : 0;
+        setERun(nextRun);
+        setEBest((b) => Math.max(b, nextRun));
+        if (data.over) setOver({ ...data.over, at: eCount + 1, missLabel: "놓친 진짜", missName: data.answer });
         if (data.correct) {
           setSHits((h) => h + 1);
           endlessPts.current += questionScore("findreal", {
@@ -199,8 +244,8 @@ export default function FindRealPage() {
       }
       if (data.correct) sfxStampRight();
       else sfxStampWrong();
-      // 콤보는 데일리·무한 공통 기록 — 풀이 시간도 함께 쌓는다
-      const next = applyComboPick(data.correct, dt);
+      // 콤보는 데일리·무한 공통 기록 — 풀이 시간도 함께 쌓는다. 답을 본 판은 기록에 넣지 않는다
+      const next = endless && retry ? combo : applyComboPick(data.correct, dt);
       setCombo(next);
       if (endless) setSMaxCombo((m) => Math.max(m, next.current));
       if (next.current >= 2) sfxCombo();
@@ -214,6 +259,10 @@ export default function FindRealPage() {
 
   async function next() {
     sfxTap();
+    if (endless && over) {
+      finishChallenge();
+      return;
+    }
     if (endless) {
       setBusy(true);
       try {
@@ -280,7 +329,7 @@ export default function FindRealPage() {
       .catch(() => null);
   }
 
-  const runXp = () => endlessPts.current + (sMaxCombo > startBest.current ? RECORD_BONUS : 0);
+  const runXp = () => (retry ? 0 : endlessPts.current + (sMaxCombo > startBest.current ? RECORD_BONUS : 0));
 
   function finishEndless() {
     if (sMaxCombo > startBest.current) sfxRecord();
@@ -293,9 +342,34 @@ export default function FindRealPage() {
 
   /** 결과를 안 보고 떠나도 쌓은 것은 남긴다 */
   function abandonEndless(keepalive = false) {
-    if (!endless || eCount === 0) return;
+    if (!endless || eCount === 0 || phase === "cresult") return;
     addXp(runXp(), areaPref());
-    void submitEndlessRun(keepalive);
+    // 도전 판은 보낸 사람의 구간에서 시작하므로 무한 판 순위에 섞지 않는다
+    if (!chal) void submitEndlessRun(keepalive);
+  }
+
+  /** 도전 판을 끝내고 대결 통지서를 연다 */
+  function finishChallenge() {
+    if (over && over.mine > over.target) sfxRecord();
+    else sfxResult();
+    setEXpRes(addXp(runXp(), areaPref()));
+    setPhase("cresult");
+  }
+
+  /** 도전 중에 그만둔다. 그때까지의 연속이 내 기록이 된다 */
+  async function quitChallenge() {
+    setBusy(true);
+    try {
+      const d = await quitChal("/api/endless/find");
+      const o: Over = { mine: d?.mine ?? eBest, target: d?.target ?? chal?.target ?? 0, at: null };
+      setOver(o);
+      if (o.mine > o.target) sfxRecord();
+      else sfxResult();
+      setEXpRes(addXp(runXp(), areaPref()));
+      setPhase("cresult");
+    } finally {
+      setBusy(false);
+    }
   }
 
   /** 공식전(오늘의 10문제) 참가 */
@@ -369,40 +443,8 @@ export default function FindRealPage() {
   /** 공식전 이름 — 구역별 공식전이면 구역을 함께 밝힌다 (부산 공식전) */
   const officialArea = (quiz?.area ?? "").replace(/특별자치시$|특별시$|광역시$/, "");
   const officialName = officialArea ? `${officialArea} 공식전` : "공식전";
-  const [, mm, dd] = (quiz?.date ?? "--------").split("-");
 
-  /** 공유 카드 내용. 통지서(이미지)와 링크 공유가 같은 값을 쓴다 */
-  const endlessCard = (): ShareCardData => ({
-      episode: quiz?.episode ?? 0,
-      date: quiz?.date ?? "",
-      subtitle: "무한 진짜 찾기 통지서",
-      headerRight: `무한 감정 · ${mm}.${dd}`,
-      score: sMaxCombo,
-      total: eCount,
-      totalText: "연속",
-      marks: [], // 무한은 문제 수가 열려 있어 10칸 그리드로 못 담는다
-      gradeName: eGradeName,
-      stats: [
-        { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
-        { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 판단 시간" },
-        { value: `${Math.max(combo.best, sMaxCombo)}`, label: "역대 최고 연속", accent: sMaxCombo > startBest.current },
-        eTop !== null
-          ? { value: `상위 ${eTop}%`, label: "최근 7일 판 순위", accent: true }
-          : { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
-      ],
-  });
 
-  async function shareEndlessImage() {
-    if (!quiz || eImgState === "busy") return;
-    sfxTap();
-    setEImgState("busy");
-    try {
-      const result = await shareCardImage(endlessCard());
-      setEImgState(result);
-    } catch {
-      setEImgState("failed");
-    }
-  }
 
   return (
     <div className="frame">
@@ -422,7 +464,7 @@ export default function FindRealPage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? (area ? `무한 찾기 · ${area}` : "무한 찾기") : officialName}
+              {chal ? `도전장 · ${chal.label || "익명"}` : endless ? (area ? `무한 찾기 · ${area}` : "무한 찾기") : officialName}
                           </small>
           </Link>
           <span className="head-tools">
@@ -433,7 +475,15 @@ export default function FindRealPage() {
             {(phase === "solve" || phase === "reveal") && (
             <CloseX
               inProgress={!endless && (phase === "solve" || phase === "reveal")}
-              onClose={endless && (phase === "solve" || phase === "reveal") && eCount > 0 ? finishEndless : undefined}
+              onClose={
+                endless && eCount > 0
+                  ? chal
+                    ? over
+                      ? finishChallenge
+                      : () => void quitChallenge()
+                    : finishEndless
+                  : undefined
+              }
             />
             )}
             </span>
@@ -462,7 +512,9 @@ export default function FindRealPage() {
 
         {(phase === "solve" || phase === "reveal") && options && (
           <section className="screen">
-            {endless ? (
+            {chal ? (
+              <RivalLine chal={chal} run={eRun} nth={eCount + (phase === "solve" ? 1 : 0)} />
+            ) : endless ? (
               <p className="qlabel mono qlabel-row">
                 <span className="mode-chip">무한</span>
                 {eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 {combo.current} · 최고 {combo.best}
@@ -503,16 +555,32 @@ export default function FindRealPage() {
             {phase === "reveal" && reveal && (
               <>
                 <div className={`verdict ${reveal.correct ? "right" : "wrong"}`}>
-                  <span className="mark">{timedOut ? "시간 초과" : reveal.correct ? "적중" : "오판"}</span>
-                  <h3>진짜는 &ldquo;{reveal.answer}&rdquo;</h3>
-                  <p className="meta">
-                    {reveal.meta.location}
-                    <br />
-                    {reveal.meta.builtYear}년 준공 · {reveal.meta.households.toLocaleString()}세대
-                  </p>
+                  {/* 진짜 단지 항공사진: 칸 오른쪽 위(감별 O/X와 같은 자리, 시안 photo-a 1번) */}
+                  <div className={photoEnabled(reveal.meta.geo) && !photoFail ? "with-thumb" : undefined}>
+                    <div className="verdict-txt">
+                      <span className="mark">{timedOut ? "시간 초과" : reveal.correct ? "적중" : "오판"}</span>
+                      <h3>진짜는 &ldquo;{reveal.answer}&rdquo;</h3>
+                      <p className="meta">
+                        {reveal.meta.location}
+                        <br />
+                        {reveal.meta.builtYear}년 준공 · {reveal.meta.households.toLocaleString()}세대
+                      </p>
+                    </div>
+                    {reveal.meta.geo && photoEnabled(reveal.meta.geo) && !photoFail && (
+                      <AptPhoto
+                        key={reveal.answer}
+                        geo={reveal.meta.geo}
+                        name={reveal.answer}
+                        caption={`${reveal.meta.location} · ${reveal.meta.builtYear}년 준공 · ${reveal.meta.households.toLocaleString()}세대`}
+                        onLoadFail={() => setPhotoFail(true)}
+                      />
+                    )}
+                  </div>
                 </div>
                 <p className="combo-line">
-                  {reveal.correct ? (
+                  {chal ? (
+                    rivalRate(chal, eRun, reveal.correct)
+                  ) : reveal.correct ? (
                     <>
                       연속 <b>{combo.current}</b>개 적중 중{runAvg ? ` · 평균 ${runAvg}` : ""}
                       {combo.current >= combo.best && combo.best > 1 ? " · 최고 기록" : ""}
@@ -526,7 +594,7 @@ export default function FindRealPage() {
                 </p>
                 <div className="choices">
                   <button className="btn btn-next full" onClick={next} disabled={busy}>
-                    {!endless && idx + 1 === total ? "결과 보기" : "다음 문제"}
+                    {(!endless && idx + 1 === total) || (endless && over) ? "결과 보기" : "다음 문제"}
                   </button>
                 </div>
               </>
@@ -568,31 +636,30 @@ export default function FindRealPage() {
               </VRow>
             </VForm>
             <div className="cut" />
+            {/* 통지서 공유 자리를 도전장이 이어받는다(감별 O/X와 같다) */}
+            <SendChallenge mode="findreal" best={eBest} />
             <div className="result-actions">
-              <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
-                {eImgState === "busy"
-                  ? "발급 중"
-                  : eImgState === "shared"
-                    ? "공유 완료"
-                    : eImgState === "downloaded"
-                      ? "저장 완료"
-                      : eImgState === "failed"
-                        ? "다시 시도"
-                        : "통지서 공유"}
-              </button>
-              <ShareLink data={endlessCard()} />
-            </div>
-            {/* 아래 줄은 이 판을 끝낸 다음에 할 일이다. 공유 두 갈래와
-                섞어 놓으면 네 단추가 다 같은 무게로 보인다 */}
-            <div className="result-actions">
-              <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
-                다시 도전
+              <button className="btn btn-ghost" onClick={() => startEndless()} disabled={busy}>
+                한 판 더
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
               </Link>
             </div>
           </section>
+        )}
+
+        {phase === "cresult" && chal && over && (
+          <ChallengeResult
+            mode="findreal"
+            chal={chal}
+            over={over}
+            retry={retry}
+            xp={eXpRes}
+            busy={busy}
+            onNewRun={() => startEndless()}
+            onRetry={() => startEndless(chal)}
+          />
         )}
 
         {phase === "done" && quiz && (
@@ -651,7 +718,7 @@ export default function FindRealPage() {
             {/* 아래 줄은 이 판을 끝낸 다음에 할 일이다. 공유 두 갈래와
                 섞어 놓으면 네 단추가 다 같은 무게로 보인다 */}
             <div className="result-actions">
-              <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
+              <button className="btn btn-ghost" onClick={() => startEndless()} disabled={busy}>
                 무한 계속
               </button>
               <Link className="btn btn-ghost" href="/">

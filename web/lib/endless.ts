@@ -1,4 +1,4 @@
-import { apartments, assemblePoolOf, fakeNames, poolOf, type Apartment } from "./data";
+import { apartments, fakeNames, type Apartment } from "./data";
 import { choseongHint } from "./hangul";
 import { geoOf } from "./geo";
 
@@ -16,10 +16,6 @@ const normName = (s: string) => s.replace(/\s+/g, "").toLowerCase();
 const realByName = new Map(apartments.map((a) => [normName(a.name), a]));
 const fakeByName = new Map(fakeNames.map((f) => [normName(f.name), f]));
 
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
 function metaOf(a: Apartment) {
   return {
     location: `${a.sido} ${a.sigungu} ${a.dong}`,
@@ -36,7 +32,7 @@ function revealOf(a: Apartment) {
 
 /* ---------- 감별 O/X ---------- */
 
-// 무한 감별의 출제는 lib/oxrun.ts가 한다 (판마다 시드를 두어 도전장으로 되살린다)
+// 무한 판의 출제는 lib/run.ts가 한다 (판마다 시드를 두어 도전장으로 되살린다)
 
 export function judgeOx(
   name: string,
@@ -55,23 +51,11 @@ export function judgeOx(
 
 /* ---------- 진짜 찾기 ---------- */
 
-export function randomFind(area?: string | null): { options: string[] } {
-  const pool = poolOf(area);
-  const real = pick(pool.reals);
-  const fakes = new Set<string>();
-  while (fakes.size < 3) fakes.add(pick(pool.fakes).name);
-  const options = [real.name, ...fakes];
-  for (let i = options.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [options[i], options[j]] = [options[j], options[i]];
-  }
-  return { options };
-}
 
 export function judgeFind(
   options: unknown,
   pickName: unknown, // null = 시간 초과 (오답 처리, 정답은 공개)
-): { correct: boolean; answer: string; meta: ReturnType<typeof metaOf> } | null {
+): { correct: boolean; answer: string; meta: ReturnType<typeof revealOf> } | null {
   if (
     !Array.isArray(options) ||
     options.length !== 4 ||
@@ -86,36 +70,12 @@ export function judgeFind(
   return {
     correct: pickName !== null && normName(pickName as string) === normName(real.name),
     answer: real.name,
-    meta: metaOf(real),
+    meta: revealOf(real),
   };
 }
 
 /* ---------- 이름 조립 ---------- */
 
-export function randomAssemble(area?: string | null): {
-  id: string;
-  pieces: string[];
-  answerLen: number;
-  hint: { location: string; builtYear: number; households: number };
-  /** 실제로 좁힌 범위. 자치구를 골라도 조립은 그 시·도로 넓히므로 화면이 이 값을 쓴다 */
-  sido: string | null;
-} {
-  const pool = assemblePoolOf(area);
-  const apt = pick(pool.reals);
-  const answer = apt.name.split(" ");
-  const decoys: string[] = [];
-  const cand = [...new Set(pool.fakes.flatMap((f) => f.name.split(" ")))].filter((t) => !answer.includes(t));
-  while (decoys.length < (answer.length >= 3 ? 2 : 3) && cand.length) {
-    const t = cand.splice(Math.floor(Math.random() * cand.length), 1)[0];
-    decoys.push(t);
-  }
-  const pieces = [...answer, ...decoys];
-  for (let i = pieces.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
-  }
-  return { id: apt.id, pieces, answerLen: answer.length, hint: metaOf(apt), sido: pool.sido };
-}
 
 const realById = new Map(apartments.map((a) => [a.id, a]));
 
@@ -130,11 +90,11 @@ export function assembleHintById(id: unknown, tier: number, filled: number[] = [
 export function judgeAssemble(
   id: unknown,
   guess: unknown,
-): { correct: boolean; answer: string; meta: ReturnType<typeof metaOf> } | null {
+): { correct: boolean; answer: string; meta: ReturnType<typeof revealOf> } | null {
   if (typeof id !== "string") return null;
   const apt = realById.get(id);
   if (!apt) return null;
   const guessOk = Array.isArray(guess) && guess.length <= 6 && guess.every((g) => typeof g === "string" && g.length <= 20);
   if (!guessOk) return null;
-  return { correct: (guess as string[]).join(" ") === apt.name, answer: apt.name, meta: metaOf(apt) };
+  return { correct: (guess as string[]).join(" ") === apt.name, answer: apt.name, meta: revealOf(apt) };
 }

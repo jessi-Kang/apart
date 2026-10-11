@@ -10,6 +10,8 @@ import { Seal } from "@/components/Seal";
 import { SheetFooter } from "@/components/SheetFooter";
 import { RuleButton, RuleOverlay, useGuide } from "@/components/RuleNote";
 import { TimerBar } from "@/components/TimerBar";
+import { AptPhoto, photoEnabled } from "@/components/AptPhoto";
+import { ChallengeResult, RivalLine, SendChallenge, fetchChal, quitChal, rivalRate, type Chal, type Over } from "@/components/Challenge";
 import { assembleGradeFor } from "@/lib/grades";
 import { areaPref, bumpEndlessRecord, endlessRecord, type EndlessRecord } from "@/lib/local";
 import { addXp, type XpResult } from "@/lib/level";
@@ -34,6 +36,8 @@ interface EndlessPuzzle {
   hint: { location: string; builtYear: number; households: number };
   /** 서버가 실제로 좁힌 범위 (시·도). 없으면 전국 */
   sido?: string | null;
+  /** 답을 이미 아는 판(같은 도전장을 다시 침). 서버가 정해 준다 */
+  practice?: boolean;
 }
 
 interface TodayResponse {
@@ -47,10 +51,12 @@ interface TodayResponse {
 interface CheckResponse {
   correct: boolean;
   answer: string;
-  meta: { location: string; builtYear: number; households: number };
+  meta: { location: string; builtYear: number; households: number; geo?: [number, number] | [number, number, number] };
+  /** 도전 판이 이 답으로 끝났다 */
+  over?: { mine: number; target: number };
 }
 
-type Phase = "loading" | "solve" | "reveal" | "done" | "eresult" | "error";
+type Phase = "loading" | "solve" | "reveal" | "done" | "eresult" | "cresult" | "error";
 
 const RESULT_KEY = "aptgam:assemble";
 const TIME_LIMIT = 40; // 초 — 조각을 읽고 조립할 시간이 필요하다
@@ -79,7 +85,11 @@ export default function AssemblePage() {
   const [marks, setMarks] = useState<boolean[]>([]);
   const [busy, setBusy] = useState(false);
   const [imgState, setImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
-  const [eImgState, setEImgState] = useState<"idle" | "busy" | "shared" | "downloaded" | "failed">("idle");
+  // 도전장: 받은 것(chal)과 그 판의 끝(over), 답을 본 판(retry, 서버가 정함)
+  const [chal, setChal] = useState<Chal | null>(null);
+  const [over, setOver] = useState<Over | null>(null);
+  const [retry, setRetry] = useState(false);
+  const [photoFail, setPhotoFail] = useState(false);
   const [xpRes, setXpRes] = useState<XpResult | null>(null);
   const [eXpRes, setEXpRes] = useState<XpResult | null>(null);
 
@@ -115,7 +125,10 @@ export default function AssemblePage() {
     setArea(areaPref());
     // 홈 대장의 현황 칸에서 바로 들어온 경우(?official=1)는 곧장 공식전을 연다.
     // quiz가 들어온 뒤에 열어야 해서 깃발만 세우고 아래 effect에서 처리한다
-    const wantOfficial = new URLSearchParams(window.location.search).get("official") === "1";
+    const params = new URLSearchParams(window.location.search);
+    const wantOfficial = params.get("official") === "1";
+    // 도전장 링크(/c/번호)에서 "도전 접수"로 들어온 경우
+    const chalCode = params.get("c");
     const officialArea = areaPref();
     fetch(`/api/assemble/today${officialArea ? `?area=${encodeURIComponent(officialArea)}` : ""}`)
       .then((r) => r.json())
@@ -131,7 +144,8 @@ export default function AssemblePage() {
         } catch {
           /* 무시 */
         }
-        if (wantOfficial) setPendingOfficial(true);
+        if (chalCode) void openChallenge(chalCode);
+        else if (wantOfficial) setPendingOfficial(true);
         else void startEndless();
       })
       .catch(() => setPhase("error"));
@@ -193,28 +207,49 @@ export default function AssemblePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, idx, eCount, endless]);
 
-  async function fetchEndless() {
-    const a = areaPref();
-    const res = await fetch(`/api/endless/assemble${a ? `?area=${encodeURIComponent(a)}` : ""}`);
+  /** start면 새 판을 연다(code가 있으면 그 도전장의 판). 아니면 지금 판의 다음 문제.
+   * 판의 진행과 기록은 서버가 센다 (lib/run.ts) */
+  async function fetchEndless(start = false, code?: string) {
+    const q = new URLSearchParams();
+    if (start) {
+      q.set("start", "1");
+      const a = areaPref();
+      if (code) q.set("c", code);
+      else if (a) q.set("area", a);
+    }
+    const qs = q.toString();
+    const res = await fetch(`/api/endless/assemble${qs ? `?${qs}` : ""}`);
     if (!res.ok) throw new Error("endless_failed");
     const data = (await res.json()) as EndlessPuzzle;
     setEpz(data);
+    if (start) setRetry(Boolean(data.practice));
     // 자치구를 골랐어도 조립은 그 시·도로 넓혀 낸다. 화면은 실제 범위를 말해야 한다
     setArea(data.sido ?? "");
   }
 
-  async function startEndless() {
+  async function openChallenge(code: string) {
+    try {
+      await startEndless(await fetchChal(code));
+    } catch {
+      setPhase("error");
+    }
+  }
+
+  async function startEndless(c: Chal | null = null) {
     sfxTap();
     setBusy(true);
     try {
-      await fetchEndless();
+      await fetchEndless(true, c?.code);
+      setChal(c);
+      setOver(null);
+      // 도전장 판을 떠나 내 판을 열었으면 주소의 ?c=도 걷는다. 새로고침이 도전장으로 돌아가지 않게
+      if (!c && window.location.search.includes("c=")) window.history.replaceState(null, "", "/a");
       setEndless(true);
       setRun(0);
       setECount(0);
       setSHits(0);
       setSBest(0);
       endlessPts.current = 0;
-      setEImgState("idle");
       runTimes.current = [];
       sessionTimes.current = [];
       startBest.current = endlessRecord("assemble").best;
@@ -259,7 +294,7 @@ export default function AssemblePage() {
       .catch(() => null);
   }
 
-  const runXp = () => endlessPts.current + (sBest > startBest.current ? RECORD_BONUS : 0);
+  const runXp = () => (retry ? 0 : endlessPts.current + (sBest > startBest.current ? RECORD_BONUS : 0));
 
   function finishEndless() {
     if (sBest > startBest.current) sfxRecord();
@@ -272,9 +307,34 @@ export default function AssemblePage() {
 
   /** 결과를 안 보고 떠나도 쌓은 것은 남긴다 */
   function abandonEndless(keepalive = false) {
-    if (!endless || eCount === 0) return;
+    if (!endless || eCount === 0 || phase === "cresult") return;
     addXp(runXp(), areaPref());
-    void submitEndlessRun(keepalive);
+    // 도전 판은 보낸 사람의 구간에서 시작하므로 무한 판 순위에 섞지 않는다
+    if (!chal) void submitEndlessRun(keepalive);
+  }
+
+  /** 도전 판을 끝내고 대결 통지서를 연다 */
+  function finishChallenge() {
+    if (over && over.mine > over.target) sfxRecord();
+    else sfxResult();
+    setEXpRes(addXp(runXp(), areaPref()));
+    setPhase("cresult");
+  }
+
+  /** 도전 중에 그만둔다. 그때까지의 연속이 내 기록이 된다 */
+  async function quitChallenge() {
+    setBusy(true);
+    try {
+      const d = await quitChal("/api/endless/assemble");
+      const o: Over = { mine: d?.mine ?? sBest, target: d?.target ?? chal?.target ?? 0, at: null };
+      setOver(o);
+      if (o.mine > o.target) sfxRecord();
+      else sfxResult();
+      setEXpRes(addXp(runXp(), areaPref()));
+      setPhase("cresult");
+    } finally {
+      setBusy(false);
+    }
   }
 
   /** 공식전(오늘의 10문제) 참가 */
@@ -322,6 +382,7 @@ export default function AssemblePage() {
     setBusy(true);
     if (!fromTimeout) sfxTap();
     const dt = Date.now() - qStart.current;
+    setPhotoFail(false);
     try {
       const guess = picked.map((k) => puzzle.pieces[k]);
       const res = endless
@@ -340,6 +401,7 @@ export default function AssemblePage() {
       setReveal(data);
       setTimedOut(fromTimeout && !data.correct);
       if (endless) {
+        if (data.over) setOver({ ...data.over, at: eCount + 1, missLabel: "정답", missName: data.answer });
         setECount((c) => c + 1);
         sessionTimes.current.push(dt);
         if (data.correct) {
@@ -355,7 +417,8 @@ export default function AssemblePage() {
           setRun(nextRun);
           setSHits((h) => h + 1);
           setSBest((b) => Math.max(b, nextRun));
-          setERec(bumpEndlessRecord("assemble", nextRun, runAvgMs()));
+          // 답을 본 판은 개인 최고 기록에 넣지 않는다
+          if (!retry) setERec(bumpEndlessRecord("assemble", nextRun, runAvgMs()));
           sfxStampRight();
         } else {
           runTimes.current = [];
@@ -381,6 +444,10 @@ export default function AssemblePage() {
 
   async function next() {
     sfxTap();
+    if (endless && over) {
+      finishChallenge();
+      return;
+    }
     if (endless) {
       setBusy(true);
       try {
@@ -468,40 +535,8 @@ export default function AssemblePage() {
   /** 공식전 이름 — 구역별 공식전이면 구역을 함께 밝힌다 (부산 공식전) */
   const officialArea = (quiz?.area ?? "").replace(/특별자치시$|특별시$|광역시$/, "");
   const officialName = officialArea ? `${officialArea} 공식전` : "공식전";
-  const [, mm, dd] = (quiz?.date ?? "--------").split("-");
 
-  /** 공유 카드 내용. 통지서(이미지)와 링크 공유가 같은 값을 쓴다 */
-  const endlessCard = (): ShareCardData => ({
-      episode: quiz?.episode ?? 0,
-      date: quiz?.date ?? "",
-      subtitle: "무한 조립 통지서",
-      headerRight: `무한 조립 · ${mm}.${dd}`,
-      score: sBest,
-      total: eCount,
-      totalText: "연속",
-      marks: [], // 무한은 문제 수가 열려 있어 10칸 그리드로 못 담는다
-      gradeName: eGradeName,
-      stats: [
-        { value: `${sHits}/${eCount}`, label: "이번 판 적중" },
-        { value: fmtSec(sessionAvgMs()) ?? "-", label: "평균 조립 시간" },
-        { value: `${Math.max(eRec.best, sBest)}`, label: "역대 최고 연속", accent: sBest > startBest.current },
-        eTop !== null
-          ? { value: `상위 ${eTop}%`, label: "최근 7일 판 순위", accent: true }
-          : { value: `+${eXpRes?.gained ?? 0}점`, label: "획득 경험치" },
-      ],
-  });
 
-  async function shareEndlessImage() {
-    if (!quiz || eImgState === "busy") return;
-    sfxTap();
-    setEImgState("busy");
-    try {
-      const result = await shareCardImage(endlessCard());
-      setEImgState(result);
-    } catch {
-      setEImgState("failed");
-    }
-  }
 
   return (
     <div className="frame">
@@ -519,7 +554,13 @@ export default function AssemblePage() {
           <Link className="brand" href="/" onClick={() => abandonEndless(true)}>
             아파트 감별사
             <small>
-              {endless ? (area ? `무한 조립 · ${area.replace(/특별자치시$|특별시$|광역시$/, "")}` : "무한 조립") : officialName}
+              {chal
+                ? `도전장 · ${chal.label || "익명"}`
+                : endless
+                  ? area
+                    ? `무한 조립 · ${area.replace(/특별자치시$|특별시$|광역시$/, "")}`
+                    : "무한 조립"
+                  : officialName}
                           </small>
           </Link>
           <span className="head-tools">
@@ -530,7 +571,15 @@ export default function AssemblePage() {
             {(phase === "solve" || phase === "reveal") && (
             <CloseX
               inProgress={!endless && (phase === "solve" || phase === "reveal")}
-              onClose={endless && (phase === "solve" || phase === "reveal") && eCount > 0 ? finishEndless : undefined}
+              onClose={
+                endless && eCount > 0
+                  ? chal
+                    ? over
+                      ? finishChallenge
+                      : () => void quitChallenge()
+                    : finishEndless
+                  : undefined
+              }
             />
             )}
             </span>
@@ -559,7 +608,9 @@ export default function AssemblePage() {
 
         {(phase === "solve" || phase === "reveal") && puzzle && (
           <section className="screen">
-            {endless ? (
+            {chal ? (
+              <RivalLine chal={chal} run={run} nth={eCount + (phase === "solve" ? 1 : 0)} />
+            ) : endless ? (
               <p className="qlabel mono qlabel-row">
                 <span className="mode-chip">무한</span>
                 {eCount + (phase === "solve" ? 1 : 0)}번째 · 연속 {run} · 최고 {eRec.best}
@@ -636,19 +687,35 @@ export default function AssemblePage() {
             {phase === "reveal" && reveal && (
               <>
                 <div className={`verdict ${reveal.correct ? "right" : "wrong"}`}>
-                  <span className="mark">
-                    {timedOut ? "시간 초과" : reveal.correct ? (endless ? "정답" : `정답 +${lastPts}점`) : "오답"}
-                  </span>
-                  <h3>{reveal.answer}</h3>
-                  <p className="meta">
-                    {reveal.meta.location}
-                    <br />
-                    {reveal.meta.builtYear}년 준공 · {reveal.meta.households.toLocaleString()}세대
-                  </p>
+                  {/* 진짜 단지 항공사진: 칸 오른쪽 위(감별 O/X와 같은 자리, 시안 photo-a 1번) */}
+                  <div className={photoEnabled(reveal.meta.geo) && !photoFail ? "with-thumb" : undefined}>
+                    <div className="verdict-txt">
+                      <span className="mark">
+                        {timedOut ? "시간 초과" : reveal.correct ? (endless ? "정답" : `정답 +${lastPts}점`) : "오답"}
+                      </span>
+                      <h3>{reveal.answer}</h3>
+                      <p className="meta">
+                        {reveal.meta.location}
+                        <br />
+                        {reveal.meta.builtYear}년 준공 · {reveal.meta.households.toLocaleString()}세대
+                      </p>
+                    </div>
+                    {reveal.meta.geo && photoEnabled(reveal.meta.geo) && !photoFail && (
+                      <AptPhoto
+                        key={reveal.answer}
+                        geo={reveal.meta.geo}
+                        name={reveal.answer}
+                        caption={`${reveal.meta.location} · ${reveal.meta.builtYear}년 준공 · ${reveal.meta.households.toLocaleString()}세대`}
+                        onLoadFail={() => setPhotoFail(true)}
+                      />
+                    )}
+                  </div>
                 </div>
                 {endless && (
                   <p className="combo-line">
-                    {reveal.correct ? (
+                    {chal ? (
+                      rivalRate(chal, run, reveal.correct)
+                    ) : reveal.correct ? (
                       <>
                         연속 <b>{run}</b>개 · 평균 {fmtSec(runAvgMs()) ?? "-"} · 최고 {eRec.best}
                         {fmtSec(eRec.avgMs) ? ` (${fmtSec(eRec.avgMs)})` : ""}
@@ -676,7 +743,7 @@ export default function AssemblePage() {
             ) : (
               <div className="choices">
                 <button className="btn btn-next full" onClick={next} disabled={busy}>
-                  {!endless && idx + 1 === total ? "결과 보기" : "다음 문제"}
+                  {(!endless && idx + 1 === total) || (endless && over) ? "결과 보기" : "다음 문제"}
                 </button>
               </div>
             )}
@@ -717,31 +784,30 @@ export default function AssemblePage() {
               </VRow>
             </VForm>
             <div className="cut" />
+            {/* 통지서 공유 자리를 도전장이 이어받는다(감별 O/X와 같다) */}
+            <SendChallenge mode="assemble" best={sBest} />
             <div className="result-actions">
-              <button className="btn btn-next" onClick={shareEndlessImage} disabled={eImgState === "busy"}>
-                {eImgState === "busy"
-                  ? "발급 중"
-                  : eImgState === "shared"
-                    ? "공유 완료"
-                    : eImgState === "downloaded"
-                      ? "저장 완료"
-                      : eImgState === "failed"
-                        ? "다시 시도"
-                        : "통지서 공유"}
-              </button>
-              <ShareLink data={endlessCard()} />
-            </div>
-            {/* 아래 줄은 이 판을 끝낸 다음에 할 일이다. 공유 두 갈래와
-                섞어 놓으면 네 단추가 다 같은 무게로 보인다 */}
-            <div className="result-actions">
-              <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
-                다시 도전
+              <button className="btn btn-ghost" onClick={() => startEndless()} disabled={busy}>
+                한 판 더
               </button>
               <Link className="btn btn-ghost" href="/">
                 창구로 돌아가기
               </Link>
             </div>
           </section>
+        )}
+
+        {phase === "cresult" && chal && over && (
+          <ChallengeResult
+            mode="assemble"
+            chal={chal}
+            over={over}
+            retry={retry}
+            xp={eXpRes}
+            busy={busy}
+            onNewRun={() => startEndless()}
+            onRetry={() => startEndless(chal)}
+          />
         )}
 
         {phase === "done" && quiz && (
@@ -799,7 +865,7 @@ export default function AssemblePage() {
             {/* 아래 줄은 이 판을 끝낸 다음에 할 일이다. 공유 두 갈래와
                 섞어 놓으면 네 단추가 다 같은 무게로 보인다 */}
             <div className="result-actions">
-              <button className="btn btn-ghost" onClick={startEndless} disabled={busy}>
+              <button className="btn btn-ghost" onClick={() => startEndless()} disabled={busy}>
                 무한 계속
               </button>
               <Link className="btn btn-ghost" href="/">

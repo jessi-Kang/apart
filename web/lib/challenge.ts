@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
+import type { RunMode } from "./run";
 
 /**
  * 도전장. 내 판을 같은 이름·같은 순서로 남에게 치게 보내는 링크다.
@@ -16,6 +17,8 @@ const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
 
 export interface Challenge {
   code: string;
+  /** 어느 창구의 판인가 */
+  mode: RunMode;
   seed: number;
   area: string;
   start: number;
@@ -62,6 +65,8 @@ function ensure(): Promise<void> {
           created_at   timestamptz NOT NULL DEFAULT now()
         )`;
       await sql`CREATE INDEX IF NOT EXISTS challenge_sender ON challenge (sender_uid)`;
+      // 도전장이 감별 O/X에만 있던 때 만든 표에는 창구 칸이 없다
+      await sql`ALTER TABLE challenge ADD COLUMN IF NOT EXISTS mode text NOT NULL DEFAULT 'ox'`;
       await sql`
         CREATE TABLE IF NOT EXISTS challenge_take (
           code       text NOT NULL,
@@ -77,9 +82,10 @@ function ensure(): Promise<void> {
   return ready;
 }
 
-type Row = { code: string; seed: string | number; area: string; start: number; target: number; sender_uid: number | null; sender_label: string };
+type Row = { code: string; mode: string; seed: string | number; area: string; start: number; target: number; sender_uid: number | null; sender_label: string };
 const fromRow = (r: Row): Challenge => ({
   code: r.code,
+  mode: (r.mode as RunMode) ?? "ox",
   seed: Number(r.seed),
   area: r.area,
   start: r.start,
@@ -92,7 +98,7 @@ const fromRow = (r: Row): Challenge => ({
 export async function createChallenge(c: Omit<Challenge, "code">): Promise<string | null> {
   if (!sql) {
     for (const v of mem.values())
-      if (v.seed === c.seed && v.start === c.start && v.target === c.target && v.senderUid === c.senderUid) return v.code;
+      if (v.mode === c.mode && v.seed === c.seed && v.start === c.start && v.target === c.target && v.senderUid === c.senderUid) return v.code;
     const code = newCode();
     mem.set(code, { ...c, code });
     return code;
@@ -101,14 +107,14 @@ export async function createChallenge(c: Omit<Challenge, "code">): Promise<strin
     await ensure();
     const prev = (await sql`
       SELECT code FROM challenge
-      WHERE seed = ${c.seed} AND start = ${c.start} AND target = ${c.target}
+      WHERE mode = ${c.mode} AND seed = ${c.seed} AND start = ${c.start} AND target = ${c.target}
         AND sender_uid IS NOT DISTINCT FROM ${c.senderUid}
       LIMIT 1`) as { code: string }[];
     if (prev[0]) return prev[0].code;
     const code = newCode();
     await sql`
-      INSERT INTO challenge (code, seed, area, start, target, sender_uid, sender_label)
-      VALUES (${code}, ${c.seed}, ${c.area}, ${c.start}, ${c.target}, ${c.senderUid}, ${c.label})`;
+      INSERT INTO challenge (code, mode, seed, area, start, target, sender_uid, sender_label)
+      VALUES (${code}, ${c.mode}, ${c.seed}, ${c.area}, ${c.start}, ${c.target}, ${c.senderUid}, ${c.label})`;
     return code;
   } catch {
     return null;
@@ -121,7 +127,7 @@ export async function getChallenge(code: unknown): Promise<Challenge | null> {
   try {
     await ensure();
     const rows = (await sql`
-      SELECT code, seed, area, start, target, sender_uid, sender_label
+      SELECT code, mode, seed, area, start, target, sender_uid, sender_label
       FROM challenge WHERE code = ${code}`) as Row[];
     return rows[0] ? fromRow(rows[0]) : null;
   } catch {

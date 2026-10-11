@@ -1,4 +1,5 @@
 import { assemblePoolOf, type Apartment } from "./data";
+import { geoOf } from "./geo";
 import { choseongHint } from "./hangul";
 import { seededShuffle, rngForDate as rngForDateWithOffset } from "./seeded";
 
@@ -98,6 +99,7 @@ export function checkAssemble(
       location: `${target.sido} ${target.sigungu} ${target.dong}`,
       builtYear: target.builtYear,
       households: target.households,
+      ...(geoOf(target.id) && { geo: geoOf(target.id) }),
     },
   };
 }

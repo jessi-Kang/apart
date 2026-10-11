@@ -1,7 +1,4 @@
-import { requireReleased } from "@/lib/guard";
-
-export default async function Layout({ children }: { children: React.ReactNode }) {
-  // 도전장은 감별 O/X의 판이다. 창구가 안 열렸으면 도전장도 없는 페이지다
-  await requireReleased("ox");
+/* 도전장의 창구 가드는 page.tsx가 건다 — 어느 창구의 판인지 도전장을 읽어야 안다 */
+export default function Layout({ children }: { children: React.ReactNode }) {
   return children;
 }

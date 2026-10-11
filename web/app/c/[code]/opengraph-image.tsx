@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getChallenge } from "@/lib/challenge";
+import { gameByKey } from "@/lib/release";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -22,7 +23,7 @@ export default async function OgImage({ params }: { params: Promise<{ code: stri
   const ch = await getChallenge((await params).code);
   const target = ch?.target ?? 0;
   const head = `${target}문제 연속 정답`;
-  const sub = "같은 문제로 이 기록을 넘을 수 있습니까?";
+  const sub = `${ch ? (gameByKey(ch.mode)?.label ?? "감별 O/X") : "감별 O/X"} · 같은 문제로 넘을 수 있습니까?`;
   const from = ch?.label ? `${ch.label} 님의 도전장` : "누군가 보낸 도전장";
   const font = await loadFont(`도전장아파트감별사${head}${sub}${from}`);
 

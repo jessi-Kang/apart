@@ -5,6 +5,8 @@ import { SheetFooter } from "@/components/SheetFooter";
 import { DocTitle, StampHero, VForm, VRow } from "@/components/VerdictForm";
 import { getChallenge, type Challenge } from "@/lib/challenge";
 import { areaLabel } from "@/lib/data";
+import { requireReleased } from "@/lib/guard";
+import { gameByKey } from "@/lib/release";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +15,14 @@ interface Props {
 }
 
 const from = (ch: Challenge) => (ch.label ? `${ch.label} 님의 도전장` : "누군가 보낸 도전장");
+const gameOf = (ch: Challenge) => gameByKey(ch.mode);
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ch = await getChallenge((await params).code);
   if (!ch) return { title: { absolute: "아파트 감별사" } };
   // 미리보기 카드가 곧 도전장이다. 기록과 "깰 수 있는가"만 싣고 문제는 싣지 않는다
   const title = `${ch.target}문제 연속 정답, 넘을 수 있습니까?`;
-  const description = `${from(ch)} · 감별 O/X, 같은 문제를 같은 순서로`;
+  const description = `${from(ch)} · ${gameOf(ch)?.label ?? "감별 O/X"}, 같은 문제를 같은 순서로`;
   return {
     title: { absolute: `${title} · 아파트 감별사` },
     description,
@@ -32,6 +35,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ChallengePage({ params }: Props) {
   const ch = await getChallenge((await params).code);
   if (!ch) notFound();
+  // 전개 전 창구의 도전장은 그 창구처럼 없는 페이지다
+  await requireReleased(ch.mode);
+  const game = gameOf(ch);
   return (
     <div className="frame">
       <aside className="rail">
@@ -58,18 +64,18 @@ export default async function ChallengePage({ params }: Props) {
           <VForm>
             <VRow label="보낸 사람">{ch.label || "익명"}</VRow>
             <VRow label="창구">
-              감별 O/X {ch.area && <small>{areaLabel(ch.area)}</small>}
+              {game?.label ?? "감별 O/X"} {ch.area && <small>{areaLabel(ch.area)}</small>}
             </VRow>
             <VRow label="넘을 기록">
               <span className="accent">{ch.target}문제</span> 연속 정답
             </VRow>
             <VRow label="규칙">
-              <small>보낸 사람이 받은 이름이 같은 순서로 나옵니다. 처음 틀리는 문제에서 끝납니다.</small>
+              <small>보낸 사람이 받은 문제가 같은 순서로 나옵니다. 처음 틀리는 문제에서 끝납니다.</small>
             </VRow>
           </VForm>
           <div className="cut" />
           <div className="result-actions">
-            <Link className="btn btn-next full" href={`/o?c=${ch.code}`}>
+            <Link className="btn btn-next full" href={`${game?.href ?? "/o"}?c=${ch.code}`}>
               도전 접수
             </Link>
           </div>
