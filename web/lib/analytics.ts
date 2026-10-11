@@ -9,4 +9,4 @@
  * 두면 넣은 뒤 재배포가 한 번 더 필요하다). 비어 있으면 스크립트를 붙이지 않는다.
  * 개인정보: 쿠키·로컬 저장소를 쓰지 않고 IP로 사람을 식별하지 않는다.
  */
-export const CF_BEACON_TOKEN = "";
+export const CF_BEACON_TOKEN = "f7f73206f368441fb242b2a30cce1021";
