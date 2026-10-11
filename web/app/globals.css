@@ -591,7 +591,7 @@ a.chop { text-decoration: none; }
 .rival i { display: block; height: 100%; background: var(--stamp); transition: width .25s ease; }
 @media (prefers-reduced-motion: reduce) { .rival i { transition: none; } }
 /* 도전장 단추 밑 한 줄: 누르면 무엇이 나가는지 */
-.send-hint { margin: 0; font-size: 12px; color: var(--ink-soft); text-align: center; line-height: 1.5; }
+.send-hint { margin: 10px 0 0; font-size: 12px; color: var(--ink-soft); text-align: center; line-height: 1.5; }
 /* 첫 판에만 나오는 규칙 한 줄 — 들어오자마자 뭘 하는 게임인지 알려준다 */
 /* 창구 이용 안내.
    화면에 얹지 않고 덮는다 — 문제 위에 접이식으로 끼웠더니 펼쳐진 동안
