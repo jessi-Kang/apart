@@ -13,7 +13,7 @@
 | 출제 데이터 | **정적 JSON 2개** (`web/data/*.json`) | 번들에 포함. 조회 지연·쿼리 비용 0 |
 | OG 이미지 | **`next/og`의 `ImageResponse`** | `app/r/[slug]/opengraph-image.tsx` 1종 |
 | 공유 이미지 | **Canvas 2D 직접 드로잉** (`lib/sharecard.ts`) | 1080×1350 접수증. 라이브러리 없음 |
-| 배치(수집·생성·검증) | Node 스크립트 (`web/scripts/*.mjs`) | GitHub Actions 야간 작업 둘이 돌린다(02:00 수집·가짜 채우기, 05:10 작명 출제) |
+| 배치(수집·생성·검증) | Node 스크립트 (`web/scripts/*.mjs`) | GitHub Actions가 돌린다(매일 02:00 수집·좌표·가짜 채우기, 05:10 작명 출제, 월요일 비율 점검) |
 | 운영 화면 | `/report` (운영자만) | 작명 승인·반려, 버그 제보 열람, 감별 리포트 |
 
 ## 2. 데이터 모델
@@ -70,6 +70,14 @@ xp_budget      (user_id PK, budget, last_at)
 endless_runs   (mode, date, best, hits, cnt, avg_ms, created_at)
                -- mode: ox | assemble | findreal, 최근 7일 백분위 산출
 
+-- 도전장 (lib/challenge.ts). 링크에는 번호만 싣고 시드·구역·시작 번호·넘을 기록은 여기 둔다
+challenge      (code PK, mode, seed, area, start, target, sender_uid, sender_label, created_at)
+               -- mode: ox | findreal | assemble. 다른 창구의 도전장으로는 판이 안 열린다
+challenge_take (code, taker, best, created_at)        -- PK (code, taker). 한 사람의 첫 판만
+
+-- 주간 점검이 적어 두는 이름별 집계 합계 (scripts/weekly-balance.mts). 누적에서 그 주 몫만 빼 보려고
+balance_snapshot (at PK, real_shown, real_fooled, fake_shown, fake_fooled)
+
 -- 계정 (lib/userdb.ts)
 app_user       (id, google_sub UNIQUE, email, name)
 user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncState
@@ -94,11 +102,14 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 | `/api/assemble/hint` | GET | `?no&tier` → 초성 힌트 마스크 (최대 3글자까지만) |
 | `/api/findreal/today` | GET | 진짜 찾기 10라운드, 섞인 보기 4개 |
 | `/api/findreal/check` | POST | `{date, no, pick \| timeout}` → 정답 여부 + 진짜·메타 공개 |
-| `/api/endless/ox` | GET / POST | 랜덤 1문제(`?recent=rffr` 최근 정체로 같은 쪽 연속을 누른다) / `{name, choice}` 판정 |
-| `/api/endless/find` | GET / POST | 랜덤 4지선다 / `{options, pick}` 판정 (조작된 보기는 거부) |
-| `/api/endless/assemble` | GET / POST | 랜덤 퍼즐 / `{id, guess[]}` 판정 |
+| `/api/endless/ox` | GET / POST | 지금 판의 다음 문제(`?start=1` 새 판, `?c=번호` 도전장 판, `?area`) / `{name, choice}` 판정 · `{end:true}` 도전 판 끝내기. 지금 판의 문제가 아닌 이름은 409 |
+| `/api/endless/find` | GET / POST | 같은 방식의 4지선다 / `{pick}` 판정. 보기는 요청에서 받지 않고 서버가 지금 판의 문제로 다시 만든다 |
+| `/api/endless/assemble` | GET / POST | 같은 방식의 퍼즐 / `{guess[]}` 판정 (퍼즐도 서버가 다시 만든다) |
 | `/api/endless/assemble/hint` | GET | `?id&tier` → 초성 힌트 마스크 |
 | `/api/endless/finish` | POST | `{mode, best, hits, count, avgMs}` → 판 기록 저장 + 최근 7일 상위 % |
+| `/api/challenge` | POST | `{mode}` → 지금 판의 최고 연속으로 도전장 번호 발급. 기록은 서버가 센 판에서만 나오고, 답을 아는 판(`p`)이면 거부 |
+| `/api/challenge/{번호}` | GET | 도전장 겉면 `{mode, target, label}`. 시드는 싣지 않는다 |
+| `/api/challenge/mine` | GET | 내가 보낸 도전장 수 · 받아 친 사람 · 넘은 사람 |
 | `/api/auth/login` | GET | 구글 동의 화면으로 리디렉션 (state 쿠키 발급) |
 | `/api/auth/callback` | GET | 코드 교환 → 사용자 upsert → 세션 쿠키 |
 | `/api/auth/me` | GET | `{configured, user}` — 로그인 기능 on/off와 현재 세션 |
@@ -108,7 +119,7 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 | `/api/coined` | GET / PATCH | 접수 목록(쪽 넘김) / 승인·반려·되돌리기 (운영자만) |
 | `/api/coined/mine` | GET | 내가 지은 이름과 속은 수 |
 
-페이지 라우트는 한 글자다: `/`(접수 대장 홈), `/o`(감별 O/X), `/a`(이름 조립), `/f`(진짜 찾기), `/n`(작명소, 로그인 필요), `/me`(기록 열람실), `/top`(구역 명부), `/bug`, `/report`(운영자), `/r/{date}-{score}-{grid}`(공유 결과 + OG). 옛 경로(`/play`·`/assemble`·`/findreal`·`/record`·`/ranking`)는 `next.config.mjs`가 308로 넘긴다.
+페이지 라우트는 한 글자다: `/`(접수 대장 홈), `/o`(감별 O/X), `/a`(이름 조립), `/f`(진짜 찾기), `/n`(작명소, 로그인 필요), `/me`(기록 열람실), `/top`(구역 명부), `/c/{번호}`(도전장 + OG), `/bug`, `/report`(운영자), `/r/{date}-{score}-{grid}`(공유 결과 + OG). 옛 경로(`/play`·`/assemble`·`/findreal`·`/record`·`/ranking`)는 `next.config.mjs`가 308로 넘긴다.
 
 - **정답을 클라이언트에 미리 내려주지 않는 이유**: 소스 보기로 만점 치팅 방지. 판정은 서버에서만. 자동화 치팅은 여전히 가능하지만 순위 경쟁이 없어 방어 비용을 더 들이지 않는다.
 - 캐시: `today` 계열만 `max-age=60`, 나머지는 `no-store` 또는 기본값. 문제 자체가 시드 생성이라 CDN 장시간 캐시의 이득이 크지 않다.
@@ -118,9 +129,11 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 
 ## 4. 출제 로직
 
-- `lib/daily.ts`: KST 날짜 문자열(`YYYY-MM-DD`)을 숫자 시드로 바꿔 mulberry32 난수를 돌린다. 진짜:가짜 4:6~6:4, 난이도 커브 `easy, easy, mid×5, hard×3`. 회차 번호(`제N호`)는 기준일(2026-09-10 = 1호)로부터의 경과일.
+- `lib/daily.ts`: KST 날짜 문자열(`YYYY-MM-DD`)을 숫자 시드로 바꿔 mulberry32 난수를 돌린다. 진짜:가짜 4:6~6:4, 난이도 커브 `easy, easy, mid×5, hard×3`. 회차 번호는 내부 키로만 남고 화면에는 내걸지 않는다.
 - `lib/assemble.ts`·`lib/findreal.ts`: 같은 날짜 시드에 오프셋(777000000 / 555000000)을 더해 모드별로 문제가 겹치지 않게 한다.
-- `lib/endless.ts`: 무한은 시드 없이 매 요청 `Math.random()`으로 풀에서 뽑는다. 감별 O/X는 같은 쪽이 셋 이상 이어지면 반대쪽 확률을 0.8로 올려 연속 구간을 누른다. 판정은 이름/단지 id를 되돌려 받아 서버 사전에서 조회하는 방식이라 클라이언트가 진짜/가짜를 유추할 값이 없다.
+- `lib/run.ts`: 무한은 판마다 시드를 두고 n번째 문제를 (시드, n)으로 정한다(감별 `oxAt` · 찾기 `findAt` · 조립 `assembleAt`). 그래야 도전장이 같은 문제를 같은 순서로 되살린다. 판 상태는 창구마다 서명 쿠키(`aptgam_ox`·`aptgam_fr`·`aptgam_as`, 서명에 창구를 섞는다)에 두고, 판 열기·판정·도전 끝내기는 `lib/runroute.ts` 한 곳이다. 이름은 풀에서 해시 최솟값으로 고른다 — 배열 위치로 고르면 매일 밤 풀이 늘 때마다 받은 도전장이 딴 문제가 된다. 감별 O/X는 같은 쪽이 셋 이상 이어지면 반대쪽 확률을 0.8로 올린다. 판정(`lib/endless.ts`)은 서버가 지금 판의 문제를 다시 만들어 조회하므로 클라이언트가 보낸 보기를 믿지 않는다.
+- `lib/balance.ts`: 구역마다 진짜와 가짜가 같은 겉모양(띄어쓰기·글자 수·끝 낱말 일곱 특징)으로 나가게 이름별 출제 무게(0.25~4)를 매긴다. 무한은 무게를 먹인 해시 경주(−ln(u)/무게)로, 공식전은 가중 추첨으로 뽑는다(공식전은 2026-10-12부터). `poolOf`는 구역별로 캐시한다.
+- **좌표는 판정 응답에만 싣는다**(`lib/geo.ts`). 문제를 내는 응답에 실리면 "좌표가 있다 = 진짜"로 정답이 샌다.
 - 시간대: 모든 날짜 판정은 KST 고정(UTC + 9h 후 앞 10자리).
 
 ## 5. 계정·기록 동기화
@@ -137,11 +150,12 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 
 점검은 `/redteam` 스킬이 한다(세션 위조·창구 가드·정답 유출·입력 검증·비밀 유출·헤더·경험치 위조). 로컬에만 대고, DB는 떼고 돌린다. 경험치 위조는 쓰기라 시험 브랜치에서만 돌리고, 시험 브랜치는 원본의 계정·비밀번호를 복사하므로 끝나면 지운다.
 
-## 6. 이미지 (OG·공유)
+## 6. 이미지 (OG·공유·사진)
 
-- **링크 미리보기**: `app/r/[slug]/opengraph-image.tsx`의 `ImageResponse` 1종, 1200×630. 슬러그 `{date}-{score}-{grid}`가 같으면 URL이 같아 CDN 캐시가 먹는다. 한글 폰트는 필요한 글자만 서브셋으로 받아온다.
+- **링크 미리보기**: `app/r/[slug]/opengraph-image.tsx`(공식전 결과)와 `app/c/[code]/opengraph-image.tsx`(도전장, "N문제 연속 정답")의 `ImageResponse`, 1200×630. 슬러그 `{date}-{score}-{grid}`가 같으면 URL이 같아 CDN 캐시가 먹는다. 한글 폰트는 필요한 글자만 서브셋으로 받아온다.
 - **공유 이미지 카드**: `lib/sharecard.ts`가 Canvas 2D로 그리는 1080×1350 "접수증". 절취선·괘선·등급 도장·바코드를 직접 그린다. 세로형 스토리 사이즈(1080×1920)와 시안 재작업은 보류 상태.
-- 텍스트 공유(클립보드)는 이모지 그리드를 쓰지만, 화면·이미지 요소는 전부 SVG/캔버스로 그린다.
+- 텍스트 공유(클립보드)는 이모지 그리드를 쓰지만, 화면·이미지 요소는 전부 SVG/캔버스로 그린다. 무한 판의 결과는 이미지 대신 도전장 링크로 나간다.
+- **항공사진**(`components/AptPhoto.tsx`): 진짜 단지의 정답 공개 칸에 국토부 브이월드 항공사진(zoom 18, 정중앙에 인주색 핀)을 붙이고, 크게 본 화면에서 카카오맵 장소 화면(사진·로드뷰)으로 잇는다. 사진은 휴대폰이 브이월드에서 직접 받아 Vercel 전송량이 늘지 않는다(CSP `img-src`에 `api.vworld.kr`). 키 `NEXT_PUBLIC_VWORLD_KEY`는 도메인을 등록한 공개용 키라 빌드 때 박힌다. 키·좌표가 없거나 사진을 못 받으면 칸을 접는다.
 
 ## 7. PWA (구현)
 
@@ -152,12 +166,12 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 ## 8. 배포
 
 - **경로는 하나뿐이다**: 푸시 → GitHub Actions(`.github/workflows/vercel-deploy.yml`) → Vercel Deploy Hook(`VERCEL_DEPLOY_HOOK` 시크릿) → 배포. 깃 웹훅 경로는 `web/vercel.json`의 `{"git":{"deploymentEnabled":false}}`로 꺼져 있다(이중 배포 방지).
-- **야간 작업 둘**은 Actions 기본 토큰으로 푸시하므로 다른 워크플로를 깨우지 않는다. 그래서 배포 훅을 직접 쏜다. `collect-kapt.yml`(02:00 KST, 시크릿 `KAPT_API_KEY`)과 `publish-coined.yml`(05:10 KST, 시크릿 `DATABASE_URL`)이며, 같은 `concurrency` 묶음(`data-push`)이라 동시에 밀지 않는다. 둘 다 끝나면 `.github/scripts/report-nightly.sh`가 이슈 `야간 작업 일지`에 결과를 댓글로 남긴다(성공이든 실패든).
+- **야간 작업 둘**과 **주간 점검 하나**가 있다. 야간 작업은 Actions 기본 토큰으로 푸시하므로 다른 워크플로를 깨우지 않는다. 그래서 배포 훅을 직접 쏜다. `collect-kapt.yml`(02:00 KST, 시크릿 `KAPT_API_KEY`)과 `publish-coined.yml`(05:10 KST, 시크릿 `DATABASE_URL`)이며, 같은 `concurrency` 묶음(`data-push`)이라 동시에 밀지 않는다. 둘 다 끝나면 `.github/scripts/report-nightly.sh`가 이슈 `야간 작업 일지`에 결과를 댓글로 남긴다(성공이든 실패든). 수집 작업은 카카오 로컬 검색으로 좌표도 채운다(`scripts/geocode-kakao.mjs`, 시크릿 `KAKAO_REST_KEY`, 하룻밤 6,000건 → `data/coords.json`). `weekly-balance.yml`(월요일 08:47 KST)은 진짜·가짜 비율을 재서 같은 이슈에 남기고, 커밋·배포는 하지 않는다.
 - 워크플로에 `concurrency`를 걸어 연달아 푸시하면 마지막 것만 훅을 쏜다. Actions 탭의 수동 실행(`workflow_dispatch`) 버튼으로 빈 커밋 없이 재배포할 수 있다.
 - **주의 이력**: 배포가 조용히 멈춘 적이 있는데 원인은 웹훅 유실이 아니라 **계정 단위 일일 배포 한도**였다. 프로젝트별이 아니라 계정 전체 합산이며, 한도를 넘으면 훅이 201을 돌려주고 빌드만 생기지 않아 유실처럼 보인다. 현재는 Pro 플랜.
-- 비밀 값은 전부 `web/.env.local`(로컬)과 Vercel 환경변수로만 주입한다. 커밋 금지 대상: `DATABASE_URL`, `KAPT_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`, `OWNER_EMAIL`.
+- 비밀 값은 전부 `web/.env.local`(로컬)과 Vercel 환경변수로만 주입한다. 커밋 금지 대상: `DATABASE_URL`, `KAPT_API_KEY`, `KAKAO_REST_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`, `OWNER_EMAIL`. `NEXT_PUBLIC_VWORLD_KEY`만 공개용이다(브이월드에 등록한 도메인에서만 통한다).
 - **`DATABASE_URL`은 세 곳에 있다**: Vercel(Production), GitHub Actions 시크릿, 로컬 `web/.env.local`. 비밀번호를 바꾸면 셋 다 바꾸고 Vercel은 재배포해야 반영된다. 재배포가 Error로 끝나면 운영은 옛 값을 든 이전 배포에 머문다 — 실제로 그래서 한동안 DB에 못 붙었다. 붙었는지는 `/api/ranking`의 `total`이 0이 아닌지로 본다(실패하면 빈 응답을 준다).
-- 명령: `npm run dev` / `npm run build && npm start` / `npm run typecheck` / `npm run validate-pool` / `npm run collect-kapt`.
+- 명령: `npm run dev` / `npm run build && npm start` / `npm run typecheck` / `npm run validate-pool` / `npm run collect-kapt` / `npm run weekly-balance`.
 
 ## 9. 비용 구조
 
