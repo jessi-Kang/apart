@@ -82,6 +82,71 @@ async function layout() {
     const out = String(e.stderr ?? e.stdout ?? e.message).trim();
     bad("레이아웃", out.split("\n").filter((l) => l.trim()).join("\n         "));
   }
+  await gaps();
+}
+
+/**
+ * 글자가 단추·서식표 테두리에 붙어 있는가. 눈으로 볼 때마다 한두 군데씩 나왔다
+ * (단추 밑 안내 0px, 표 밑 안내 0px). 글자 덩어리와 테두리 있는 상자가 가로로
+ * 겹치면서 세로 간격이 8px 미만이면 잡는다. 휴대폰 글씨 크기를 키운 사람(130%)
+ * 기준으로 잰다 — 기본 크기에서 멀쩡해도 거기서 붙는다.
+ */
+async function gaps() {
+  const browser = await chromium.launch();
+  try {
+    const ctx = await browser.newContext({ viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true });
+    await ctx.addInitScript(() =>
+      document.addEventListener("DOMContentLoaded", () => {
+        const st = document.createElement("style");
+        st.textContent = "html{-webkit-text-size-adjust:130%!important}";
+        document.head.appendChild(st);
+      }),
+    );
+    const page = await ctx.newPage();
+    const found = [];
+    const measure = (label) =>
+      page.evaluate((label) => {
+        const vis = (e) => { const s = getComputedStyle(e); const b = e.getBoundingClientRect(); return s.display !== "none" && s.visibility !== "hidden" && b.width > 0 && b.height > 0; };
+        const boxes = [...document.querySelectorAll("body *")].filter((e) => {
+          if (!vis(e) || e.closest("footer, [role=dialog]") || e.matches("main, .sheet, .frame, .screen, header, aside, section")) return false; // 덮개는 화면 위에 떠 있어 아래 글자와 재면 안 된다
+          const s = getComputedStyle(e);
+          return e.matches(".btn, button") || (parseFloat(s.borderTopWidth) > 0 && parseFloat(s.borderBottomWidth) > 0 && e.getBoundingClientRect().height > 30);
+        });
+        const out = [];
+        for (const t of document.querySelectorAll("p, small, .send-hint, .note, .sub, .stamp-sub, .hint")) {
+          if (!vis(t) || !t.textContent.trim() || t.closest("button, .btn, footer, [role=dialog]")) continue;
+          const tb = t.getBoundingClientRect();
+          for (const b of boxes) {
+            if (b.contains(t) || t.contains(b)) continue;
+            const bb = b.getBoundingClientRect();
+            if (Math.min(tb.right, bb.right) - Math.max(tb.left, bb.left) < 20) continue;
+            const gap = tb.top >= bb.bottom ? tb.top - bb.bottom : bb.top >= tb.bottom ? bb.top - tb.bottom : -1;
+            if (gap >= 0 && gap < 8) out.push(`${label}: "${t.textContent.trim().slice(0, 24)}" ${gap.toFixed(0)}px (${String(b.className).slice(0, 24)})`);
+          }
+        }
+        return out;
+      }, label);
+    for (const p of ["/", "/me", "/top", "/bug", "/o"]) {
+      await page.goto(LOCAL + p, { waitUntil: "load" });
+      await page.waitForTimeout(1500);
+      found.push(...(await measure(p)));
+    }
+    // 무한 감별 결과 화면 (단추 밑 안내가 붙었던 자리)
+    if (await page.locator(".rule-veil button").count()) await page.locator(".rule-veil button").first().click();
+    await page.locator(".btn-real").click();
+    await page.locator(".btn-next").waitFor();
+    await page.locator(".close-x").click();
+    await page.waitForSelector(".stamp-hero");
+    await page.waitForTimeout(1200);
+    found.push(...(await measure("/o 결과")));
+    const uniq = [...new Set(found)];
+    if (uniq.length) bad("붙은 글자", uniq.join("\n         "));
+    else ok("붙은 글자", "글자-단추·서식표 간격 8px 이상 (360px · 글씨 130% · 화면 6종)");
+  } catch (e) {
+    skip("붙은 글자", `측정 실패: ${e.message.split("\n")[0]}`);
+  } finally {
+    await browser.close();
+  }
 }
 
 /* ---------- 2. 동작 ---------- */

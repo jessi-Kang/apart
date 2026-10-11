@@ -967,6 +967,8 @@ a.chop { text-decoration: none; }
 .status-chip b { color: var(--stamp); font-weight: 700; }
 
 /* ---- 로딩/에러 ---- */
+/* 서식표 바로 아래 한 줄 안내. 표 테두리에 붙지 않게 띄운다 */
+.form-note { margin: 10px 0 0; color: var(--ink-soft); font-size: 13px; text-align: center; line-height: 1.6; }
 .center-note { flex: 1; display: grid; place-items: center; color: var(--ink-soft); font-size: 14px; text-align: center; line-height: 1.7; }
 
 /* ---- 사이드 레일 ---- */

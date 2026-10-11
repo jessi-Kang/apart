@@ -276,7 +276,7 @@ export default function RecordPage() {
           {/* 같은 안내를 행마다 되풀이하면 표가 안내문이 된다. 아직 안 친 창구가
               있을 때만, 표 아래에 한 번 */}
           {GAMES.some((g) => !daily[g.mode]) && (
-            <p className="center-note">공식전 신청은 접수 대장의 현황 칸에서</p>
+            <p className="form-note">공식전 신청은 접수 대장의 현황 칸에서</p>
           )}
 
           {/* 작명소 칸. 창구가 전개 전이면 응답이 404라 coined가 null이고 칸이 통째로 없다.
