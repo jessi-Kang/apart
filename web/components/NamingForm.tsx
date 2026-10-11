@@ -164,6 +164,10 @@ export function NamingForm({
     };
   }, [phase, page, sort]);
 
+  // 이름이나 구역을 바꾸면 지난 접수의 실패 안내는 지운다. 남겨 두면 새로 적은 이름까지
+  // "접수하지 못했습니다"를 이고 있어서, 무엇이 실패했는지 헷갈린다
+  useEffect(() => setFailed(""), [name, area]);
+
   async function submit() {
     if (busy || !name.trim() || !area) return;
     setBusy(true);
@@ -287,8 +291,8 @@ export function NamingForm({
                 </VRow>
                 <VRow label="확인">
                   <span>
-                    접수 즉시 실단지 <b className="accent">12,121건</b>과 대조합니다
-                    <small>진짜로 있는 이름이면 그 이름을 짚어 드립니다</small>
+                    접수 즉시 <b className="accent">실단지 전부</b>와 대조합니다
+                    <small>이미 있는 이름과 비슷하면 그 이름을 짚어 드립니다</small>
                   </span>
                 </VRow>
               </VForm>
@@ -379,7 +383,7 @@ export function NamingForm({
                 <p className="coin-no">
                   {verdict.reason === "exists" ? (
                     <>
-                      <b>이미 있는 이름입니다</b> — {verdict.near}. 조금 바꿔 주세요.
+                      <b>이미 있는 이름과 비슷합니다</b> · {verdict.near}. 조금 바꿔 주세요.
                     </>
                   ) : (
                     <b>{verdict.message}</b>
