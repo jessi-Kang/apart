@@ -7,7 +7,7 @@
 | 레이어 | 선택 | 메모 |
 |---|---|---|
 | 프론트/서버 | **Next.js 15 App Router + TypeScript, React 19** | 모바일 웹 우선, 네이티브 앱 없음. 링크 타고 바로 플레이 |
-| 런타임 의존성 | **`@neondatabase/serverless` 하나뿐** | 나머지는 next/react/react-dom. UI·사운드·공유카드 전부 자체 구현 |
+| 런타임 의존성 | **`@neondatabase/serverless` 하나뿐** (Next 15.5.27) | 나머지는 next/react/react-dom. UI·사운드·공유카드 전부 자체 구현 |
 | 배포 | **Vercel 프로젝트 `apt-gam`** (Root Directory `web`) | 프로덕션 도메인 https://apt-game.app (`apt-gam.vercel.app`은 리디렉션) |
 | DB | **Neon Postgres**(DB `aptgam`) | 집계·계정만. 출제 데이터는 DB에 없다 |
 | 출제 데이터 | **정적 JSON 2개** (`web/data/*.json`) | 번들에 포함. 조회 지연·쿼리 비용 0 |
@@ -21,7 +21,7 @@
 ### 2-1. 출제 풀 (정적 파일, DB 아님)
 
 ```jsonc
-// web/data/apartments.json — K-apt 실데이터 15,839건 (시도 15곳)
+// web/data/apartments.json — K-apt 실데이터 약 15,900건 (시도 15곳)
 { "items": [{
   "id": "kA10021295",        // "k" + kaptCode
   "name": "경희궁의아침4단지",
@@ -62,6 +62,9 @@ coined_name    (id, user_id, name, area, approved, rejected, hold_reason, create
 
 -- 버그 제보 (lib/bugreport.ts)
 bug_report     (id, user_id, page, text, created_at)
+
+-- 경험치 한도: 서버가 본 적중으로 벌 수 있는 최대치 (lib/xpbudget.ts). 처음 쓸 때 코드가 만든다
+xp_budget      (user_id PK, budget, last_at)
 
 -- 무한 세션 판 기록 (lib/runstats.ts)
 endless_runs   (mode, date, best, hits, cnt, avg_ms, created_at)
@@ -126,6 +129,13 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 - 필요 env: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`. **하나라도 없으면 로그인 UI가 자동으로 숨고 비회원 모드만 동작한다.**
 - 기록은 기본이 localStorage다(`lib/local.ts`, `lib/level.ts`). 로그인 시에만 `lib/cloud.ts`가 진입 시 pull, 변경 시 디바운스 push를 한다.
 - 병합 규약은 `lib/sync.ts`에 서버·클라 공용으로 두고 양쪽에서 같은 함수를 쓴다. 원칙은 "잃지 않는 쪽": XP·최고 기록은 큰 값, 날짜 기록은 최신 날짜. 서버도 저장 전에 같은 병합을 거쳐 늦게 도착한 기기 쓰기가 기록을 덮지 않게 한다. 업로드 본문은 `sanitizeState`로 전부 정규화한다.
+- **경험치는 서버가 본 적중만큼만 는다**(`lib/xpbudget.ts`). 큰 쪽을 남기는 병합만 있던 때는 로그인한 아무나 `xp: 9999999`를 올려 구역 명부 1위가 될 수 있었고 영영 내려오지 않았다. 지금은 판정 라우트 여섯 곳이 맞힐 때마다 그 문제의 최대 점수(+여유 15)를 `xp_budget`에 더하고(0.6초에 한 번만 센다), 병합 결과의 경험치는 그 한도를 넘지 못한다. 이미 저장된 값은 깎지 않고 늘어나는 쪽만 막는다. 구역별 증가분 합은 전체 증가분을 넘지 못한다. 처음 보는 계정은 비회원 때 쌓은 것을 3,000까지 인정한다. 한도를 못 읽으면 늘어나는 것을 받지 않는다.
+
+## 5-1. 보안 헤더
+
+`next.config.mjs`가 모든 경로에 CSP · X-Frame-Options(DENY) · nosniff · Referrer-Policy · Permissions-Policy · HSTS를 걸고 `X-Powered-By`를 뗀다. 헤더가 하나도 없던 때는 남의 사이트가 iframe으로 감싸 클릭을 가로챌 수 있었다. CSP는 스크립트에 `'unsafe-inline'`을 남긴다(Next의 인라인 스크립트와 설치 안내 선점 스크립트). 그래서 이 CSP가 막는 것은 XSS 전체가 아니라 **바깥 출처**다 — 스크립트·연결·폼 전송이 이 사이트와 구글(로그인·글꼴) 밖으로 나가지 못한다. 외부 출처를 새로 붙이면 CSP에 적어야 동작한다.
+
+점검은 `/redteam` 스킬이 한다(세션 위조·창구 가드·정답 유출·입력 검증·비밀 유출·헤더·경험치 위조). 로컬에만 대고, DB는 떼고 돌린다. 경험치 위조는 쓰기라 시험 브랜치에서만 돌리고, 시험 브랜치는 원본의 계정·비밀번호를 복사하므로 끝나면 지운다.
 
 ## 6. 이미지 (OG·공유)
 
@@ -145,7 +155,8 @@ user_state     (user_id PK, state jsonb, updated_at)  -- lib/sync.ts의 SyncStat
 - **야간 작업 둘**은 Actions 기본 토큰으로 푸시하므로 다른 워크플로를 깨우지 않는다. 그래서 배포 훅을 직접 쏜다. `collect-kapt.yml`(02:00 KST, 시크릿 `KAPT_API_KEY`)과 `publish-coined.yml`(05:10 KST, 시크릿 `DATABASE_URL`)이며, 같은 `concurrency` 묶음(`data-push`)이라 동시에 밀지 않는다. 둘 다 끝나면 `.github/scripts/report-nightly.sh`가 이슈 `야간 작업 일지`에 결과를 댓글로 남긴다(성공이든 실패든).
 - 워크플로에 `concurrency`를 걸어 연달아 푸시하면 마지막 것만 훅을 쏜다. Actions 탭의 수동 실행(`workflow_dispatch`) 버튼으로 빈 커밋 없이 재배포할 수 있다.
 - **주의 이력**: 배포가 조용히 멈춘 적이 있는데 원인은 웹훅 유실이 아니라 **계정 단위 일일 배포 한도**였다. 프로젝트별이 아니라 계정 전체 합산이며, 한도를 넘으면 훅이 201을 돌려주고 빌드만 생기지 않아 유실처럼 보인다. 현재는 Pro 플랜.
-- 비밀 값은 전부 `web/.env.local`(로컬)과 Vercel 환경변수로만 주입한다. 커밋 금지 대상: `DATABASE_URL`, `KAPT_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`.
+- 비밀 값은 전부 `web/.env.local`(로컬)과 Vercel 환경변수로만 주입한다. 커밋 금지 대상: `DATABASE_URL`, `KAPT_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`, `OWNER_EMAIL`.
+- **`DATABASE_URL`은 세 곳에 있다**: Vercel(Production), GitHub Actions 시크릿, 로컬 `web/.env.local`. 비밀번호를 바꾸면 셋 다 바꾸고 Vercel은 재배포해야 반영된다. 재배포가 Error로 끝나면 운영은 옛 값을 든 이전 배포에 머문다 — 실제로 그래서 한동안 DB에 못 붙었다. 붙었는지는 `/api/ranking`의 `total`이 0이 아닌지로 본다(실패하면 빈 응답을 준다).
 - 명령: `npm run dev` / `npm run build && npm start` / `npm run typecheck` / `npm run validate-pool` / `npm run collect-kapt`.
 
 ## 9. 비용 구조

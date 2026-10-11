@@ -7,7 +7,7 @@
 | 단계 | 현재 | 위치 |
 |---|---|---|
 | 실단지 수집 | **매일 02:00(KST) 자동** (GitHub Actions) | `web/scripts/collect-kapt.mjs`, `.github/workflows/collect-kapt.yml` |
-| 실단지 풀 | **정적 JSON 15,839건** (DB 테이블 아님) | `web/data/apartments.json` |
+| 실단지 풀 | **정적 JSON 약 15,900건**(매일 는다) (DB 테이블 아님) | `web/data/apartments.json` |
 | 승격 | 수집본 → 출제 풀, 더하기 방식 + 겹치는 가짜 솎기 | `web/scripts/promote-apartments.mjs` |
 | 가짜 생성 | **규칙 생성기** (실단지 모양 학습) + 작명소(사람) | `web/scripts/generate-fakes.mjs`, `web/lib/naming.ts` |
 | 가짜 풀 | **정적 JSON 2,000건** | `web/data/fake_names.json` |
@@ -21,7 +21,7 @@
 ### 1-1. 소스 (구현)
 - 공공데이터포털 **공동주택 단지 목록제공 V4**(`AptListService4/getSidoAptList4`) + **공동주택 기본 정보 V5**(`AptBasisInfoServiceV5/getAphusBassInfoV5`).
 - 사용 필드: 단지명(`kaptName`), 주소(`as1/as2/as3` 또는 `kaptAddr`), 준공년도(`kaptUsedate` 앞 4자리), 세대수(`kaptdaCnt`).
-- **수집 범위**: 시도 15곳, 총 15,839건. 목록에 있는데 받지 못한 것은 기본정보 API에 자료가 없거나 세대수·준공년도가 빈 단지라, 받을 수 있는 것은 다 받은 상태다.
+- **수집 범위**: 시도 15곳, 총 약 15,900건. 목록에 있는데 받지 못한 것은 기본정보 API에 자료가 없거나 세대수·준공년도가 빈 단지라, 받을 수 있는 것은 다 받은 상태다.
   인자로 시도코드를 주면 그 시도를 받고, 다시 실행하면 기존 수집본에 이어붙는다.
   **시도코드에 함정이 있다**: 강원은 42가 아니라 51, 전북은 45가 아니라 52다(특별자치도 전환).
   확인된 코드 표는 `collect-kapt.mjs` 주석에 있다.
@@ -54,7 +54,7 @@ K-apt 원본에는 단지명이 아니라 관리 단위가 이름 칸에 들어�
 
 ### 1-3. 결과물과 승격 절차 (구현)
 - 수집 결과는 `web/data/apartments.collected.json`에 쓰고 `promote-apartments.mjs`가 `apartments.json`으로 승격한다. **승격은 덮어쓰기가 아니라 더하기다** — 출제 풀에는 수집본에 없는 단지가 손으로 들어가 있어, 복사로 만들면 매일 밤 사라진다. 같은 단계에서 새 실단지와 사실상 같아진 가짜를 솎는다(실단지는 사실이고 가짜는 지어낸 것이라 물러나는 쪽은 가짜다).
-- 현재 풀: **15,839건, 시도 15곳.** 서울 2,889 · 경기 2,801 · 부산 1,361 · 경남 1,287 · 대구 1,061 · 인천 1,004 · 경북 981 · 충남 920 · 전북 796 · 강원 739 · 충북 721 · 대전 509 · 울산 458 · 제주 172 · 세종 139. 항목 필드는 `id`(`k` + kaptCode) / `name` / `sido` / `sigungu` / `dong` / `builtYear` / `households` / `difficulty`.
+- 현재 풀: **약 15,900건, 시도 15곳**(2026-10 기준, 매일 밤 새 단지가 더해진다). 서울 2,889 · 경기 2,801 · 부산 1,361 · 경남 1,287 · 대구 1,061 · 인천 1,004 · 경북 981 · 충남 920 · 전북 796 · 강원 739 · 충북 721 · 대전 509 · 울산 458 · 제주 172 · 세종 139. 항목 필드는 `id`(`k` + kaptCode) / `name` / `sido` / `sigungu` / `dong` / `builtYear` / `households` / `difficulty`.
 - 정답 공개 화면의 "서울특별시 서초구 반포동 · 2023년 · 2,990세대"가 이 데이터에서 나온다. 표기 규칙: 시/도 + 시/군/구 + 동까지만(도로명 상세주소 미노출), 준공년도 4자리, 세대수 콤마 표기.
 
 ## 2. 가짜 단지명 생성
@@ -145,7 +145,7 @@ K-apt 원본에는 단지명이 아니라 관리 단위가 이름 칸에 들어�
 ## 6. 파이프라인 요약도
 
 ```
-[K-apt API] ─매일 02:00─> [collect-kapt] ─> [apartments.collected.json] ─승격(더하기)─> [apartments.json 15,839]
+[K-apt API] ─매일 02:00─> [collect-kapt] ─> [apartments.collected.json] ─승격(더하기)─> [apartments.json ~15,900]
                                                                              │ 겹치는 가짜 솎기
 [generate-fakes 매일 02:00] ──┐                                               ▼
 [작명소 → 말 거르기 → 05:10] ──┼─> [validate-pool · check-wordguard · 겉모양] ─> [fake_names.json 2,000]
