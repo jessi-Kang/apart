@@ -1,6 +1,7 @@
 {
-  "_note": "K-apt 수집본 2026-10-12. 검토 후 apartments.json으로 승격.",
+  "_note": "K-apt 수집본 2026-10-13. 검토 후 apartments.json으로 승격.",
   "skipped": {
+    "A10019902": "2026-10-13",
     "A10019909": "2026-10-06",
     "A10019917": "2026-10-08",
     "A10019939": "2026-10-08",
@@ -161293,6 +161294,26 @@
       "dong": "병점동",
       "builtYear": 2001,
       "households": 572,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10019901",
+      "name": "대신아파트",
+      "sido": "인천광역시",
+      "sigungu": "계양구",
+      "dong": "효성동",
+      "builtYear": 1989,
+      "households": 120,
+      "difficulty": "easy"
+    },
+    {
+      "id": "kA10019903",
+      "name": "운정중앙역 이지더원",
+      "sido": "경기도",
+      "sigungu": "파주시",
+      "dong": "동패동",
+      "builtYear": 2026,
+      "households": 379,
       "difficulty": "easy"
     }
   ]
