@@ -127,7 +127,7 @@ button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 .home { position: relative; isolation: isolate; overflow: hidden; }
 /* 관인: 크게, 종이 모서리 밖으로 살짝 잘려 나가게 — 서류에 눌러 찍힌 인장 */
 /* 관인 워터마크. 결과 화면에도 같은 자리·같은 농도로 찍는다 —
-   한 번 걷어냈다가 "결과에 도장이 없다"는 지적을 받고 되돌렸고,
+   한 번 걷어냈다가 결과 화면만 도장 없이 허전해져 되돌렸고,
    위치는 홈에서 이미 합의된 방식(모서리 밖으로 잘려 나가게)을 그대로 쓴다.
    등급 도장이 주인공이라 농도는 배경으로만 남는 선에서 멈춘다 */
 .home-seal,

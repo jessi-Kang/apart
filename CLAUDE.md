@@ -119,7 +119,7 @@ node .claude/skills/redteam/scripts/redteam.mjs all
 
 ## 문서 최신화
 
-**"문서 업데이트 하자"** 요청이 오면 `README.md`와 `docs/*.md`를 지금 코드 기준으로
+**문서 최신화** 요청이 오면 `README.md`와 `docs/*.md`를 지금 코드 기준으로
 최신화한다. 기획 당시에 쓴 문서와 실제로 만들어진 것이 갈라져 있는 곳을 찾아 고친다:
 
 - `README.md` — 문서 맵과 현재 단계
