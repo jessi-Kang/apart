@@ -1,0 +1,3 @@
+#!/bin/sh
+# 대화 인용 막기 (.githooks/quote-guard.mjs)
+exec node "$(git rev-parse --show-toplevel)/.githooks/quote-guard.mjs" msg "$1"

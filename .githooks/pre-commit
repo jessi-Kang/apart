@@ -1,0 +1,3 @@
+#!/bin/sh
+# 대화 인용 막기 (.githooks/quote-guard.mjs) — 문서·주석에 새로 들어가는 줄
+exec node "$(git rev-parse --show-toplevel)/.githooks/quote-guard.mjs" staged
