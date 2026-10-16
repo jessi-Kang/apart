@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "아파트 감별사",
     short_name: "아파트 감별사",
-    description: "이거 진짜 있는 아파트야, AI가 지어낸 거야? 이름 하나 보고 가려내는 퀴즈",
+    description: "단지 이름 하나만 보고 진짜 아파트인지 가려내는 감별 퀴즈",
     start_url: "/",
     display: "standalone",
     background_color: "#f6f6f3",
